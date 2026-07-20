@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS "user" (
+    "id" BIGINT NOT NULL AUTO_INCREMENT,
+    "username" VARCHAR(64) NOT NULL,
+    "password" VARCHAR(128) NOT NULL,
+    "phone" VARCHAR(20) DEFAULT NULL,
+    "status" TINYINT NOT NULL DEFAULT 1,
+    "create_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "update_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "deleted" TINYINT NOT NULL DEFAULT 0,
+    PRIMARY KEY ("id"),
+    UNIQUE ("username")
+);

@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: mrb-auth-test
+  cloud:
+    nacos:
+      config:
+        enabled: false
+      discovery:
+        enabled: false
