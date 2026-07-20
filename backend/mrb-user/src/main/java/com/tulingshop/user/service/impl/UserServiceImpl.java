@@ -1,5 +1,7 @@
 package com.tulingshop.user.service.impl;
 
+import cn.hutool.crypto.digest.BCrypt;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.tulingshop.common.exception.BusinessException;
 import com.tulingshop.common.exception.ErrorCode;
 import com.tulingshop.user.model.entity.User;
@@ -26,5 +28,30 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         return user;
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        return userRepository.selectOne(
+                new LambdaQueryWrapper<User>()
+                        .eq(User::getUsername, username)
+        );
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void register(String username, String password, String phone) {
+        // 检查用户名是否已存在
+        User existing = getUserByUsername(username);
+        if (existing != null) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(BCrypt.hashpw(password));
+        user.setPhone(phone);
+        user.setStatus(1);
+        userRepository.insert(user);
     }
 }

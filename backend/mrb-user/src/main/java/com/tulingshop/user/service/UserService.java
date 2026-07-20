@@ -8,4 +8,8 @@ import com.tulingshop.user.model.entity.User;
 public interface UserService {
 
     User getUserById(Long id);
+
+    User getUserByUsername(String username);
+
+    void register(String username, String password, String phone);
 }
