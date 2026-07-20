@@ -1,0 +1,25 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# Env
+.env
+*.env
+
+# MiMo Code
+.mimocode/
+
+# Node
+node_modules/

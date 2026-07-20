@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: mrb-user
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      config:
+        file-extension: yml
+        namespace: dev
+      discovery:
+        namespace: dev

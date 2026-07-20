@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: mrb-gateway
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        namespace: dev

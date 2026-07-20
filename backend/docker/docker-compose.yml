@@ -1,0 +1,70 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mrb-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mrb-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  nacos:
+    image: nacos/nacos-server:v2.3.1
+    container_name: mrb-nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: ""
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: mrb-rocketmq-namesrv
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m"
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: mrb-rocketmq-broker
+    command: sh mqbroker -n rocketmq-namesrv:9876
+    ports:
+      - "10911:10911"
+    depends_on:
+      - rocketmq-namesrv
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m"
+
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: mrb-rocketmq-dashboard
+    ports:
+      - "9877:8080"
+    environment:
+      NACOS_ADDR: rocketmq-namesrv:9876
+
+volumes:
+  mysql-data:
+  redis-data:
