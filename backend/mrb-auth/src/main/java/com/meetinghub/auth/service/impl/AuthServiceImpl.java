@@ -2,6 +2,7 @@ package com.meetinghub.auth.service.impl;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.meetinghub.auth.feign.UserFeignClient;
+import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.auth.util.JwtUtils;
 import com.meetinghub.common.exception.BusinessException;
@@ -16,9 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.meetinghub.common.constant.RedisKeyConstant.USER_TOKEN;
 
-/**
- * 鉴权服务实现
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,8 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final StringRedisTemplate redisTemplate;
 
     @Override
-    public String login(String username, String password) {
-        // 1. 通过 Feign 调用用户服务查询用户
+    public LoginVO login(String username, String password) {
         var result = userFeignClient.getUserForAuth(username);
         if (result == null || result.getData() == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -38,25 +35,27 @@ public class AuthServiceImpl implements AuthService {
 
         AuthUserDTO user = result.getData();
 
-        // 2. 校验用户状态
         if (user.getStatus() == null || user.getStatus() == 0) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号已被禁用");
         }
 
-        // 3. 校验密码（BCrypt）
         if (user.getPassword() == null || !BCrypt.checkpw(password, user.getPassword())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "用户名或密码错误");
         }
 
-        // 4. 签发 JWT
-        String token = jwtUtils.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtils.generateToken(user.getId(), user.getUsername(), user.getRole());
 
-        // 5. 存储 Token 到 Redis（用于后续校验和踢人）
         String redisKey = USER_TOKEN + user.getId();
         redisTemplate.opsForValue().set(redisKey, token, 24, TimeUnit.HOURS);
 
-        log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
-        return token;
+        LoginVO loginVO = new LoginVO();
+        loginVO.setToken(token);
+        loginVO.setUserId(user.getId());
+        loginVO.setUsername(user.getUsername());
+        loginVO.setRole(user.getRole());
+
+        log.info("用户登录成功: userId={}, username={}, role={}", user.getId(), user.getUsername(), user.getRole());
+        return loginVO;
     }
 
     @Override
@@ -67,8 +66,9 @@ public class AuthServiceImpl implements AuthService {
 
         Long userId = jwtUtils.getUserIdFromToken(token);
         String username = jwtUtils.getUsernameFromToken(token);
+        String role = jwtUtils.getRoleFromToken(token);
 
-        String newToken = jwtUtils.generateToken(userId, username);
+        String newToken = jwtUtils.generateToken(userId, username, role);
 
         String redisKey = USER_TOKEN + userId;
         redisTemplate.opsForValue().set(redisKey, newToken, 24, TimeUnit.HOURS);

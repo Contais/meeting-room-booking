@@ -6,7 +6,14 @@ export interface LoginParams {
   password: string
 }
 
-export function login(data: LoginParams): Promise<Result<string>> {
+export interface LoginVO {
+  token: string
+  userId: number
+  username: string
+  role: string
+}
+
+export function login(data: LoginParams): Promise<Result<LoginVO>> {
   return request.post('/api/auth/login', data)
 }
 

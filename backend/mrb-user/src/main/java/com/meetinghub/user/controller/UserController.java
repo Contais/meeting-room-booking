@@ -1,9 +1,10 @@
 package com.meetinghub.user.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
-import com.meetinghub.user.model.dto.RegisterDTO;
-import com.meetinghub.user.model.dto.UserDTO;
+import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.service.UserService;
 import jakarta.validation.Valid;
@@ -35,9 +36,6 @@ public class UserController {
         return Result.ok(toDTO(user));
     }
 
-    /**
-     * 内部接口：供鉴权服务调用
-     */
     @GetMapping("/internal/info/username/{username}")
     public Result<AuthUserDTO> getUserForAuth(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
@@ -48,6 +46,7 @@ public class UserController {
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setPassword(user.getPassword());
+        dto.setRole(user.getRole());
         dto.setStatus(user.getStatus());
         return Result.ok(dto);
     }
@@ -62,12 +61,55 @@ public class UserController {
         return Result.ok();
     }
 
+    @RequiresRole("admin")
+    @GetMapping("/admin/list")
+    public Result<IPage<UserDTO>> listUsers(UserPageQuery query) {
+        return Result.ok(userService.listUsers(query));
+    }
+
+    @RequiresRole("admin")
+    @GetMapping("/admin/detail/{id}")
+    public Result<UserDTO> getUserDetail(@PathVariable Long id) {
+        return Result.ok(userService.getUserDetail(id));
+    }
+
+    @RequiresRole("admin")
+    @PostMapping("/admin/create")
+    public Result<Void> createUser(@Valid @RequestBody UserCreateDTO dto) {
+        userService.createUser(dto);
+        return Result.ok();
+    }
+
+    @RequiresRole("admin")
+    @PutMapping("/admin/update")
+    public Result<Void> updateUser(@Valid @RequestBody UserUpdateDTO dto) {
+        userService.updateUser(dto);
+        return Result.ok();
+    }
+
+    @RequiresRole("admin")
+    @PutMapping("/admin/toggle-status/{id}")
+    public Result<Void> toggleStatus(@PathVariable Long id) {
+        userService.toggleStatus(id);
+        return Result.ok();
+    }
+
+    @RequiresRole("admin")
+    @DeleteMapping("/admin/delete/{id}")
+    public Result<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return Result.ok();
+    }
+
     private UserDTO toDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setPhone(user.getPhone());
+        dto.setRealName(user.getRealName());
+        dto.setRole(user.getRole());
         dto.setStatus(user.getStatus());
+        dto.setCreateTime(user.getCreateTime());
         return dto;
     }
 }

@@ -2,7 +2,6 @@
 -- 会议室预约系统 - 数据库初始化脚本
 -- ============================================================
 
--- 创建数据库（如果不存在）
 CREATE DATABASE IF NOT EXISTS `mrb_user` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS `mrb_auth` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS `mrb_meeting` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -17,6 +16,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(64) NOT NULL COMMENT '用户名',
     `password` VARCHAR(128) NOT NULL COMMENT '密码（BCrypt哈希）',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
+    `real_name` VARCHAR(64) DEFAULT NULL COMMENT '真实姓名',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT '角色: admin-管理员, user-普通用户',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -25,17 +26,18 @@ CREATE TABLE IF NOT EXISTS `user` (
     UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 插入测试用户 (密码: 123456, BCrypt哈希)
-INSERT INTO `user` (`username`, `password`, `phone`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', 1),
-('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', 1);
+-- 管理员账号 (密码: admin123)
+INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '系统管理员', 'admin', 1);
+
+-- 测试用户 (密码: 123456)
+INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
+('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'user', 1);
 
 -- ============================================================
 -- 鉴权中心 (mrb_auth)
 -- ============================================================
 USE `mrb_auth`;
-
--- 鉴权中心暂无独立表，Token 存储在 Redis 中
 
 -- ============================================================
 -- 会议室管理 (mrb_meeting)
@@ -73,7 +75,6 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     KEY `idx_time_range` (`start_time`, `end_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室预约表';
 
--- 插入测试会议室
 INSERT INTO `meeting_room` (`name`, `location`, `capacity`, `equipment`, `description`, `status`) VALUES
 ('大会议室A', '3楼A301', 20, '投影仪,白板,视频会议系统', '适合部门例会和项目评审', 1),
 ('中会议室B', '3楼A302', 10, '投影仪,白板', '适合小组讨论', 1),

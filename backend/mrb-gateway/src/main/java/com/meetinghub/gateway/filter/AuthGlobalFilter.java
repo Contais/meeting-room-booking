@@ -12,9 +12,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-/**
- * 全局认证过滤器骨架
- */
 @Slf4j
 @Component
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
@@ -22,7 +19,6 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     private static final String TOKEN_HEADER = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
 
-    /** 白名单路径 */
     private static final List<String> WHITE_LIST = List.of(
             "/api/auth/login",
             "/api/auth/register",
@@ -33,14 +29,12 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // 白名单放行
         for (String whitePath : WHITE_LIST) {
             if (path.startsWith(whitePath)) {
                 return chain.filter(exchange);
             }
         }
 
-        // 校验 Token
         String token = exchange.getRequest().getHeaders().getFirst(TOKEN_HEADER);
         if (!StringUtils.hasText(token) || !token.startsWith(TOKEN_PREFIX)) {
             log.warn("请求缺少有效Token: path={}", path);
@@ -48,11 +42,30 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return exchange.getResponse().setComplete();
         }
 
-        // Token 有效，传递给下游服务
+        // 简单解析 JWT 获取 role（Base64 解码 payload）
+        String role = extractRoleFromToken(token.replace(TOKEN_PREFIX, ""));
+
         ServerHttpRequest request = exchange.getRequest().mutate()
                 .header(TOKEN_HEADER, token)
+                .header("X-User-Role", role != null ? role : "")
                 .build();
         return chain.filter(exchange.mutate().request(request).build());
+    }
+
+    private String extractRoleFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length != 3) return null;
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            // 简单解析 JSON 中的 role 字段
+            int roleIdx = payload.indexOf("\"role\":\"");
+            if (roleIdx < 0) return null;
+            int start = roleIdx + 8;
+            int end = payload.indexOf("\"", start);
+            return payload.substring(start, end);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

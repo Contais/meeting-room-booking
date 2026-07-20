@@ -1,21 +1,22 @@
 package com.meetinghub.user.model.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
- * 用户信息 DTO
+ * 管理员编辑用户 DTO
  */
 @Data
-public class UserDTO implements Serializable {
+public class UserUpdateDTO implements Serializable {
 
+    @NotNull(message = "用户ID不能为空")
     private Long id;
-    private String username;
+
     private String phone;
+
     private String realName;
+
     private String role;
-    private Integer status;
-    private LocalDateTime createTime;
 }

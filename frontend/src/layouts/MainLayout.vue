@@ -19,14 +19,21 @@
           <el-icon><OfficeBuilding /></el-icon>
           <span>会议室</span>
         </el-menu-item>
+        <el-menu-item v-if="userStore.isAdmin()" index="/admin/users">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header class="layout-header">
         <div class="header-right">
+          <el-tag v-if="userStore.isAdmin()" type="danger" size="small" style="margin-right: 12px">
+            管理员
+          </el-tag>
           <el-dropdown>
             <span class="el-dropdown-link">
-              {{ userStore.userInfo?.username || '用户' }}
+              {{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
@@ -46,7 +53,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, OfficeBuilding, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, OfficeBuilding, ArrowDown, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

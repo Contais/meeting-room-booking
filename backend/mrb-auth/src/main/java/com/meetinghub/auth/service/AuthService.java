@@ -1,11 +1,10 @@
 package com.meetinghub.auth.service;
 
-/**
- * 鉴权服务接口
- */
+import com.meetinghub.auth.model.dto.LoginVO;
+
 public interface AuthService {
 
-    String login(String username, String password);
+    LoginVO login(String username, String password);
 
     String refreshToken(String token);
 

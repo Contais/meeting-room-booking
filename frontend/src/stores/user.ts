@@ -17,18 +17,22 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = info
   }
 
+  function isAdmin(): boolean {
+    return userInfo.value?.role === 'admin'
+  }
+
   async function logout() {
     try {
       if (token.value) {
         await logoutApi()
       }
     } catch {
-      // ignore logout API error
+      // ignore
     }
     token.value = ''
     userInfo.value = null
     removeToken()
   }
 
-  return { token, userInfo, setUserToken, setUserInfo, logout }
+  return { token, userInfo, setUserToken, setUserInfo, isAdmin, logout }
 })

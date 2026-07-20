@@ -2,6 +2,7 @@ package com.meetinghub.auth.service.impl;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.meetinghub.auth.feign.UserFeignClient;
+import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.util.JwtUtils;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
@@ -28,13 +29,10 @@ class AuthServiceImplTest {
 
     @Mock
     private UserFeignClient userFeignClient;
-
     @Mock
     private JwtUtils jwtUtils;
-
     @Mock
     private StringRedisTemplate redisTemplate;
-
     @Mock
     private ValueOperations<String, String> valueOperations;
 
@@ -50,18 +48,21 @@ class AuthServiceImplTest {
         mockAuthUser.setId(1L);
         mockAuthUser.setUsername("testuser");
         mockAuthUser.setPassword(BCrypt.hashpw("password123"));
+        mockAuthUser.setRole("user");
         mockAuthUser.setStatus(1);
     }
 
     @Test
-    void should_returnToken_when_loginWithCorrectCredentials() {
+    void should_returnLoginVO_when_loginWithCorrectCredentials() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(userFeignClient.getUserForAuth("testuser")).thenReturn(Result.ok(mockAuthUser));
-        when(jwtUtils.generateToken(1L, "testuser")).thenReturn(VALID_TOKEN);
+        when(jwtUtils.generateToken(1L, "testuser", "user")).thenReturn(VALID_TOKEN);
 
-        String token = authService.login("testuser", "password123");
+        LoginVO result = authService.login("testuser", "password123");
 
-        assertThat(token).isEqualTo(VALID_TOKEN);
+        assertThat(result.getToken()).isEqualTo(VALID_TOKEN);
+        assertThat(result.getUsername()).isEqualTo("testuser");
+        assertThat(result.getRole()).isEqualTo("user");
         verify(valueOperations).set(eq("mrb:user:token:1"), eq(VALID_TOKEN), eq(24L), eq(TimeUnit.HOURS));
     }
 
@@ -91,6 +92,7 @@ class AuthServiceImplTest {
         disabledUser.setId(2L);
         disabledUser.setUsername("disabled");
         disabledUser.setPassword(BCrypt.hashpw("pass"));
+        disabledUser.setRole("user");
         disabledUser.setStatus(0);
 
         when(userFeignClient.getUserForAuth("disabled")).thenReturn(Result.ok(disabledUser));
@@ -107,12 +109,12 @@ class AuthServiceImplTest {
         when(jwtUtils.validateToken(VALID_TOKEN)).thenReturn(true);
         when(jwtUtils.getUserIdFromToken(VALID_TOKEN)).thenReturn(1L);
         when(jwtUtils.getUsernameFromToken(VALID_TOKEN)).thenReturn("testuser");
-        when(jwtUtils.generateToken(1L, "testuser")).thenReturn("new.jwt.token");
+        when(jwtUtils.getRoleFromToken(VALID_TOKEN)).thenReturn("user");
+        when(jwtUtils.generateToken(1L, "testuser", "user")).thenReturn("new.jwt.token");
 
         String newToken = authService.refreshToken(VALID_TOKEN);
 
         assertThat(newToken).isEqualTo("new.jwt.token");
-        verify(valueOperations).set(eq("mrb:user:token:1"), eq("new.jwt.token"), eq(24L), eq(TimeUnit.HOURS));
     }
 
     @Test

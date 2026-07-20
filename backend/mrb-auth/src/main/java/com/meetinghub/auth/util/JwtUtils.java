@@ -24,25 +24,20 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    /**
-     * 生成 JWT Token
-     */
-    public String generateToken(Long userId, String username) {
+    public String generateToken(Long userId, String username, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("username", username)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    /**
-     * 解析 JWT Token
-     */
     public Claims parseToken(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -51,37 +46,26 @@ public class JwtUtils {
                 .getPayload();
     }
 
-    /**
-     * 从 Token 中获取用户 ID
-     */
     public Long getUserIdFromToken(String token) {
-        Claims claims = parseToken(token);
-        return Long.parseLong(claims.getSubject());
+        return Long.parseLong(parseToken(token).getSubject());
     }
 
-    /**
-     * 从 Token 中获取用户名
-     */
     public String getUsernameFromToken(String token) {
-        Claims claims = parseToken(token);
-        return claims.get("username", String.class);
+        return parseToken(token).get("username", String.class);
     }
 
-    /**
-     * 校验 Token 是否过期
-     */
+    public String getRoleFromToken(String token) {
+        return parseToken(token).get("role", String.class);
+    }
+
     public boolean isTokenExpired(String token) {
         try {
-            Claims claims = parseToken(token);
-            return claims.getExpiration().before(new Date());
+            return parseToken(token).getExpiration().before(new Date());
         } catch (Exception e) {
             return true;
         }
     }
 
-    /**
-     * 校验 Token 是否有效
-     */
     public boolean validateToken(String token) {
         try {
             parseToken(token);

@@ -13,5 +13,6 @@ public class AuthUserDTO implements Serializable {
     private Long id;
     private String username;
     private String password;
+    private String role;
     private Integer status;
 }

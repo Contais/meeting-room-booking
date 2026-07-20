@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -34,6 +35,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/meeting/RoomDetailView.vue'),
         meta: { title: '会议室详情', requiresAuth: true },
       },
+      {
+        path: 'admin/users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UserManage.vue'),
+        meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true },
+      },
     ],
   },
 ]
@@ -46,11 +53,19 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   NProgress.start()
   const userStore = useUserStore()
+
   if (to.meta.requiresAuth && !userStore.token) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.requiresAdmin && !userStore.isAdmin()) {
+    ElMessage.error('无权访问')
+    next('/home')
+    return
+  }
+
+  next()
 })
 
 router.afterEach(() => {
