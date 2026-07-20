@@ -11,5 +11,9 @@ export function login(data: LoginParams): Promise<Result<string>> {
 }
 
 export function refreshToken(token: string): Promise<Result<string>> {
-  return request.post('/api/auth/refresh', null, { params: { token } })
+  return request.post('/api/auth/refresh', { token })
+}
+
+export function logout(): Promise<Result<void>> {
+  return request.post('/api/auth/logout')
 }

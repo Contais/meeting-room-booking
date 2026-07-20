@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 鉴权控制器
  */
@@ -23,7 +25,14 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public Result<String> refreshToken(@RequestParam String token) {
-        return Result.ok(authService.refreshToken(token));
+    public Result<String> refreshToken(@RequestBody Map<String, String> params) {
+        return Result.ok(authService.refreshToken(params.get("token")));
+    }
+
+    @PostMapping("/logout")
+    public Result<Void> logout(@RequestHeader("Authorization") String authorization) {
+        String token = authorization.replace("Bearer ", "");
+        authService.logout(token);
+        return Result.ok();
     }
 }

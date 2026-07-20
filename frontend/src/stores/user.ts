@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getToken, setToken, removeToken } from '@/utils/auth'
+import { logout as logoutApi } from '@/api/auth'
 import type { UserInfo } from '@/types/user'
 
 export const useUserStore = defineStore('user', () => {
@@ -16,7 +17,14 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = info
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      if (token.value) {
+        await logoutApi()
+      }
+    } catch {
+      // ignore logout API error
+    }
     token.value = ''
     userInfo.value = null
     removeToken()

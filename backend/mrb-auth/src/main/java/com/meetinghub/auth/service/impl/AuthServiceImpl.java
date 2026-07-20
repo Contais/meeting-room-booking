@@ -6,12 +6,12 @@ import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.auth.util.JwtUtils;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
+import com.meetinghub.common.model.dto.AuthUserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.meetinghub.common.constant.RedisKeyConstant.USER_TOKEN;
@@ -36,56 +36,55 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
 
-        Map<String, Object> userData = result.getData();
+        AuthUserDTO user = result.getData();
 
         // 2. 校验用户状态
-        Integer status = (Integer) userData.get("status");
-        if (status == null || status == 0) {
+        if (user.getStatus() == null || user.getStatus() == 0) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号已被禁用");
         }
 
         // 3. 校验密码（BCrypt）
-        String storedHash = (String) userData.get("password");
-        if (storedHash == null || !BCrypt.checkpw(password, storedHash)) {
+        if (user.getPassword() == null || !BCrypt.checkpw(password, user.getPassword())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "用户名或密码错误");
         }
 
         // 4. 签发 JWT
-        Long userId = ((Number) userData.get("id")).longValue();
-        String token = jwtUtils.generateToken(userId, username);
+        String token = jwtUtils.generateToken(user.getId(), user.getUsername());
 
         // 5. 存储 Token 到 Redis（用于后续校验和踢人）
-        String redisKey = USER_TOKEN + userId;
+        String redisKey = USER_TOKEN + user.getId();
         redisTemplate.opsForValue().set(redisKey, token, 24, TimeUnit.HOURS);
 
-        log.info("用户登录成功: userId={}, username={}", userId, username);
+        log.info("用户登录成功: userId={}, username={}", user.getId(), user.getUsername());
         return token;
     }
 
     @Override
     public String refreshToken(String token) {
-        // 1. 校验旧 Token 是否存在
         if (!jwtUtils.validateToken(token)) {
             throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
         }
 
-        // 2. 检查是否已过期
-        if (jwtUtils.isTokenExpired(token)) {
-            throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED);
-        }
-
-        // 3. 解析旧 Token 信息
         Long userId = jwtUtils.getUserIdFromToken(token);
         String username = jwtUtils.getUsernameFromToken(token);
 
-        // 4. 签发新 Token
         String newToken = jwtUtils.generateToken(userId, username);
 
-        // 5. 更新 Redis
         String redisKey = USER_TOKEN + userId;
         redisTemplate.opsForValue().set(redisKey, newToken, 24, TimeUnit.HOURS);
 
         log.info("Token 刷新成功: userId={}", userId);
         return newToken;
+    }
+
+    @Override
+    public void logout(String token) {
+        if (!jwtUtils.validateToken(token)) {
+            return;
+        }
+        Long userId = jwtUtils.getUserIdFromToken(token);
+        String redisKey = USER_TOKEN + userId;
+        redisTemplate.delete(redisKey);
+        log.info("用户登出: userId={}", userId);
     }
 }
