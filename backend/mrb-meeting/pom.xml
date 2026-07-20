@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.tulingshop</groupId>
+        <groupId>com.meetingroombook</groupId>
         <artifactId>mrb-backend</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -20,7 +20,7 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.tulingshop</groupId>
+            <groupId>com.meetingroombook</groupId>
             <artifactId>mrb-common</artifactId>
             <version>${project.version}</version>
         </dependency>

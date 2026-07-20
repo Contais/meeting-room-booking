@@ -1,9 +1,0 @@
-package com.tulingshop.meeting.repository;
-
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.tulingshop.meeting.model.entity.MeetingRoomReservation;
-import org.apache.ibatis.annotations.Mapper;
-
-@Mapper
-public interface ReservationRepository extends BaseMapper<MeetingRoomReservation> {
-}
