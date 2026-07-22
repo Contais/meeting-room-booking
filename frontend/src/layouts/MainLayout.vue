@@ -33,6 +33,10 @@
           <el-icon><OfficeBuilding /></el-icon>
           <span>会议室管理</span>
         </el-menu-item>
+        <el-menu-item index="/reservation/my">
+          <el-icon><Calendar /></el-icon>
+          <span>我的预约</span>
+        </el-menu-item>
         <el-menu-item v-if="userStore.isAdmin()" index="/admin/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>

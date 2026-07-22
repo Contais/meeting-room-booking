@@ -10,7 +10,6 @@
     </div>
 
     <div v-if="room" class="detail-layout">
-      <!-- 左侧信息 -->
       <div class="detail-main">
         <div class="detail-card page-card">
           <div class="detail-header">
@@ -27,9 +26,7 @@
               </el-tag>
             </div>
           </div>
-
           <el-divider />
-
           <div class="info-grid">
             <div class="info-item">
               <div class="info-icon" style="background: linear-gradient(135deg, #667eea, #764ba2)">
@@ -50,60 +47,152 @@
               </div>
             </div>
           </div>
-
           <div v-if="room.description" class="description-section">
             <h4>会议室描述</h4>
             <p>{{ room.description }}</p>
           </div>
         </div>
-      </div>
 
-      <!-- 右侧操作 -->
-      <div class="detail-sidebar">
-        <div class="action-card page-card">
-          <h4>预约此会议室</h4>
-          <p class="action-desc">选择时间段，快速预约</p>
-          <el-button type="primary" class="btn-gradient" size="large" block :disabled="room.status !== 1" @click="handleReserve">
-            <el-icon><Calendar /></el-icon>
-            立即预约
-          </el-button>
-          <p v-if="room.status !== 1" class="tip-text">该会议室当前不可预约</p>
-        </div>
-
-        <div class="info-card page-card">
-          <h4>会议室信息</h4>
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-key">位置</span>
-              <span class="info-val">{{ room.location || '-' }}</span>
+        <!-- 今日预约 -->
+        <div class="page-card" style="margin-top: 20px">
+          <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 600">今日预约</h4>
+          <div v-if="todayReservations.length === 0" class="empty-text">暂无预约</div>
+          <div v-for="r in todayReservations" :key="r.id" class="reservation-item">
+            <div class="reservation-time">
+              <el-icon><Clock /></el-icon>
+              {{ formatTime(r.startTime) }} ~ {{ formatTime(r.endTime) }}
             </div>
-            <div class="info-row">
-              <span class="info-key">容量</span>
-              <span class="info-val">{{ room.capacity }} 人</span>
-            </div>
-            <div class="info-row">
-              <span class="info-key">状态</span>
-              <span class="info-val">{{ room.status === 1 ? '可用' : '禁用' }}</span>
+            <div class="reservation-info">
+              <span class="reservation-subject">{{ r.subject }}</span>
+              <el-tag :type="statusType(r.status)" size="small" effect="dark" round>
+                {{ statusText(r.status) }}
+              </el-tag>
             </div>
           </div>
         </div>
       </div>
+
+      <div class="detail-sidebar">
+        <div class="action-card page-card">
+          <h4>预约此会议室</h4>
+          <p class="action-desc">选择时间段，快速预约</p>
+          <el-button type="primary" class="btn-gradient" size="large" :disabled="room.status !== 1" @click="showReserveDialog">
+            <el-icon><Calendar /></el-icon>
+            立即预约
+          </el-button>
+        </div>
+      </div>
     </div>
+
+    <!-- 预约弹窗 -->
+    <el-dialog v-model="reserveDialogVisible" title="预约会议室" width="520px" destroy-on-close>
+      <el-form ref="reserveFormRef" :model="reserveForm" :rules="reserveRules" label-width="80px">
+        <el-form-item label="会议室">
+          <el-input :value="room?.name" disabled />
+        </el-form-item>
+        <el-form-item label="会议主题" prop="subject">
+          <el-input v-model="reserveForm.subject" placeholder="请输入会议主题" />
+        </el-form-item>
+        <el-form-item label="开始时间" prop="startTime">
+          <el-date-picker v-model="reserveForm.startTime" type="datetime" placeholder="选择开始时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="结束时间" prop="endTime">
+          <el-date-picker v-model="reserveForm.endTime" type="datetime" placeholder="选择结束时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="参会人数">
+          <el-input-number v-model="reserveForm.attendeeCount" :min="1" :max="room?.capacity || 100" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="联系电话">
+          <el-input v-model="reserveForm.contactPhone" placeholder="请输入联系电话" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="reserveForm.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reserveDialogVisible = false">取消</el-button>
+        <el-button type="primary" class="btn-gradient" :loading="reserveLoading" @click="handleReserve">提交预约</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, OfficeBuilding, User, Monitor, Location, Calendar } from '@element-plus/icons-vue'
+import { ArrowLeft, OfficeBuilding, User, Monitor, Location, Calendar, Clock } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { getRoomById } from '@/api/meeting'
+import { createReservation, listByRoomAndDate } from '@/api/reservation'
 import type { MeetingRoom } from '@/types/meeting'
+import type { Reservation } from '@/types/reservation'
 
 const route = useRoute()
 const router = useRouter()
 const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
+const todayReservations = ref<Reservation[]>([])
+
+// 预约弹窗
+const reserveDialogVisible = ref(false)
+const reserveLoading = ref(false)
+const reserveFormRef = ref<FormInstance>()
+const reserveForm = reactive({
+  subject: '',
+  startTime: '',
+  endTime: '',
+  attendeeCount: 1,
+  contactPhone: '',
+  remark: '',
+})
+const reserveRules: FormRules = {
+  subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }],
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+}
+
+function statusText(s: number) {
+  return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知'
+}
+function statusType(s: number) {
+  return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info'
+}
+function formatTime(t: string) {
+  if (!t) return ''
+  return t.replace('T', ' ').substring(0, 16)
+}
+
+function showReserveDialog() {
+  reserveForm.subject = ''
+  reserveForm.startTime = ''
+  reserveForm.endTime = ''
+  reserveForm.attendeeCount = 1
+  reserveForm.contactPhone = ''
+  reserveForm.remark = ''
+  reserveDialogVisible.value = true
+}
+
+async function handleReserve() {
+  const valid = await reserveFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  reserveLoading.value = true
+  try {
+    await createReservation({ roomId: room.value!.id, ...reserveForm })
+    ElMessage.success('预约成功')
+    reserveDialogVisible.value = false
+    loadTodayReservations()
+  } catch { /* */ } finally { reserveLoading.value = false }
+}
+
+async function loadTodayReservations() {
+  if (!room.value) return
+  const today = new Date().toISOString().substring(0, 10)
+  try {
+    const res = await listByRoomAndDate(room.value.id, today)
+    todayReservations.value = res.data
+  } catch { /* */ }
+}
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -111,70 +200,35 @@ onMounted(async () => {
   try {
     const res = await getRoomById(id)
     room.value = res.data
-  } catch { /* */ } finally {
-    loading.value = false
-  }
+    loadTodayReservations()
+  } catch { /* */ } finally { loading.value = false }
 })
-
-function handleReserve() {
-  ElMessage.info('预约功能即将上线')
-}
 </script>
 
 <style scoped>
 .room-detail { display: flex; flex-direction: column; gap: 20px; }
-
-.detail-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 20px;
-  align-items: start;
-}
-
-.detail-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.detail-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-
+.detail-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+.detail-header { display: flex; align-items: center; gap: 16px; }
+.detail-icon { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
 .detail-header h3 { font-size: 22px; font-weight: 600; color: #1a1a2e; margin: 0; }
 .location-text { font-size: 14px; color: #9ca3af; margin: 4px 0 0 0; display: flex; align-items: center; gap: 4px; }
 .status-badge { margin-left: auto; }
-
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
 .info-item { display: flex; align-items: center; gap: 12px; }
 .info-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
 .info-label { font-size: 12px; color: #9ca3af; display: block; }
 .info-value { font-size: 15px; color: #1a1a2e; font-weight: 500; }
-
 .description-section { margin-top: 20px; }
 .description-section h4 { font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 8px 0; }
 .description-section p { font-size: 14px; color: #4b5563; line-height: 1.7; margin: 0; }
-
-.action-card, .info-card { margin-bottom: 16px; }
-.action-card h4, .info-card h4 { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0 0 8px 0; }
+.action-card { margin-bottom: 16px; }
+.action-card h4 { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0 0 8px 0; }
 .action-desc { font-size: 13px; color: #9ca3af; margin: 0 0 16px 0; }
-.tip-text { font-size: 12px; color: #ef4444; margin: 8px 0 0 0; text-align: center; }
-
-.info-list { margin-top: 12px; }
-.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-.info-row:last-child { border-bottom: none; }
-.info-key { font-size: 13px; color: #9ca3af; }
-.info-val { font-size: 13px; color: #374151; font-weight: 500; }
-
-@media (max-width: 768px) {
-  .detail-layout { grid-template-columns: 1fr; }
-}
+.empty-text { font-size: 13px; color: #9ca3af; text-align: center; padding: 20px 0; }
+.reservation-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+.reservation-item:last-child { border-bottom: none; }
+.reservation-time { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.reservation-info { display: flex; align-items: center; justify-content: space-between; }
+.reservation-subject { font-size: 14px; color: #1a1a2e; font-weight: 500; }
+@media (max-width: 768px) { .detail-layout { grid-template-columns: 1fr; } }
 </style>

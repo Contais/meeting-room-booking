@@ -5,9 +5,6 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * 会议室预约实体
- */
 @Data
 @TableName("meeting_room_reservation")
 public class MeetingRoomReservation {
@@ -19,10 +16,19 @@ public class MeetingRoomReservation {
 
     private Long userId;
 
+    private String subject;
+
+    private Integer attendeeCount;
+
+    private String contactPhone;
+
+    private String remark;
+
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
 
+    /** 0-待确认, 1-已确认, 2-已取消 */
     private Integer status;
 
     @TableField(fill = FieldFill.INSERT)

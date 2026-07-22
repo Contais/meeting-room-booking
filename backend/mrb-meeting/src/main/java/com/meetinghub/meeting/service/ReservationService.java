@@ -1,17 +1,26 @@
 package com.meetinghub.meeting.service;
 
-import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
+import com.meetinghub.meeting.model.dto.ReservationPageQuery;
+import com.meetinghub.meeting.model.vo.ReservationVO;
 
 import java.util.List;
 
-/**
- * 预约服务接口
- */
 public interface ReservationService {
 
-    MeetingRoomReservation getReservationById(Long id);
+    void createReservation(Long userId, ReservationCreateDTO dto);
 
-    List<MeetingRoomReservation> listByRoomId(Long roomId);
+    void cancelReservation(Long userId, Long reservationId);
 
-    void createReservation(MeetingRoomReservation reservation);
+    IPage<ReservationVO> listMyReservations(Long userId, ReservationPageQuery query);
+
+    List<ReservationVO> listByRoomAndDate(Long roomId, String date);
+
+    // 管理接口
+    IPage<ReservationVO> listAllReservations(ReservationPageQuery query);
+
+    void approveReservation(Long reservationId);
+
+    void rejectReservation(Long reservationId);
 }

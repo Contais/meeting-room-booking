@@ -26,12 +26,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     UNIQUE KEY `uk_phone_active` (`phone`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 管理员账号 (密码: 123456)
 INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '系统管理员', 'admin', 1);
-
--- 测试用户 (密码: 123456)
-INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '系统管理员', 'admin', 1),
 ('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'user', 1);
 
 -- ============================================================
@@ -63,6 +59,10 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '预约ID',
     `room_id` BIGINT NOT NULL COMMENT '会议室ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
+    `attendee_count` INT DEFAULT NULL COMMENT '参会人数',
+    `contact_phone` VARCHAR(20) DEFAULT NULL COMMENT '联系人手机号',
+    `remark` VARCHAR(512) DEFAULT NULL COMMENT '备注',
     `start_time` DATETIME NOT NULL COMMENT '开始时间',
     `end_time` DATETIME NOT NULL COMMENT '结束时间',
     `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待确认, 1-已确认, 2-已取消',
