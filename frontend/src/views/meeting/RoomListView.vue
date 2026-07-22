@@ -35,7 +35,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { OfficeBuilding, User, Monitor } from '@element-plus/icons-vue'
-import { listRooms } from '@/api/meeting'
+import { listActiveRooms } from '@/api/meeting'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
@@ -49,7 +49,7 @@ function goDetail(id: number) {
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await listRooms()
+    const res = await listActiveRooms()
     rooms.value = res.data
   } catch { /* */ } finally {
     loading.value = false
@@ -58,103 +58,19 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.room-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.room-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.room-card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.25s;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  position: relative;
-  overflow: hidden;
-}
-
-.room-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
-}
-
-.room-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.room-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.room-status-dot.active {
-  background: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-}
-
-.room-status-dot.inactive {
-  background: #9ca3af;
-}
-
-.room-card-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #667eea;
-  margin-bottom: 16px;
-}
-
-.room-name {
-  font-size: 17px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0 0 6px 0;
-}
-
-.room-location {
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 0 0 16px 0;
-}
-
-.room-meta {
-  display: flex;
-  gap: 16px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.room-meta span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 60px 0;
-  color: #9ca3af;
-}
-
-.empty-state p {
-  margin-top: 12px;
-  font-size: 14px;
-}
+.room-list { display: flex; flex-direction: column; gap: 20px; }
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.room-card { background: #fff; border-radius: 14px; padding: 24px; cursor: pointer; transition: all 0.25s; box-shadow: 0 2px 12px rgba(0,0,0,0.06); position: relative; overflow: hidden; }
+.room-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(102,126,234,0.15); }
+.room-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.room-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.room-status-dot.active { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+.room-status-dot.inactive { background: #9ca3af; }
+.room-card-icon { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); display: flex; align-items: center; justify-content: center; color: #667eea; margin-bottom: 16px; }
+.room-name { font-size: 17px; font-weight: 600; color: #1a1a2e; margin: 0 0 6px 0; }
+.room-location { font-size: 13px; color: #9ca3af; margin: 0 0 16px 0; }
+.room-meta { display: flex; gap: 16px; font-size: 12px; color: #6b7280; }
+.room-meta span { display: flex; align-items: center; gap: 4px; }
+.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 0; color: #9ca3af; }
+.empty-state p { margin-top: 12px; font-size: 14px; }
 </style>

@@ -1,4 +1,3 @@
-/** 会议室 */
 export interface MeetingRoom {
   id: number
   name: string
@@ -9,10 +8,23 @@ export interface MeetingRoom {
   description: string
   status: number
   createTime: string
-  updateTime: string
 }
 
-/** 预约记录 */
+export interface MeetingRoomPageQuery {
+  page?: number
+  size?: number
+  keyword?: string
+  status?: number
+  minCapacity?: number
+}
+
+export interface MeetingRoomPageResult {
+  records: MeetingRoom[]
+  total: number
+  page: number
+  size: number
+}
+
 export interface Reservation {
   id: number
   roomId: number

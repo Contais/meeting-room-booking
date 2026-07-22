@@ -47,6 +47,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/UserManage.vue'),
         meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true },
       },
+      {
+        path: 'admin/rooms',
+        name: 'AdminRooms',
+        component: () => import('@/views/admin/RoomManage.vue'),
+        meta: { title: '会议室管理', requiresAuth: true, requiresAdmin: true },
+      },
     ],
   },
 ]

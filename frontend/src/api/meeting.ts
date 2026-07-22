@@ -1,27 +1,37 @@
 import request from '@/utils/request'
 import type { Result } from '@/types/api'
-import type { MeetingRoom, Reservation } from '@/types/meeting'
+import type { MeetingRoom, MeetingRoomPageQuery, MeetingRoomPageResult } from '@/types/meeting'
+
+// 公开接口
+export function listActiveRooms(): Promise<Result<MeetingRoom[]>> {
+  return request.get('/api/meeting/room/list')
+}
 
 export function getRoomById(id: number): Promise<Result<MeetingRoom>> {
   return request.get(`/api/meeting/room/${id}`)
 }
 
-export function listRooms(): Promise<Result<MeetingRoom[]>> {
-  return request.get('/api/meeting/room/list')
+// 管理接口
+export function listRoomsAdmin(params: MeetingRoomPageQuery): Promise<Result<MeetingRoomPageResult>> {
+  return request.get('/api/meeting/room/admin/list', { params })
 }
 
-export function addRoom(room: Partial<MeetingRoom>): Promise<Result<void>> {
-  return request.post('/api/meeting/room/add', room)
+export function getRoomDetailAdmin(id: number): Promise<Result<MeetingRoom>> {
+  return request.get(`/api/meeting/room/admin/detail/${id}`)
 }
 
-export function getReservationById(id: number): Promise<Result<Reservation>> {
-  return request.get(`/api/meeting/reservation/${id}`)
+export function createRoom(data: Partial<MeetingRoom>): Promise<Result<void>> {
+  return request.post('/api/meeting/room/admin/create', data)
 }
 
-export function listReservationsByRoom(roomId: number): Promise<Result<Reservation[]>> {
-  return request.get(`/api/meeting/reservation/list/${roomId}`)
+export function updateRoom(data: Partial<MeetingRoom>): Promise<Result<void>> {
+  return request.put('/api/meeting/room/admin/update', data)
 }
 
-export function createReservation(reservation: Partial<Reservation>): Promise<Result<void>> {
-  return request.post('/api/meeting/reservation/create', reservation)
+export function toggleRoomStatus(id: number): Promise<Result<void>> {
+  return request.put(`/api/meeting/room/admin/toggle-status/${id}`)
+}
+
+export function deleteRoom(id: number): Promise<Result<void>> {
+  return request.delete(`/api/meeting/room/admin/delete/${id}`)
 }
