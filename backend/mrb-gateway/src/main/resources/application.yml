@@ -4,19 +4,7 @@ server:
 spring:
   application:
     name: mrb-gateway
-  config:
-    import: "optional:nacos:application.yml"
   cloud:
-    nacos:
-      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-      config:
-        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: 572b010e-ff99-4a28-bee4-13260db37c32
-        import-check:
-          enabled: false
-      discovery:
-        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: 572b010e-ff99-4a28-bee4-13260db37c32
     gateway:
       routes:
         - id: user-service
@@ -37,10 +25,3 @@ spring:
             - Path=/api/meeting/**
           filters:
             - StripPrefix=1
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true
