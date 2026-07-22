@@ -1,17 +1,28 @@
 package com.meetinghub.meeting.service;
 
-import com.meetinghub.meeting.model.entity.MeetingRoom;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.meetinghub.meeting.model.dto.RoomCreateDTO;
+import com.meetinghub.meeting.model.dto.RoomPageQuery;
+import com.meetinghub.meeting.model.dto.RoomUpdateDTO;
+import com.meetinghub.meeting.model.vo.MeetingRoomVO;
 
 import java.util.List;
 
-/**
- * 会议室服务接口
- */
 public interface MeetingRoomService {
 
-    MeetingRoom getRoomById(Long id);
+    // 公开接口
+    List<MeetingRoomVO> listActiveRooms();
 
-    List<MeetingRoom> listRooms();
+    MeetingRoomVO getRoomDetail(Long id);
 
-    void addRoom(MeetingRoom meetingRoom);
+    // 管理接口
+    IPage<MeetingRoomVO> listRooms(RoomPageQuery query);
+
+    void createRoom(RoomCreateDTO dto);
+
+    void updateRoom(RoomUpdateDTO dto);
+
+    void toggleStatus(Long id);
+
+    void deleteRoom(Long id);
 }
