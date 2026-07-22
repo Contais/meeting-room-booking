@@ -9,6 +9,7 @@ import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
+import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.repository.UserRepository;
 import com.meetinghub.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,14 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private User getActiveUserByUsername(String username) {
+        return userRepository.selectOne(
+                new LambdaQueryWrapper<User>()
+                        .eq(User::getUsername, username)
+                        .eq(User::getDeleted, 0)
+        );
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void register(String username, String password, String phone) {
@@ -53,12 +62,12 @@ public class UserServiceImpl implements UserService {
         if (phone != null && !phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
-        if (getUserByUsername(username) != null) {
+        if (getActiveUserByUsername(username) != null) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
         if (StringUtils.hasText(phone)) {
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, phone)
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, 0)
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -74,7 +83,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public IPage<UserDTO> listUsers(UserPageQuery query) {
+    public IPage<UserVO> listUsers(UserPageQuery query) {
         Page<User> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(query.getKeyword())) {
@@ -85,12 +94,12 @@ public class UserServiceImpl implements UserService {
             wrapper.eq(User::getStatus, query.getStatus());
         }
         wrapper.orderByDesc(User::getCreateTime);
-        return userRepository.selectPage(page, wrapper).convert(this::toDTO);
+        return userRepository.selectPage(page, wrapper).convert(this::toVO);
     }
 
     @Override
-    public UserDTO getUserDetail(Long id) {
-        return toDTO(getUserById(id));
+    public UserVO getUserDetail(Long id) {
+        return toVO(getUserById(id));
     }
 
     @Override
@@ -102,12 +111,12 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.hasText(dto.getPhone()) && !PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
-        if (getUserByUsername(dto.getUsername()) != null) {
+        if (getActiveUserByUsername(dto.getUsername()) != null) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
         if (StringUtils.hasText(dto.getPhone())) {
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone())
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0)
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -132,7 +141,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).ne(User::getId, dto.getId())
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0).ne(User::getId, dto.getId())
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -173,7 +182,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).ne(User::getId, userId)
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0).ne(User::getId, userId)
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -195,15 +204,15 @@ public class UserServiceImpl implements UserService {
         userRepository.updateById(user);
     }
 
-    private UserDTO toDTO(User user) {
-        UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setPhone(user.getPhone());
-        dto.setRealName(user.getRealName());
-        dto.setRole(user.getRole());
-        dto.setStatus(user.getStatus());
-        dto.setCreateTime(user.getCreateTime());
-        return dto;
+    private UserVO toVO(User user) {
+        UserVO vo = new UserVO();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setPhone(user.getPhone());
+        vo.setRealName(user.getRealName());
+        vo.setRole(user.getRole());
+        vo.setStatus(user.getStatus());
+        vo.setCreateTime(user.getCreateTime());
+        return vo;
     }
 }

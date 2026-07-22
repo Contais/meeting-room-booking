@@ -3,6 +3,7 @@ package com.meetinghub.user.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
+import com.meetinghub.user.model.vo.UserVO;
 
 public interface UserService {
 
@@ -12,9 +13,9 @@ public interface UserService {
 
     void register(String username, String password, String phone);
 
-    IPage<UserDTO> listUsers(UserPageQuery query);
+    IPage<UserVO> listUsers(UserPageQuery query);
 
-    UserDTO getUserDetail(Long id);
+    UserVO getUserDetail(Long id);
 
     void createUser(UserCreateDTO dto);
 

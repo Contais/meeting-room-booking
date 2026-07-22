@@ -1,4 +1,4 @@
-package com.meetinghub.user.model.dto;
+package com.meetinghub.user.model.vo;
 
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 用户信息 DTO
  */
 @Data
-public class UserDTO implements Serializable {
+public class UserVO implements Serializable {
 
     private Long id;
     private String username;

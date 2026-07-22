@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import type { Result } from '@/types/api'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import router from '@/router'
 
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -30,7 +31,14 @@ service.interceptors.response.use(
     return res as any
   },
   (error) => {
-    ElMessage.error(error.message || '网络异常')
+    if (error.response?.status === 401) {
+      const userStore = useUserStore()
+      userStore.logout()
+      router.push('/login')
+      ElMessage.error('登录已过期，请重新登录')
+    } else {
+      ElMessage.error(error.message || '网络异常')
+    }
     return Promise.reject(error)
   }
 )

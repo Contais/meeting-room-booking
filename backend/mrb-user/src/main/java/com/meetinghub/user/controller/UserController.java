@@ -6,14 +6,12 @@ import com.meetinghub.common.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
+import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 用户控制器
- */
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -22,18 +20,17 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/{id}")
-    public Result<UserDTO> getUser(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        return Result.ok(toDTO(user));
+    public Result<UserVO> getUser(@PathVariable Long id) {
+        return Result.ok(userService.getUserDetail(id));
     }
 
     @GetMapping("/info/username/{username}")
-    public Result<UserDTO> getUserByUsername(@PathVariable String username) {
+    public Result<UserVO> getUserByUsername(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
         if (user == null) {
             return Result.ok(null);
         }
-        return Result.ok(toDTO(user));
+        return Result.ok(userService.getUserDetail(user.getId()));
     }
 
     @GetMapping("/internal/info/username/{username}")
@@ -53,23 +50,38 @@ public class UserController {
 
     @PostMapping("/register")
     public Result<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
-        userService.register(
-                registerDTO.getUsername(),
-                registerDTO.getPassword(),
-                registerDTO.getPhone()
-        );
+        userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone());
+        return Result.ok();
+    }
+
+    @GetMapping("/me")
+    public Result<UserVO> getCurrentUser(@RequestHeader("X-User-Id") String userId) {
+        return Result.ok(userService.getUserDetail(Long.parseLong(userId)));
+    }
+
+    @PutMapping("/me/profile")
+    public Result<Void> updateProfile(@RequestHeader("X-User-Id") String userId,
+                                      @RequestBody UserProfileDTO dto) {
+        userService.updateProfile(Long.parseLong(userId), dto);
+        return Result.ok();
+    }
+
+    @PutMapping("/me/password")
+    public Result<Void> changePassword(@RequestHeader("X-User-Id") String userId,
+                                       @Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(Long.parseLong(userId), dto);
         return Result.ok();
     }
 
     @RequiresRole("admin")
     @GetMapping("/admin/list")
-    public Result<IPage<UserDTO>> listUsers(UserPageQuery query) {
+    public Result<IPage<UserVO>> listUsers(UserPageQuery query) {
         return Result.ok(userService.listUsers(query));
     }
 
     @RequiresRole("admin")
     @GetMapping("/admin/detail/{id}")
-    public Result<UserDTO> getUserDetail(@PathVariable Long id) {
+    public Result<UserVO> getUserDetail(@PathVariable Long id) {
         return Result.ok(userService.getUserDetail(id));
     }
 
@@ -99,39 +111,5 @@ public class UserController {
     public Result<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return Result.ok();
-    }
-
-
-    // === 个人中心接口 ===
-
-    @GetMapping("/me")
-    public Result<UserDTO> getCurrentUser(@RequestHeader("X-User-Id") String userId) {
-        return Result.ok(userService.getUserDetail(Long.parseLong(userId)));
-    }
-
-    @PutMapping("/me/profile")
-    public Result<Void> updateProfile(@RequestHeader("X-User-Id") String userId,
-                                      @RequestBody UserProfileDTO dto) {
-        userService.updateProfile(Long.parseLong(userId), dto);
-        return Result.ok();
-    }
-
-    @PutMapping("/me/password")
-    public Result<Void> changePassword(@RequestHeader("X-User-Id") String userId,
-                                       @Valid @RequestBody ChangePasswordDTO dto) {
-        userService.changePassword(Long.parseLong(userId), dto);
-        return Result.ok();
-    }
-
-    private UserDTO toDTO(User user) {
-        UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setPhone(user.getPhone());
-        dto.setRealName(user.getRealName());
-        dto.setRole(user.getRole());
-        dto.setStatus(user.getStatus());
-        dto.setCreateTime(user.getCreateTime());
-        return dto;
     }
 }
