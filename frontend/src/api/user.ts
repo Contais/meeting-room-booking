@@ -6,6 +6,18 @@ export function getUserById(id: number): Promise<Result<UserInfo>> {
   return request.get(`/api/user/${id}`)
 }
 
+export function getCurrentUser(): Promise<Result<UserInfo>> {
+  return request.get('/api/user/me')
+}
+
+export function updateProfile(data: { phone?: string; realName?: string }): Promise<Result<void>> {
+  return request.put('/api/user/me/profile', data)
+}
+
+export function changePassword(data: { oldPassword: string; newPassword: string }): Promise<Result<void>> {
+  return request.put('/api/user/me/password', data)
+}
+
 // 管理接口
 export function listUsers(params: UserPageQuery): Promise<Result<UserPageResult>> {
   return request.get('/api/user/admin/list', { params })

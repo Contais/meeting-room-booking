@@ -7,10 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.meetinghub.common.enums.RoleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.user.model.dto.UserCreateDTO;
-import com.meetinghub.user.model.dto.UserDTO;
-import com.meetinghub.user.model.dto.UserPageQuery;
-import com.meetinghub.user.model.dto.UserUpdateDTO;
+import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.repository.UserRepository;
 import com.meetinghub.user.service.UserService;
@@ -21,9 +18,6 @@ import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
-/**
- * 用户服务实现
- */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -46,8 +40,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByUsername(String username) {
         return userRepository.selectOne(
-                new LambdaQueryWrapper<User>()
-                        .eq(User::getUsername, username)
+                new LambdaQueryWrapper<User>().eq(User::getUsername, username)
         );
     }
 
@@ -60,11 +53,10 @@ public class UserServiceImpl implements UserService {
         if (phone != null && !phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
-        User existing = getUserByUsername(username);
-        if (existing != null) {
+        if (getUserByUsername(username) != null) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
-        if (phone != null && !phone.isEmpty()) {
+        if (StringUtils.hasText(phone)) {
             Long count = userRepository.selectCount(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, phone)
             );
@@ -72,7 +64,6 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
             }
         }
-
         User user = new User();
         user.setUsername(username);
         user.setPassword(BCrypt.hashpw(password));
@@ -82,33 +73,24 @@ public class UserServiceImpl implements UserService {
         userRepository.insert(user);
     }
 
-    // === 管理接口实现 ===
-
     @Override
     public IPage<UserDTO> listUsers(UserPageQuery query) {
         Page<User> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-
         if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.and(w -> w
-                    .like(User::getUsername, query.getKeyword())
-                    .or()
-                    .like(User::getPhone, query.getKeyword())
-            );
+            wrapper.and(w -> w.like(User::getUsername, query.getKeyword())
+                    .or().like(User::getPhone, query.getKeyword()));
         }
         if (query.getStatus() != null) {
             wrapper.eq(User::getStatus, query.getStatus());
         }
         wrapper.orderByDesc(User::getCreateTime);
-
-        Page<User> result = userRepository.selectPage(page, wrapper);
-        return result.convert(this::toDTO);
+        return userRepository.selectPage(page, wrapper).convert(this::toDTO);
     }
 
     @Override
     public UserDTO getUserDetail(Long id) {
-        User user = getUserById(id);
-        return toDTO(user);
+        return toDTO(getUserById(id));
     }
 
     @Override
@@ -120,12 +102,9 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.hasText(dto.getPhone()) && !PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
-
-        User existing = getUserByUsername(dto.getUsername());
-        if (existing != null) {
+        if (getUserByUsername(dto.getUsername()) != null) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
-
         if (StringUtils.hasText(dto.getPhone())) {
             Long count = userRepository.selectCount(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone())
@@ -134,7 +113,6 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
             }
         }
-
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(BCrypt.hashpw(dto.getPassword()));
@@ -149,21 +127,17 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void updateUser(UserUpdateDTO dto) {
         User user = getUserById(dto.getId());
-
         if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
             if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>()
-                            .eq(User::getPhone, dto.getPhone())
-                            .ne(User::getId, dto.getId())
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).ne(User::getId, dto.getId())
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
             }
         }
-
         user.setPhone(dto.getPhone());
         user.setRealName(dto.getRealName());
         if (StringUtils.hasText(dto.getRole())) {
@@ -187,8 +161,38 @@ public class UserServiceImpl implements UserService {
         if (RoleEnum.ADMIN.getCode().equals(user.getRole())) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "不允许删除管理员账号");
         }
-        // TODO: 检查是否有未完成的预约（Phase 3）
         userRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProfile(Long userId, UserProfileDTO dto) {
+        User user = getUserById(userId);
+        if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
+            if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
+                throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
+            }
+            Long count = userRepository.selectCount(
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).ne(User::getId, userId)
+            );
+            if (count > 0) {
+                throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
+            }
+        }
+        user.setPhone(dto.getPhone());
+        user.setRealName(dto.getRealName());
+        userRepository.updateById(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(Long userId, ChangePasswordDTO dto) {
+        User user = getUserById(userId);
+        if (user.getPassword() == null || !BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "旧密码错误");
+        }
+        user.setPassword(BCrypt.hashpw(dto.getNewPassword()));
+        userRepository.updateById(user);
     }
 
     private UserDTO toDTO(User user) {

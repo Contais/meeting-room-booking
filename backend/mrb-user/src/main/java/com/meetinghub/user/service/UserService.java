@@ -1,10 +1,7 @@
 package com.meetinghub.user.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.meetinghub.user.model.dto.UserCreateDTO;
-import com.meetinghub.user.model.dto.UserDTO;
-import com.meetinghub.user.model.dto.UserPageQuery;
-import com.meetinghub.user.model.dto.UserUpdateDTO;
+import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 
 public interface UserService {
@@ -26,4 +23,8 @@ public interface UserService {
     void toggleStatus(Long id);
 
     void deleteUser(Long id);
+
+    void updateProfile(Long userId, UserProfileDTO dto);
+
+    void changePassword(Long userId, ChangePasswordDTO dto);
 }

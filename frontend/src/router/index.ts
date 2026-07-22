@@ -24,6 +24,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '首页', requiresAuth: true },
       },
       {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/user/ProfileView.vue'),
+        meta: { title: '个人中心', requiresAuth: true },
+      },
+      {
         path: 'meeting/rooms',
         name: 'MeetingRooms',
         component: () => import('@/views/meeting/RoomListView.vue'),

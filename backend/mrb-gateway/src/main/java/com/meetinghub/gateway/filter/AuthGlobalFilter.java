@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -42,30 +43,49 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return exchange.getResponse().setComplete();
         }
 
-        // 简单解析 JWT 获取 role（Base64 解码 payload）
-        String role = extractRoleFromToken(token.replace(TOKEN_PREFIX, ""));
+        String payload = extractPayload(token.replace(TOKEN_PREFIX, ""));
+        String role = extractJsonField(payload, "role");
+        String userId = extractJsonField(payload, "sub");
+        String username = extractJsonField(payload, "username");
 
         ServerHttpRequest request = exchange.getRequest().mutate()
                 .header(TOKEN_HEADER, token)
                 .header("X-User-Role", role != null ? role : "")
+                .header("X-User-Id", userId != null ? userId : "")
+                .header("X-User-Username", username != null ? username : "")
                 .build();
         return chain.filter(exchange.mutate().request(request).build());
     }
 
-    private String extractRoleFromToken(String token) {
+    private String extractPayload(String token) {
         try {
             String[] parts = token.split("\\.");
             if (parts.length != 3) return null;
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-            // 简单解析 JSON 中的 role 字段
-            int roleIdx = payload.indexOf("\"role\":\"");
-            if (roleIdx < 0) return null;
-            int start = roleIdx + 8;
-            int end = payload.indexOf("\"", start);
-            return payload.substring(start, end);
+            return new String(Base64.getUrlDecoder().decode(parts[1]));
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String extractJsonField(String json, String field) {
+        if (json == null) return null;
+        String pattern = "\"" + field + "\":\"";
+        int idx = json.indexOf(pattern);
+        if (idx < 0) {
+            // 数值型 (如 sub)
+            pattern = "\"" + field + "\":";
+            idx = json.indexOf(pattern);
+            if (idx < 0) return null;
+            int start = idx + pattern.length();
+            int end = start;
+            while (end < json.length() && json.charAt(end) != ',' && json.charAt(end) != '}') {
+                end++;
+            }
+            return json.substring(start, end);
+        }
+        int start = idx + pattern.length();
+        int end = json.indexOf("\"", start);
+        return json.substring(start, end);
     }
 
     @Override

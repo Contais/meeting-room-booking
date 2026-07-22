@@ -101,6 +101,28 @@ public class UserController {
         return Result.ok();
     }
 
+
+    // === 个人中心接口 ===
+
+    @GetMapping("/me")
+    public Result<UserDTO> getCurrentUser(@RequestHeader("X-User-Id") String userId) {
+        return Result.ok(userService.getUserDetail(Long.parseLong(userId)));
+    }
+
+    @PutMapping("/me/profile")
+    public Result<Void> updateProfile(@RequestHeader("X-User-Id") String userId,
+                                      @RequestBody UserProfileDTO dto) {
+        userService.updateProfile(Long.parseLong(userId), dto);
+        return Result.ok();
+    }
+
+    @PutMapping("/me/password")
+    public Result<Void> changePassword(@RequestHeader("X-User-Id") String userId,
+                                       @Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(Long.parseLong(userId), dto);
+        return Result.ok();
+    }
+
     private UserDTO toDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
