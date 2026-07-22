@@ -5,7 +5,19 @@ spring:
   application:
     name: mrb-auth
   config:
-    import: "optional:nacos:"
+    import: "optional:nacos:application.yml"
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: 572b010e-ff99-4a28-bee4-13260db37c32
+        file-extension: yml
+        import-check:
+          enabled: false
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: 572b010e-ff99-4a28-bee4-13260db37c32
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/mrb_auth?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4
     username: ${MYSQL_USER:root}
