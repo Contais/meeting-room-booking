@@ -2,17 +2,18 @@
   <div class="user-manage">
     <div class="page-header">
       <h2>用户管理</h2>
-      <el-button type="primary" @click="showCreateDialog">新增用户</el-button>
+      <el-button type="primary" class="btn-gradient" @click="showCreateDialog">
+        <el-icon><Plus /></el-icon>新增用户
+      </el-button>
     </div>
 
-    <!-- 搜索栏 -->
-    <el-card class="search-card">
+    <div class="search-card page-card">
       <el-form :inline="true" :model="query">
         <el-form-item label="搜索">
-          <el-input v-model="query.keyword" placeholder="用户名/手机号" clearable @keyup.enter="loadData" />
+          <el-input v-model="query.keyword" placeholder="用户名/手机号" clearable @keyup.enter="loadData" style="width: 200px" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="全部" clearable>
+          <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px">
             <el-option label="启用" :value="1" />
             <el-option label="禁用" :value="0" />
           </el-select>
@@ -22,58 +23,57 @@
           <el-button @click="resetQuery">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </div>
 
-    <!-- 用户表格 -->
-    <el-table :data="tableData" stripe v-loading="loading" style="margin-top: 16px">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="realName" label="真实姓名" width="120" />
-      <el-table-column prop="phone" label="手机号" width="140" />
-      <el-table-column prop="role" label="角色" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.role === 'admin' ? 'danger' : 'info'">
-            {{ row.role === 'admin' ? '管理员' : '普通用户' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'warning'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" min-width="200" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" link @click="showEditDialog(row)">编辑</el-button>
-          <el-button :type="row.status === 1 ? 'warning' : 'success'" link @click="handleToggleStatus(row)">
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-popconfirm title="确定删除该用户?" @confirm="handleDelete(row.id)">
-            <template #reference>
-              <el-button type="danger" link>删除</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-card page-card">
+      <el-table :data="tableData" stripe v-loading="loading">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="username" label="用户名" width="120" />
+        <el-table-column prop="realName" label="真实姓名" width="120" />
+        <el-table-column prop="phone" label="手机号" width="140" />
+        <el-table-column prop="role" label="角色" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.role === 'admin' ? 'danger' : 'info'" effect="dark" round size="small">
+              {{ row.role === 'admin' ? '管理员' : '用户' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'warning'" effect="dark" round size="small">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" min-width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="showEditDialog(row)">编辑</el-button>
+            <el-button :type="row.status === 1 ? 'warning' : 'success'" link size="small" @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-popconfirm title="确定删除该用户?" @confirm="handleDelete(row.id)">
+              <template #reference>
+                <el-button type="danger" link size="small">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <!-- 分页 -->
-    <el-pagination
-      v-model:current-page="query.page"
-      v-model:page-size="query.size"
-      :page-sizes="[10, 20, 50]"
-      :total="total"
-      layout="total, sizes, prev, pager, next"
-      style="margin-top: 16px; justify-content: flex-end"
-      @size-change="loadData"
-      @current-change="loadData"
-    />
+      <el-pagination
+        v-model:current-page="query.page"
+        v-model:page-size="query.size"
+        :page-sizes="[10, 20, 50]"
+        :total="total"
+        layout="total, sizes, prev, pager, next"
+        style="margin-top: 16px; justify-content: flex-end"
+        @size-change="loadData"
+        @current-change="loadData"
+      />
+    </div>
 
-    <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="500px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="500px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" :disabled="isEdit" placeholder="请输入用户名" />
@@ -81,14 +81,14 @@
         <el-form-item v-if="!isEdit" label="密码" prop="password">
           <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
         </el-form-item>
-        <el-form-item label="真实姓名" prop="realName">
+        <el-form-item label="真实姓名">
           <el-input v-model="form.realName" placeholder="请输入真实姓名" />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
+        <el-form-item label="手机号">
           <el-input v-model="form.phone" placeholder="请输入手机号" />
         </el-form-item>
         <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" placeholder="请选择角色">
+          <el-select v-model="form.role" placeholder="请选择角色" style="width: 100%">
             <el-option label="普通用户" value="user" />
             <el-option label="管理员" value="admin" />
           </el-select>
@@ -96,7 +96,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+        <el-button type="primary" class="btn-gradient" :loading="submitting" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -106,6 +106,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { listUsers, createUser, updateUser, toggleUserStatus, deleteUser } from '@/api/user'
 import type { UserInfo } from '@/types/user'
 
@@ -140,9 +141,7 @@ async function loadData() {
     const res = await listUsers(query)
     tableData.value = res.data.records
     total.value = res.data.total
-  } catch {
-    // handled by interceptor
-  } finally {
+  } catch { /* */ } finally {
     loading.value = false
   }
 }
@@ -156,30 +155,19 @@ function resetQuery() {
 
 function showCreateDialog() {
   isEdit.value = false
-  form.id = undefined
-  form.username = ''
-  form.password = ''
-  form.realName = ''
-  form.phone = ''
-  form.role = 'user'
+  Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user' })
   dialogVisible.value = true
 }
 
 function showEditDialog(row: UserInfo) {
   isEdit.value = true
-  form.id = row.id
-  form.username = row.username
-  form.password = ''
-  form.realName = row.realName || ''
-  form.phone = row.phone || ''
-  form.role = row.role
+  Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role })
   dialogVisible.value = true
 }
 
 async function handleSubmit() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
-
   submitting.value = true
   try {
     if (isEdit.value) {
@@ -191,31 +179,17 @@ async function handleSubmit() {
     }
     dialogVisible.value = false
     loadData()
-  } catch {
-    // handled by interceptor
-  } finally {
+  } catch { /* */ } finally {
     submitting.value = false
   }
 }
 
 async function handleToggleStatus(row: UserInfo) {
-  try {
-    await toggleUserStatus(row.id)
-    ElMessage.success('操作成功')
-    loadData()
-  } catch {
-    // handled
-  }
+  try { await toggleUserStatus(row.id); ElMessage.success('操作成功'); loadData() } catch { /* */ }
 }
 
 async function handleDelete(id: number) {
-  try {
-    await deleteUser(id)
-    ElMessage.success('删除成功')
-    loadData()
-  } catch {
-    // handled
-  }
+  try { await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ }
 }
 
 onMounted(loadData)
@@ -223,18 +197,12 @@ onMounted(loadData)
 
 <style scoped>
 .user-manage {
-  padding: 20px;
-}
-.page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 20px;
 }
-.page-header h2 {
-  margin: 0;
-}
-.search-card {
+
+.search-card :deep(.el-form-item) {
   margin-bottom: 0;
 }
 </style>
