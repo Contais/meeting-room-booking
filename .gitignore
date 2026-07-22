@@ -24,3 +24,10 @@ target/
 # Node
 node_modules/
 backend/.env
+
+# Local config
+backend/*-local.yml
+backend/mrb-*/src/main/resources/*-local.yml
+backend/mrb-*/src/main/resources/bootstrap-local.yml
+backend/.env
+backend/.env.example

@@ -3,9 +3,9 @@ spring:
     name: mrb-user
   cloud:
     nacos:
-      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      server-addr: localhost:8848
       config:
         file-extension: yml
-        namespace: ${NACOS_NAMESPACE:dev}
+        namespace: dev
       discovery:
-        namespace: ${NACOS_NAMESPACE:dev}
+        namespace: dev
