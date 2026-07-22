@@ -30,7 +30,7 @@
 
     <div class="table-card page-card">
       <el-table :data="tableData" stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column type="index" label="#" width="50" />
         <el-table-column prop="name" label="名称" width="140" />
         <el-table-column prop="location" label="位置" width="140" />
         <el-table-column prop="capacity" label="容纳人数" width="100" />
