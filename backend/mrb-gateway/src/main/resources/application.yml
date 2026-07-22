@@ -4,7 +4,13 @@ server:
 spring:
   application:
     name: mrb-gateway
+  config:
+    import: "optional:nacos:"
   cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      discovery:
+        namespace: dev
     gateway:
       routes:
         - id: user-service

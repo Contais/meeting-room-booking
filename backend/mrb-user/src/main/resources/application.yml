@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: mrb-user
+  config:
+    import: "optional:nacos:"
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/mrb_user?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4
     username: ${MYSQL_USER:root}

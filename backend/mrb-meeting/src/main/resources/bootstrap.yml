@@ -1,11 +1,3 @@
 spring:
   application:
     name: mrb-meeting
-  cloud:
-    nacos:
-      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-      config:
-        file-extension: yml
-        namespace: dev
-      discovery:
-        namespace: dev

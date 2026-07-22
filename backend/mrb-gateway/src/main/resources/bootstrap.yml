@@ -1,8 +1,3 @@
 spring:
   application:
     name: mrb-gateway
-  cloud:
-    nacos:
-      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-      discovery:
-        namespace: dev
