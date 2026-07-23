@@ -99,9 +99,10 @@
         <el-form-item label="设备设施">
           <el-input v-model="form.equipment" placeholder="如：投影仪,白板,视频会议系统" />
         </el-form-item>
-        <el-form-item label="图片URL">
+        <!-- 图片上传功能暂未开放 -->
+        <!-- <el-form-item label="图片URL">
           <el-input v-model="form.imageUrl" placeholder="会议室实景图片地址" />
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="描述">
           <el-input v-model="form.description" type="textarea" :rows="2" placeholder="会议室详细描述" />
         </el-form-item>

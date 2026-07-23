@@ -52,8 +52,20 @@
           </div>
           <span>预约会议室</span>
         </div>
-        <div v-if="userStore.isAdmin()" class="action-item" @click="$router.push('/admin/users')">
+        <div class="action-item" @click="$router.push('/reservation/my')">
+          <div class="action-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe)">
+            <el-icon :size="20"><Calendar /></el-icon>
+          </div>
+          <span>我的预约</span>
+        </div>
+        <div v-if="userStore.isAdmin()" class="action-item" @click="$router.push('/admin/rooms')">
           <div class="action-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c)">
+            <el-icon :size="20"><Setting /></el-icon>
+          </div>
+          <span>会议室管理</span>
+        </div>
+        <div v-if="userStore.isAdmin()" class="action-item" @click="$router.push('/admin/users')">
+          <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669)">
             <el-icon :size="20"><User /></el-icon>
           </div>
           <span>用户管理</span>
@@ -64,130 +76,37 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import { OfficeBuilding, Calendar, Clock, User } from '@element-plus/icons-vue'
+import { reactive, onMounted } from 'vue'
+import { OfficeBuilding, Calendar, Clock, User, Setting } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { getHomeStats } from '@/api/home'
 
 const userStore = useUserStore()
+const stats = reactive({ roomCount: 0, todayReservations: 0, pendingApproval: 0 })
 
-const stats = reactive({
-  roomCount: 0,
-  todayReservations: 0,
-  pendingApproval: 0,
+onMounted(async () => {
+  try {
+    const res = await getHomeStats()
+    Object.assign(stats, res.data)
+  } catch { /* */ }
 })
 </script>
 
 <style scoped>
-.home-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.welcome-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 40px;
-  color: #fff;
-}
-
-.welcome-text h1 {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-}
-
-.welcome-text p {
-  font-size: 15px;
-  opacity: 0.85;
-  margin: 0;
-}
-
-.stat-row {
-  margin: 0;
-}
-
-.stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1a1a2e;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #9ca3af;
-  margin-top: 2px;
-}
-
-.quick-actions h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 20px 0;
-  color: #1a1a2e;
-}
-
-.action-grid {
-  display: flex;
-  gap: 16px;
-}
-
-.action-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 32px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: #f9fafb;
-}
-
-.action-item:hover {
-  background: #f3f4f6;
-  transform: translateY(-2px);
-}
-
-.action-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
-
-.action-item span {
-  font-size: 13px;
-  color: #374151;
-  font-weight: 500;
-}
+.home-container { display: flex; flex-direction: column; gap: 20px; }
+.welcome-banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 40px; color: #fff; }
+.welcome-text h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; }
+.welcome-text p { font-size: 15px; opacity: 0.85; margin: 0; }
+.stat-row { margin: 0; }
+.stat-card { background: #fff; border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.stat-value { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+.stat-label { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+.quick-actions h3 { font-size: 16px; font-weight: 600; margin: 0 0 20px 0; color: #1a1a2e; }
+.action-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+.action-item { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 32px; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #f9fafb; }
+.action-item:hover { background: #f3f4f6; transform: translateY(-2px); }
+.action-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; }
+.action-item span { font-size: 13px; color: #374151; font-weight: 500; }
 </style>
