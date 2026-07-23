@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      config:
+        file-extension: yml
+        namespace: ${NACOS_NAMESPACE:dev}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:dev}

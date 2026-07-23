@@ -712,3 +712,52 @@ docker compose logs --tail=50 mrb-user
 3. **使用 HTTPS**：配置 SSL 证书（Let's Encrypt 免费）
 4. **定期备份**：MySQL 数据卷定期导出
 5. **日志清理**：配置 logrotate 或 Docker 日志驱动限制大小
+
+---
+
+## 补充：Nacos 配置说明
+
+### 问题
+
+Nacos 连接配置在 `bootstrap.yml` 中，而 `--spring.config.import` 只影响 application context。
+生产环境需要覆盖 bootstrap.yml 中的 Nacos 配置。
+
+### 解决方案
+
+每个服务的 `config/` 目录下需要两个文件：
+
+```
+/opt/mrb/config/
+├── mrb-user-bootstrap-prod.yml     # Nacos 连接配置
+├── mrb-user-prod.yml               # 应用配置
+├── mrb-auth-bootstrap-prod.yml
+├── mrb-auth-prod.yml
+├── mrb-meeting-bootstrap-prod.yml
+├── mrb-meeting-prod.yml
+├── mrb-gateway-bootstrap-prod.yml
+└── mrb-gateway-prod.yml
+```
+
+**`mrb-user-bootstrap-prod.yml` 示例：**
+
+```yaml
+spring:
+  cloud:
+    nacos:
+      server-addr: 你的Nacos地址:8848
+      config:
+        file-extension: yml
+        namespace: 你的namespace-id
+      discovery:
+        namespace: 你的namespace-id
+```
+
+**启动命令修改：**
+
+```bash
+java -jar mrb-user-1.0.0-SNAPSHOT.jar \
+  --spring.config.import="optional:file:/opt/mrb/config/mrb-user-prod.yml" \
+  --spring.config.additional-location="optional:file:/opt/mrb/config/"
+```
+
+`spring.config.additional-location` 会让 Spring 额外扫描 config 目录，从而加载 `mrb-user-bootstrap-prod.yml`（文件名匹配 `mrb-*-bootstrap-*.yml` 模式）。
