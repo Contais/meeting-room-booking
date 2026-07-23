@@ -2,7 +2,7 @@
   <div class="time-slot-calendar">
     <div class="calendar-header">
       <el-button text @click="prevDay"><el-icon><ArrowLeft /></el-icon></el-button>
-      <span class="calendar-date">{{ formatDate(selectedDate) }}</span>
+      <span class="calendar-date">{{ displayDate }}</span>
       <el-button text @click="nextDay"><el-icon><ArrowRight /></el-icon></el-button>
       <el-button size="small" @click="goToday">今天</el-button>
     </div>
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { listByRoomAndDate } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
@@ -42,12 +42,19 @@ interface TimeSlot {
 
 const timeSlots = ref<TimeSlot[]>([])
 
-function formatDate(d: Date) {
-  return d.toISOString().substring(0, 10).replace(/-/g, '年') + '月' + d.toISOString().substring(8, 10) + '日'
-}
+const displayDate = computed(() => {
+  const d = selectedDate.value
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}年${m}月${day}日`
+})
 
-function formatDateISO(d: Date) {
-  return d.toISOString().substring(0, 10)
+function toDateString(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 function prevDay() {
@@ -68,9 +75,10 @@ function goToday() {
 
 function buildTimeSlots() {
   const slots: TimeSlot[] = []
+  const dateStr = toDateString(selectedDate.value)
   for (let h = 8; h < 20; h++) {
     const time = `${String(h).padStart(2, '0')}:00`
-    const slotStart = new Date(`${formatDateISO(selectedDate.value)}T${time}:00`)
+    const slotStart = new Date(`${dateStr}T${time}:00`)
     const slotEnd = new Date(slotStart)
     slotEnd.setHours(slotEnd.getHours() + 1)
 
@@ -92,7 +100,7 @@ function buildTimeSlots() {
 async function loadReservations() {
   loading.value = true
   try {
-    const res = await listByRoomAndDate(props.roomId, formatDateISO(selectedDate.value))
+    const res = await listByRoomAndDate(props.roomId, toDateString(selectedDate.value))
     reservations.value = res.data
     buildTimeSlots()
   } catch { /* */ } finally { loading.value = false }
