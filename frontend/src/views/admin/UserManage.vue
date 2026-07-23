@@ -10,7 +10,7 @@
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column type="selection" width="40" />
         <el-table-column type="index" label="序号" width="60" />
-        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="username" label="用户名" min-width="80" />
         <el-table-column prop="realName" label="姓名" min-width="100" />
         <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column prop="role" label="角色" width="90"><template #default="{ row }"><el-tag :type="row.role === 'admin' ? 'danger' : 'info'" size="small">{{ row.role === 'admin' ? '管理员' : '用户' }}</el-tag></template></el-table-column>
@@ -63,5 +63,5 @@ onMounted(loadData)
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
-.action-buttons { display: flex; justify-content: center; gap: 8px; }
+.action-buttons { display: flex; justify-content: center; gap: 4px; }
 </style>

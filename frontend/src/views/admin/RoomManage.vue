@@ -69,5 +69,5 @@ onMounted(loadData)
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
-.action-buttons { display: flex; justify-content: center; gap: 8px; }
+.action-buttons { display: flex; justify-content: center; gap: 4px; }
 </style>
