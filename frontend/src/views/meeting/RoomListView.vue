@@ -39,7 +39,7 @@
         <el-table-column prop="capacity" label="容量" width="70" align="center" />
         <el-table-column prop="equipment" label="设备" min-width="140" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="70" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '可用' : '禁用' }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="80" fixed="right" align="center"><template #default="{ row }"><el-button type="primary" link size="small" @click="goDetail(row.id)">详情</el-button></template></el-table-column>
+        <el-table-column label="操作" width="80" fixed="right" align="center"><template #default="{ row }"><div class="action-buttons"><el-button type="primary" link @click="goDetail(row.id)">详情</el-button></div></template></el-table-column>
       </el-table>
       <div v-if="viewMode === 'list'" class="table-footer"><el-pagination :total="filteredRooms.length" layout="total, prev, pager, next" :page-size="10" /></div>
     </div>
@@ -83,4 +83,5 @@ onMounted(async () => { loading.value = true; try { const res = await listActive
 .tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-secondary); background: var(--border-light); padding: 3px 8px; border-radius: 6px; }
 .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 0; color: var(--text-muted); }
 .empty-state p { margin-top: 12px; font-size: 13px; }
+.action-buttons { display: flex; justify-content: center; gap: 8px; }
 </style>

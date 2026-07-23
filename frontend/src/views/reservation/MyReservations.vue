@@ -15,7 +15,7 @@
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button v-if="row.status !== 2" type="danger" link :icon="Close" @click="handleCancel(row.id)">取消</el-button>
+              <el-button v-if="row.status !== 2" type="danger" link @click="handleCancel(row.id)">取消</el-button>
               <span v-else style="color:var(--text-muted)">-</span>
             </div>
           </template>
@@ -29,7 +29,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Close } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'

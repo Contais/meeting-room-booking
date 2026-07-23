@@ -18,11 +18,11 @@
           <template #default="{ row }">
             <div class="action-buttons">
               <template v-if="row.status === 0">
-                <el-button type="success" link :icon="Check" @click="handleApprove(row.id)">通过</el-button>
-                <el-button type="danger" link :icon="Close" @click="handleReject(row.id)">拒绝</el-button>
+                <el-button type="success" link @click="handleApprove(row.id)">通过</el-button>
+                <el-button type="danger" link @click="handleReject(row.id)">拒绝</el-button>
               </template>
               <template v-else-if="row.status === 1">
-                <el-button type="danger" link :icon="Close" @click="handleCancel(row.id)">取消</el-button>
+                <el-button type="danger" link @click="handleCancel(row.id)">取消</el-button>
               </template>
               <span v-else style="color:var(--text-muted)">-</span>
             </div>
@@ -37,7 +37,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Check, Close } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
