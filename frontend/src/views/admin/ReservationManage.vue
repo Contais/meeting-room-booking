@@ -1,20 +1,10 @@
 <template>
   <div class="page-view">
     <div class="page-header"><h2>预约管理</h2></div>
-
     <FilterBar :model="query" @search="loadData" @reset="resetQuery">
-      <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="请选择状态" clearable filterable style="width: 140px">
-          <el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已取消" :value="2" />
-        </el-select>
-      </el-form-item>
+      <el-form-item label="状态"><el-select v-model="query.status" placeholder="请选择状态" clearable filterable><el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已取消" :value="2" /></el-select></el-form-item>
     </FilterBar>
-
     <div class="table-card page-card">
-      <div class="table-toolbar">
-        <div class="table-toolbar-left"></div>
-        <div class="table-toolbar-right"><el-tooltip content="刷新"><div class="action-btn" @click="loadData"><el-icon><Refresh /></el-icon></div></el-tooltip></div>
-      </div>
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="roomName" label="会议室" min-width="110" />
@@ -45,7 +35,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'

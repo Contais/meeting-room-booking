@@ -1,24 +1,12 @@
 <template>
   <div class="page-view">
     <div class="page-header"><h2>会议室管理</h2></div>
-
     <FilterBar :model="query" @search="loadData" @reset="resetQuery">
-      <el-form-item label="名称">
-        <el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable style="width: 200px" @keyup.enter="loadData" />
-      </el-form-item>
-      <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="请选择状态" clearable filterable style="width: 140px">
-          <el-option label="启用" :value="1" /><el-option label="禁用" :value="0" />
-        </el-select>
-      </el-form-item>
+      <el-form-item label="名称"><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></el-form-item>
+      <el-form-item label="状态"><el-select v-model="query.status" placeholder="请选择状态" clearable filterable><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></el-form-item>
     </FilterBar>
-
     <div class="table-card page-card">
-      <div class="table-toolbar">
-        <div class="table-toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增会议室</el-button></div>
-        <div class="table-toolbar-right"><el-tooltip content="刷新"><div class="action-btn" @click="loadData"><el-icon><Refresh /></el-icon></div></el-tooltip></div>
-      </div>
-
+      <div class="table-toolbar"><div class="table-toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增会议室</el-button></div></div>
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="名称" min-width="120" />
@@ -28,22 +16,18 @@
         <el-table-column label="时段" width="110"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
         <el-table-column label="审批" width="80" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small">{{ row.needApproval === 1 ? '需审批' : '免' }}</el-tag></template></el-table-column>
         <el-table-column prop="status" label="状态" width="70" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="100" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-tooltip content="编辑"><div class="action-btn" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></div></el-tooltip>
-            <el-tooltip content="删除"><div class="action-btn danger" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></div></el-tooltip>
-          </template>
+        <el-table-column label="操作" width="120" fixed="right" align="center">
+          <template #default="{ row }"><el-tooltip content="编辑"><div class="action-btn" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></div></el-tooltip><el-tooltip content="删除"><div class="action-btn danger" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></div></el-tooltip></template>
         </el-table-column>
       </el-table>
       <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
     </div>
-
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="请输入会议室名称" /></el-form-item>
         <el-form-item label="位置"><el-input v-model="form.location" placeholder="如：3楼A301" /></el-form-item>
-        <el-form-item label="容纳人数" prop="capacity"><el-input-number v-model="form.capacity" :min="1" :max="1000" style="width: 100%" /></el-form-item>
+        <el-form-item label="容纳人数" prop="capacity"><el-input-number v-model="form.capacity" :min="1" :max="1000" style="width:100%" /></el-form-item>
         <el-form-item label="设备"><el-input v-model="form.equipment" placeholder="投影仪,白板,视频会议系统" /></el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="2" placeholder="详细描述" /></el-form-item>
         <el-divider content-position="left">使用规则</el-divider>
@@ -61,7 +45,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import type { MeetingRoom } from '@/types/meeting'
