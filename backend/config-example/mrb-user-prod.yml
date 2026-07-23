@@ -2,6 +2,16 @@ server:
   port: 8081
 
 spring:
+  application:
+    name: mrb-user
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      config:
+        file-extension: yml
+        namespace: ${NACOS_NAMESPACE:dev}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:dev}
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/mrb_user?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8mb4
     username: ${MYSQL_USER:root}
