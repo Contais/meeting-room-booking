@@ -9,9 +9,11 @@ import com.meetinghub.meeting.service.HomeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +31,7 @@ public class HomeServiceImpl implements HomeService {
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        // 会议室总数（启用状态）
+        // 会议室总数（启用）
         long roomCount = meetingRoomRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
         );
@@ -52,6 +54,23 @@ public class HomeServiceImpl implements HomeService {
                         .eq(MeetingRoomReservation::getStatus, 0)
         );
         stats.put("pendingApproval", pendingApproval);
+
+        // 本周预约数
+        LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        long weekReservations = reservationRepository.selectCount(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ge(MeetingRoomReservation::getStartTime, weekStart.atStartOfDay())
+                        .le(MeetingRoomReservation::getStartTime, today.atTime(LocalTime.MAX))
+        );
+        stats.put("weekReservations", weekReservations);
+
+        // 总预约数
+        long totalReservations = reservationRepository.selectCount(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .ne(MeetingRoomReservation::getStatus, 2)
+        );
+        stats.put("totalReservations", totalReservations);
 
         return stats;
     }
