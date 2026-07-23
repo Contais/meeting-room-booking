@@ -17,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/meeting/room")
 @RequiredArgsConstructor
+/** 会议室控制器 */
 public class MeetingRoomController {
 
     private final MeetingRoomService meetingRoomService;

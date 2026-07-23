@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+/** 会议室服务实现 */
 public class MeetingRoomServiceImpl implements MeetingRoomService {
 
     private final MeetingRoomRepository meetingRoomRepository;

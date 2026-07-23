@@ -15,6 +15,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+/** 全局认证过滤器：校验Token、传递用户信息 */
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
     private static final String TOKEN_HEADER = "Authorization";

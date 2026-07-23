@@ -7,6 +7,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
+/** 新增会议室请求 DTO */
 public class RoomCreateDTO implements Serializable {
     @NotBlank(message = "会议室名称不能为空")
     private String name;

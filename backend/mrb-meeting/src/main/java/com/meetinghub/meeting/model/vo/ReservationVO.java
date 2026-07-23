@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
+/** 预约视图对象 */
 public class ReservationVO implements Serializable {
     private Long id;
     private Long roomId;

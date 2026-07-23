@@ -18,8 +18,10 @@ import java.util.concurrent.TimeUnit;
 import static com.meetinghub.common.constant.RedisKeyConstant.USER_TOKEN;
 
 @Slf4j
+/** 鉴权服务实现 */
 @Service
 @RequiredArgsConstructor
+/** 鉴权服务实现 */
 public class AuthServiceImpl implements AuthService {
 
     private final UserFeignClient userFeignClient;

@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Configuration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Jackson 全局配置：Long->String、LocalDateTime 序列化
+ */
 @Configuration
 public class JacksonConfig {
 
@@ -20,13 +23,13 @@ public class JacksonConfig {
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
 
-        // Long -> String
+        /** Long -> String（防前端精度丢失） */
         SimpleModule module = new SimpleModule();
         module.addSerializer(Long.class, ToStringSerializer.instance);
         module.addSerializer(Long.TYPE, ToStringSerializer.instance);
         mapper.registerModule(module);
 
-        // LocalDateTime: accept ISO format (yyyy-MM-dd'T'HH:mm:ss)
+        /** LocalDateTime 序列化/反序列化，ISO 格式 */
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));

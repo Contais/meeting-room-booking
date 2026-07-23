@@ -10,6 +10,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableDiscoveryClient
 @EnableFeignClients
 @MapperScan("com.meetinghub.auth.repository")
+/** 鉴权服务启动类 */
 public class AuthApplication {
 
     public static void main(String[] args) {

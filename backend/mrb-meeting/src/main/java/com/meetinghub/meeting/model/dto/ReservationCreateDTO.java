@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
+/** 创建预约请求 DTO */
 public class ReservationCreateDTO implements Serializable {
 
     @NotNull(message = "会议室ID不能为空")

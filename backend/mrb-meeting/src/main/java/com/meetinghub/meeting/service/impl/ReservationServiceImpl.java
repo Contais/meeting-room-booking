@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+/** 预约服务实现 */
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
