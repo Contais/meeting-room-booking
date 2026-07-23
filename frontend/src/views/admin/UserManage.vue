@@ -17,7 +17,7 @@
         <el-table-column prop="status" label="状态" width="80"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="120" fixed="right" align="center">
-          <template #default="{ row }"><el-button type="primary" link :icon="Edit" @click="showEditDialog(row)">编辑</el-button><el-button type="danger" link :icon="Delete" @click="handleDelete(row.id)">删除</el-button></template>
+          <template #default="{ row }"><div class="action-buttons"><el-button type="primary" link :icon="Edit" @click="showEditDialog(row)">编辑</el-button><el-button type="danger" link :icon="Delete" @click="handleDelete(row.id)">删除</el-button></div></template>
         </el-table-column>
       </el-table>
       <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
@@ -63,4 +63,5 @@ onMounted(loadData)
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+.action-buttons { display: flex; justify-content: center; gap: 8px; }
 </style>
