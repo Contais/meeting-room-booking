@@ -7,7 +7,7 @@
     </FilterBar>
     <div class="table-card page-card">
       <div class="table-toolbar"><div class="table-toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></div></div>
-      <el-table :data="tableData" v-loading="loading">
+      <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column type="selection" width="40" />
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="username" label="用户名" min-width="120" />
