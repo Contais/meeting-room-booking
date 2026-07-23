@@ -25,4 +25,7 @@ public class UserCreateDTO implements Serializable {
     private String realName;
 
     private String role;
+
+    /** 所属部门ID */
+    private Long departmentId;
 }

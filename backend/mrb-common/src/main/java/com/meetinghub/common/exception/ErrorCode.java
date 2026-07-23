@@ -32,7 +32,14 @@ public enum ErrorCode {
     MEETING_ROOM_NOT_FOUND(1001, "会议室不存在"),
     MEETING_ROOM_DISABLED(1002, "会议室已禁用"),
     RESERVATION_CONFLICT(1003, "时段已被预约"),
-    RESERVATION_NOT_FOUND(1004, "预约记录不存在");
+    RESERVATION_NOT_FOUND(1004, "预约记录不存在"),
+
+    // 部门相关
+    DEPARTMENT_NOT_FOUND(1012, "部门不存在"),
+    DEPARTMENT_NAME_DUPLICATE(1013, "部门名称已存在"),
+    DEPARTMENT_HAS_CHILDREN(1014, "存在子部门，不允许删除"),
+    DEPARTMENT_HAS_USERS(1015, "部门下有用户，不允许删除"),
+    DEPARTMENT_CIRCULAR(1016, "不能将部门移动到其子部门下");
 
     private final Integer code;
     private final String message;

@@ -13,6 +13,7 @@
         <el-table-column prop="username" label="用户名" min-width="120" />
         <el-table-column prop="realName" label="姓名" min-width="100" />
         <el-table-column prop="phone" label="手机号" min-width="130" />
+        <el-table-column prop="departmentName" label="部门" min-width="100" />
         <el-table-column prop="role" label="角色" width="90"><template #default="{ row }"><el-tag :type="row.role === 'admin' ? 'danger' : 'info'" size="small">{{ row.role === 'admin' ? '管理员' : '用户' }}</el-tag></template></el-table-column>
         <el-table-column prop="status" label="状态" width="80"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
@@ -28,6 +29,7 @@
         <el-form-item v-if="!isEdit" label="密码" prop="password"><el-input v-model="form.password" type="password" placeholder="请输入密码" show-password /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
+        <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
         <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
       </el-form>
       <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" class="btn-gradient" :loading="submitting" @click="handleSubmit">确定</el-button></template>
@@ -40,24 +42,28 @@ import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { getDepartmentTree } from '@/api/department'
+import type { Department } from '@/types/department'
 import FilterBar from '@/components/FilterBar.vue'
 import { listUsers, createUser, updateUser, deleteUser } from '@/api/user'
 import type { UserInfo } from '@/types/user'
 
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<UserInfo[]>([]); const total = ref(0)
+const deptTree = ref<Department[]>([])
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const query = reactive({ page: 1, size: 10, keyword: '', status: undefined as number | undefined })
-const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', role: 'user' })
+const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined as number | undefined })
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
+async function loadDeptTree() { try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ } }
 function resetQuery() { query.keyword = ''; query.status = undefined; query.page = 1; loadData() }
-function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user' }); dialogVisible.value = true }
-function showEditDialog(row: UserInfo) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role }); dialogVisible.value = true }
+function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
+function showEditDialog(row: UserInfo) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: (row as any).departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateUser(form); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' }); await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
-onMounted(loadData)
+onMounted(() => { loadData(); loadDeptTree() })
 </script>
 
 <style scoped>

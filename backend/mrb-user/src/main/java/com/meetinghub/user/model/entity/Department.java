@@ -5,33 +5,24 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户实体
+ * 部门实体
  */
 @Data
-@TableName("user")
-public class User {
+@TableName("department")
+public class Department {
 
-    /** 用户ID */
+    /** 部门ID */
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 用户名 */
-    private String username;
+    /** 部门名称 */
+    private String name;
 
-    /** 密码（BCrypt哈希） */
-    private String password;
+    /** 父部门ID, 0为顶级 */
+    private Long parentId;
 
-    /** 手机号 */
-    private String phone;
-
-    /** 真实姓名 */
-    private String realName;
-
-    /** 所属部门ID */
-    private Long departmentId;
-
-    /** 角色: admin-管理员, user-普通用户 */
-    private String role;
+    /** 排序号 */
+    private Integer sortOrder;
 
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;

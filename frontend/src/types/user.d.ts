@@ -6,6 +6,8 @@ export interface UserInfo {
   role: string
   status: number
   createTime: string
+  departmentId?: number
+  departmentName?: string
 }
 
 export interface UserPageQuery {

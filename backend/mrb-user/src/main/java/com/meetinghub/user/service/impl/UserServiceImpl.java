@@ -10,6 +10,8 @@ import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
+import com.meetinghub.user.model.entity.Department;
+import com.meetinghub.user.repository.DepartmentRepository;
 import com.meetinghub.user.repository.UserRepository;
 import com.meetinghub.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.util.regex.Pattern;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
@@ -129,6 +132,7 @@ public class UserServiceImpl implements UserService {
         user.setPhone(dto.getPhone());
         user.setRealName(dto.getRealName());
         user.setRole(StringUtils.hasText(dto.getRole()) ? dto.getRole() : RoleEnum.USER.getCode());
+        user.setDepartmentId(dto.getDepartmentId());
         user.setStatus(1);
         userRepository.insert(user);
     }
@@ -153,6 +157,7 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.hasText(dto.getRole())) {
             user.setRole(dto.getRole());
         }
+        user.setDepartmentId(dto.getDepartmentId());
         userRepository.updateById(user);
     }
 
@@ -214,6 +219,13 @@ public class UserServiceImpl implements UserService {
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());
         vo.setCreateTime(user.getCreateTime());
+        vo.setDepartmentId(user.getDepartmentId());
+        if (user.getDepartmentId() != null) {
+            Department dept = departmentRepository.selectById(user.getDepartmentId());
+            if (dept != null) {
+                vo.setDepartmentName(dept.getName());
+            }
+        }
         return vo;
     }
 }

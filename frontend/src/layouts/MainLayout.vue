@@ -29,6 +29,10 @@
           <el-icon><Calendar /></el-icon>
           <span>我的预约</span>
         </el-menu-item>
+        <el-menu-item v-if="userStore.isAdmin()" index="/admin/departments">
+          <el-icon><Menu /></el-icon>
+          <span>部门管理</span>
+        </el-menu-item>
         <el-menu-item v-if="userStore.isAdmin()" index="/admin/users">
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -73,7 +77,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, OfficeBuilding, ArrowDown, User, Calendar } from '@element-plus/icons-vue'
+import { HomeFilled, OfficeBuilding, ArrowDown, User, Calendar, Menu } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

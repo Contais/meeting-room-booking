@@ -18,4 +18,6 @@ public class UserVO implements Serializable {
     private String role;
     private Integer status;
     private LocalDateTime createTime;
+    private Long departmentId;
+    private String departmentName;
 }
