@@ -1,5 +1,5 @@
 <template>
-  <div class="my-reservations">
+  <div class="page-view">
     <div class="page-header"><h2>我的预约</h2></div>
 
     <FilterBar :model="query" @search="loadData" @reset="resetQuery">
@@ -13,19 +13,21 @@
     <div class="table-card page-card">
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="#" width="50" />
-        <el-table-column prop="roomName" label="会议室" width="130" />
-        <el-table-column prop="subject" label="会议主题" width="150" show-overflow-tooltip />
-        <el-table-column prop="attendeeCount" label="人数" width="70" />
-        <el-table-column label="预约时段" min-width="190"><template #default="{ row }"><span>{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</span></template></el-table-column>
-        <el-table-column prop="status" label="状态" width="90"><template #default="{ row }"><el-tag :type="statusType(row.status)" effect="dark" round size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column prop="roomName" label="会议室" min-width="120" />
+        <el-table-column prop="subject" label="会议主题" min-width="140" show-overflow-tooltip />
+        <el-table-column prop="attendeeCount" label="人数" width="65" align="center" />
+        <el-table-column label="预约时段" min-width="180"><template #default="{ row }"><span class="time-text">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</span></template></el-table-column>
+        <el-table-column prop="status" label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" effect="dark" round size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
+        <el-table-column label="操作" width="80" fixed="right" align="right">
           <template #default="{ row }">
             <el-popconfirm v-if="row.status !== 2" title="确定取消?" @confirm="handleCancel(row.id)"><template #reference><el-button type="danger" link size="small">取消</el-button></template></el-popconfirm>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next" style="margin-top: 16px; justify-content: flex-end" @size-change="loadData" @current-change="loadData" />
+      <div class="table-footer">
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next" @size-change="loadData" @current-change="loadData" />
+      </div>
     </div>
   </div>
 </template>
@@ -49,6 +51,8 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.my-reservations { display: flex; flex-direction: column; gap: 20px; }
-.text-muted { color: #d1d5db; }
+.page-view { display: flex; flex-direction: column; gap: 16px; }
+.table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+.time-text { font-size: 13px; color: var(--text-primary); }
+.text-muted { color: var(--text-muted); }
 </style>

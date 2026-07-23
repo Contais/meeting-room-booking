@@ -1,5 +1,5 @@
 <template>
-  <div class="user-manage">
+  <div class="page-view">
     <div class="page-header">
       <h2>用户管理</h2>
       <el-button type="primary" class="btn-gradient" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button>
@@ -7,7 +7,7 @@
 
     <FilterBar :model="query" @search="loadData" @reset="resetQuery">
       <el-form-item label="搜索">
-        <el-input v-model="query.keyword" placeholder="用户名/手机号" clearable style="width: 200px" @keyup.enter="loadData" />
+        <el-input v-model="query.keyword" placeholder="用户名 / 手机号" clearable style="width: 220px" @keyup.enter="loadData" />
       </el-form-item>
       <el-form-item label="状态">
         <el-select v-model="query.status" placeholder="全部" clearable filterable style="width: 120px">
@@ -19,9 +19,9 @@
     <div class="table-card page-card">
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="#" width="50" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
-        <el-table-column prop="phone" label="手机号" width="140" />
+        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="realName" label="姓名" min-width="100" />
+        <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column prop="role" label="角色" width="100">
           <template #default="{ row }"><el-tag :type="row.role === 'admin' ? 'danger' : 'info'" effect="dark" round size="small">{{ row.role === 'admin' ? '管理员' : '用户' }}</el-tag></template>
         </el-table-column>
@@ -29,22 +29,26 @@
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" effect="dark" round size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" min-width="200" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right" align="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="showEditDialog(row)">编辑</el-button>
+            <el-divider direction="vertical" />
             <el-button :type="row.status === 1 ? 'warning' : 'success'" link size="small" @click="handleToggleStatus(row)">{{ row.status === 1 ? '禁用' : '启用' }}</el-button>
+            <el-divider direction="vertical" />
             <el-popconfirm title="确定删除该用户?" @confirm="handleDelete(row.id)"><template #reference><el-button type="danger" link size="small">删除</el-button></template></el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next" style="margin-top: 16px; justify-content: flex-end" @size-change="loadData" @current-change="loadData" />
+      <div class="table-footer">
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next" @size-change="loadData" @current-change="loadData" />
+      </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="500px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="480px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="用户名" prop="username"><el-input v-model="form.username" :disabled="isEdit" placeholder="请输入用户名" /></el-form-item>
         <el-form-item v-if="!isEdit" label="密码" prop="password"><el-input v-model="form.password" type="password" placeholder="请输入密码" show-password /></el-form-item>
-        <el-form-item label="真实姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
+        <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
         <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width: 100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
       </el-form>
@@ -80,5 +84,6 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.user-manage { display: flex; flex-direction: column; gap: 20px; }
+.page-view { display: flex; flex-direction: column; gap: 16px; }
+.table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
 </style>

@@ -14,9 +14,3 @@
 defineProps<{ model: Record<string, any> }>()
 defineEmits(['search', 'reset'])
 </script>
-
-<style scoped>
-.filter-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0; }
-.filter-form :deep(.el-form-item) { margin-bottom: 0; margin-right: 16px; }
-.filter-actions { margin-left: auto; }
-</style>
