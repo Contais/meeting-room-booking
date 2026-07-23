@@ -12,10 +12,12 @@
         <el-table-column prop="attendeeCount" label="人数" width="65" align="center" />
         <el-table-column label="预约时段" min-width="180"><template #default="{ row }">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</template></el-table-column>
         <el-table-column prop="status" label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="60" fixed="right" align="center">
+        <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
-            <el-tooltip v-if="row.status !== 2" content="取消预约"><div class="action-btn danger" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></div></el-tooltip>
-            <span v-else style="color:var(--text-muted)">-</span>
+            <div class="action-buttons">
+              <el-button v-if="row.status !== 2" type="danger" link :icon="Close" @click="handleCancel(row.id)">取消</el-button>
+              <span v-else style="color:var(--text-muted)">-</span>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -46,4 +48,6 @@ onMounted(loadData)
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+.action-buttons { display: flex; justify-content: center; gap: 0px; }
+.action-buttons .el-button { padding: 0 4px; }
 </style>
