@@ -13,7 +13,7 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #94a3b8;
-  --radius: 8px;
+  --radius: 12px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,13 +29,11 @@ a { text-decoration: none; color: var(--primary); }
   --el-color-primary-dark-2: #3f58c5;
 }
 
-/* 页面 */
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .page-header { display: flex; align-items: center; justify-content: space-between; }
 .page-header h2 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0; }
 
-/* 卡片 - 扁平化 */
-.page-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-light); box-shadow: none; }
+.page-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-light); }
 
 /* 筛选栏 */
 .filter-bar { padding: 20px 24px 8px; }
@@ -50,21 +48,19 @@ a { text-decoration: none; color: var(--primary); }
 .filter-bar .el-input__wrapper.is-focus,
 .filter-bar .el-select .el-input__wrapper.is-focus { box-shadow: 0 0 0 2px var(--primary) inset; }
 
-/* 表格 */
+/* 表格 - 加大行高 */
 .table-card { padding: 0; overflow: hidden; }
 .table-card .el-table { --el-table-border-color: var(--border-light); --el-table-header-bg-color: #fafbfc; }
 .table-card .el-table th.el-table__cell { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-.table-card .el-table td.el-table__cell { font-size: 13px; padding: 14px 0; }
+.table-card .el-table td.el-table__cell { font-size: 13px; padding: 18px 0; }
 .table-card .el-table .cell { padding: 0 14px; }
 .table-card .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell { background: #fafbfc; }
 .table-card .el-table .el-table__row:hover > td.el-table__cell { background: #f8fafc !important; }
 
-/* 工具栏 */
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
 .table-toolbar-left { display: flex; align-items: center; gap: 8px; }
 .table-toolbar-right { display: flex; align-items: center; gap: 4px; }
 
-/* 分页 */
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
 
 /* 按钮 */
@@ -73,13 +69,15 @@ a { text-decoration: none; color: var(--primary); }
 .btn-outline { border-color: var(--primary); color: var(--primary); background: transparent; }
 .btn-outline:hover { background: var(--primary-light); }
 
-/* 操作图标按钮 */
+/* 操作图标按钮 - 水平排列 */
+.action-btns { display: flex; align-items: center; gap: 6px; justify-content: center; }
 .action-btn { width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: #fff; cursor: pointer; transition: all 0.15s; font-size: 14px; color: var(--text-secondary); }
 .action-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .action-btn.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .action-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: #fef2f2; }
+.action-btn.warning:hover { border-color: var(--warning); color: var(--warning); background: #fffbeb; }
+.action-btn.success:hover { border-color: var(--success); color: var(--success); background: #ecfdf5; }
 
-/* 标签 */
 .el-tag--dark.el-tag--success { background: #ecfdf5; border-color: #a7f3d0; color: #059669; }
 .el-tag--dark.el-tag--warning { background: #fffbeb; border-color: #fde68a; color: #d97706; }
 .el-tag--dark.el-tag--danger { background: #fef2f2; border-color: #fecaca; color: #dc2626; }

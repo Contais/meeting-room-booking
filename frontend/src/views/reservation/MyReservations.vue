@@ -12,8 +12,11 @@
         <el-table-column prop="attendeeCount" label="人数" width="65" align="center" />
         <el-table-column label="预约时段" min-width="180"><template #default="{ row }">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</template></el-table-column>
         <el-table-column prop="status" label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="80" fixed="right" align="center">
-          <template #default="{ row }"><el-popconfirm v-if="row.status !== 2" title="确定取消?" @confirm="handleCancel(row.id)"><template #reference><el-button type="danger" link size="small">取消</el-button></template></el-popconfirm><span v-else style="color:var(--text-muted)">-</span></template>
+        <el-table-column label="操作" width="60" fixed="right" align="center">
+          <template #default="{ row }">
+            <el-tooltip v-if="row.status !== 2" content="取消预约"><div class="action-btn danger" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></div></el-tooltip>
+            <span v-else style="color:var(--text-muted)">-</span>
+          </template>
         </el-table-column>
       </el-table>
       <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
@@ -24,6 +27,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Close } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'

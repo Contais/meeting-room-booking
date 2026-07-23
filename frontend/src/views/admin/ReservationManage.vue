@@ -15,16 +15,16 @@
         <el-table-column prop="status" label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="150" />
         <el-table-column label="操作" width="120" fixed="right" align="center">
-          <template #default="{ row }">
+          <template #default="{ row }"><div class="action-btns">
             <template v-if="row.status === 0">
-              <el-button type="success" link size="small" @click="handleApprove(row.id)">通过</el-button>
-              <el-button type="danger" link size="small" @click="handleReject(row.id)">拒绝</el-button>
+              <el-tooltip content="通过"><div class="action-btn success" @click="handleApprove(row.id)"><el-icon><Check /></el-icon></div></el-tooltip>
+              <el-tooltip content="拒绝"><div class="action-btn danger" @click="handleReject(row.id)"><el-icon><Close /></el-icon></div></el-tooltip>
             </template>
             <template v-else-if="row.status === 1">
-              <el-button type="warning" link size="small" @click="handleCancel(row.id)">取消</el-button>
+              <el-tooltip content="取消"><div class="action-btn warning" @click="handleCancel(row.id)"><el-icon><CircleClose /></el-icon></div></el-tooltip>
             </template>
             <span v-else style="color:var(--text-muted)">-</span>
-          </template>
+          </div></template>
         </el-table-column>
       </el-table>
       <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Check, Close, CircleClose } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
