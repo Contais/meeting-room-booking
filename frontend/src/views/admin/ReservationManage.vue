@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Check, Close, CircleClose } from '@element-plus/icons-vue'
+import { Check, Close } from '@element-plus/icons-vue'
 import FilterBar from '@/components/FilterBar.vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
