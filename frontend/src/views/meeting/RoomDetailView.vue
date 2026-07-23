@@ -42,52 +42,19 @@
 
         <!-- 使用规则 -->
         <div class="page-card" style="margin-top: 20px">
-          <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 600">使用规则</h4>
+          <h4 class="section-title">使用规则</h4>
           <div class="rules-grid">
-            <div class="rule-item">
-              <el-icon><Clock /></el-icon>
-              <div>
-                <span class="rule-label">可预约时段</span>
-                <span class="rule-value">{{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}</span>
-              </div>
-            </div>
-            <div class="rule-item">
-              <el-icon><Timer /></el-icon>
-              <div>
-                <span class="rule-label">最大预约时长</span>
-                <span class="rule-value">{{ room.maxDuration || 480 }} 分钟</span>
-              </div>
-            </div>
-            <div class="rule-item">
-              <el-icon><Calendar /></el-icon>
-              <div>
-                <span class="rule-label">提前预约</span>
-                <span class="rule-value">最多 {{ room.advanceDays || 7 }} 天</span>
-              </div>
-            </div>
-            <div class="rule-item">
-              <el-icon><Checked /></el-icon>
-              <div>
-                <span class="rule-label">审批模式</span>
-                <el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small" effect="dark" round>
-                  {{ room.needApproval === 1 ? '需审批' : '免审批' }}
-                </el-tag>
-              </div>
-            </div>
+            <div class="rule-item"><el-icon><Clock /></el-icon><div><span class="rule-label">可预约时段</span><span class="rule-value">{{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}</span></div></div>
+            <div class="rule-item"><el-icon><Timer /></el-icon><div><span class="rule-label">最大预约时长</span><span class="rule-value">{{ room.maxDuration || 480 }} 分钟</span></div></div>
+            <div class="rule-item"><el-icon><Calendar /></el-icon><div><span class="rule-label">提前预约</span><span class="rule-value">最多 {{ room.advanceDays || 7 }} 天</span></div></div>
+            <div class="rule-item"><el-icon><Checked /></el-icon><div><span class="rule-label">审批模式</span><el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small" effect="dark" round>{{ room.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></div></div>
           </div>
         </div>
 
-        <!-- 今日预约 -->
+        <!-- 预约日历 -->
         <div class="page-card" style="margin-top: 20px">
-          <h4 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 600">今日预约</h4>
-          <div v-if="todayReservations.length === 0" class="empty-text">暂无预约</div>
-          <div v-for="r in todayReservations" :key="r.id" class="reservation-item">
-            <div class="reservation-time"><el-icon><Clock /></el-icon> {{ formatTime(r.startTime) }} ~ {{ formatTime(r.endTime) }}</div>
-            <div class="reservation-info">
-              <span class="reservation-subject">{{ r.subject }}</span>
-              <el-tag :type="statusType(r.status)" size="small" effect="dark" round>{{ statusText(r.status) }}</el-tag>
-            </div>
-          </div>
+          <h4 class="section-title">预约日历</h4>
+          <TimeSlotCalendar :room-id="room.id" />
         </div>
       </div>
 
@@ -106,9 +73,7 @@
     <el-dialog v-model="reserveDialogVisible" title="预约会议室" width="520px" destroy-on-close>
       <div v-if="room" class="dialog-rules-tip">
         <el-icon><InfoFilled /></el-icon>
-        可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，
-        最长 {{ room.maxDuration || 480 }} 分钟，
-        最多提前 {{ room.advanceDays || 7 }} 天
+        可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
       </div>
       <el-form ref="reserveFormRef" :model="reserveForm" :rules="reserveRules" label-width="80px">
         <el-form-item label="会议室"><el-input :value="room?.name" disabled /></el-form-item>
@@ -140,15 +105,14 @@ import { ArrowLeft, OfficeBuilding, User, Monitor, Location, Calendar, Clock, Ti
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { getRoomById } from '@/api/meeting'
-import { createReservation, listByRoomAndDate } from '@/api/reservation'
+import { createReservation } from '@/api/reservation'
+import TimeSlotCalendar from '@/components/TimeSlotCalendar.vue'
 import type { MeetingRoom } from '@/types/meeting'
-import type { Reservation } from '@/types/reservation'
 
 const route = useRoute()
 const router = useRouter()
 const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
-const todayReservations = ref<Reservation[]>([])
 
 const reserveDialogVisible = ref(false)
 const reserveLoading = ref(false)
@@ -160,23 +124,10 @@ const reserveRules: FormRules = {
   endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
 }
 
-function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
-function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
-function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
-
-function disablePastDate(date: Date) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return date < today
-}
+function disablePastDate(date: Date) { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today }
 
 function showReserveDialog() {
-  reserveForm.subject = ''
-  reserveForm.startTime = ''
-  reserveForm.endTime = ''
-  reserveForm.attendeeCount = 1
-  reserveForm.contactPhone = ''
-  reserveForm.remark = ''
+  Object.assign(reserveForm, { subject: '', startTime: '', endTime: '', attendeeCount: 1, contactPhone: '', remark: '' })
   reserveDialogVisible.value = true
 }
 
@@ -188,23 +139,12 @@ async function handleReserve() {
     await createReservation({ roomId: room.value!.id, ...reserveForm })
     ElMessage.success(room.value?.needApproval === 1 ? '预约已提交，等待管理员审批' : '预约成功')
     reserveDialogVisible.value = false
-    loadTodayReservations()
   } catch { /* */ } finally { reserveLoading.value = false }
-}
-
-async function loadTodayReservations() {
-  if (!room.value) return
-  const today = new Date().toISOString().substring(0, 10)
-  try { const res = await listByRoomAndDate(room.value.id, today); todayReservations.value = res.data } catch { /* */ }
 }
 
 onMounted(async () => {
   loading.value = true
-  try {
-    const res = await getRoomById(Number(route.params.id))
-    room.value = res.data
-    loadTodayReservations()
-  } catch { /* */ } finally { loading.value = false }
+  try { const res = await getRoomById(Number(route.params.id)); room.value = res.data } catch { /* */ } finally { loading.value = false }
 })
 </script>
 
@@ -222,23 +162,15 @@ onMounted(async () => {
 .info-label { font-size: 12px; color: #9ca3af; display: block; }
 .info-value { font-size: 15px; color: #1a1a2e; font-weight: 500; }
 .description-section { margin-top: 20px; }
-.description-section h4, .rules-section h4 { font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 8px 0; }
+.description-section h4, .section-title { font-size: 15px; font-weight: 600; color: #374151; margin: 0 0 12px 0; }
 .description-section p { font-size: 14px; color: #4b5563; line-height: 1.7; margin: 0; }
-
-.rules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.rule-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f9fafb; border-radius: 10px; }
-.rule-item .el-icon { font-size: 18px; color: #667eea; }
+.rules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.rule-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f9fafb; border-radius: 8px; }
+.rule-item .el-icon { font-size: 16px; color: #667eea; }
 .rule-label { font-size: 12px; color: #9ca3af; display: block; }
-.rule-value { font-size: 14px; color: #1a1a2e; font-weight: 500; }
-
+.rule-value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
 .action-card h4 { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0 0 8px 0; }
 .action-desc { font-size: 13px; color: #9ca3af; margin: 0 0 16px 0; }
-.empty-text { font-size: 13px; color: #9ca3af; text-align: center; padding: 20px 0; }
-.reservation-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
-.reservation-item:last-child { border-bottom: none; }
-.reservation-time { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.reservation-info { display: flex; align-items: center; justify-content: space-between; }
-.reservation-subject { font-size: 14px; color: #1a1a2e; font-weight: 500; }
 .dialog-rules-tip { background: #eff6ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #3b82f6; display: flex; align-items: center; gap: 6px; }
 @media (max-width: 768px) { .detail-layout { grid-template-columns: 1fr; } .rules-grid { grid-template-columns: 1fr; } }
 </style>
