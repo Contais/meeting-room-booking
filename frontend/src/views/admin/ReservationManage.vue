@@ -21,7 +21,7 @@
               <el-tooltip content="拒绝"><div class="action-btn danger" @click="handleReject(row.id)"><el-icon><Close /></el-icon></div></el-tooltip>
             </template>
             <template v-else-if="row.status === 1">
-              <el-tooltip content="取消"><div class="action-btn warning" @click="handleCancel(row.id)"><el-icon><CircleClose /></el-icon></div></el-tooltip>
+              <el-tooltip content="取消预约"><div class="action-btn danger" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></div></el-tooltip>
             </template>
             <span v-else style="color:var(--text-muted)">-</span>
           </div></template>
