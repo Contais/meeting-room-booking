@@ -17,7 +17,7 @@
         <el-table-column label="审批" width="80" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small">{{ row.needApproval === 1 ? '需审批' : '免' }}</el-tag></template></el-table-column>
         <el-table-column prop="status" label="状态" width="70" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
-          <template #default="{ row }"><div style="display:flex;gap:8px;justify-content:center"><el-tooltip content="编辑"><div class="action-btn" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></div></el-tooltip><el-tooltip content="删除"><div class="action-btn danger" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></div></el-tooltip></div></template>
+          <template #default="{ row }"><el-button type="primary" link :icon="Edit" @click="showEditDialog(row)">编辑</el-button><el-button type="danger" link :icon="Delete" @click="handleDelete(row.id)">删除</el-button></template>
         </el-table-column>
       </el-table>
       <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
