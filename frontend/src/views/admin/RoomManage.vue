@@ -18,9 +18,6 @@
             <el-option label="禁用" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item label="最少容纳">
-          <el-input-number v-model="query.minCapacity" :min="1" :max="1000" placeholder="人数" style="width: 120px" />
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="resetQuery">重置</el-button>
@@ -31,25 +28,41 @@
     <div class="table-card page-card">
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="#" width="50" />
-        <el-table-column prop="name" label="名称" width="140" />
-        <el-table-column prop="location" label="位置" width="140" />
-        <el-table-column prop="capacity" label="容纳人数" width="100" />
-        <el-table-column prop="equipment" label="设备" width="180" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="name" label="名称" width="130" />
+        <el-table-column prop="location" label="位置" width="120" />
+        <el-table-column prop="capacity" label="容量" width="70" />
+        <el-table-column prop="equipment" label="设备" width="150" show-overflow-tooltip />
+        <el-table-column label="可预约时段" width="130">
+          <template #default="{ row }">
+            {{ row.bookableStart || '08:00' }} ~ {{ row.bookableEnd || '20:00' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="最大时长" width="90">
+          <template #default="{ row }">
+            {{ row.maxDuration || 480 }}分钟
+          </template>
+        </el-table-column>
+        <el-table-column label="审批" width="70">
+          <template #default="{ row }">
+            <el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="dark" round>
+              {{ row.needApproval === 1 ? '需审批' : '免审批' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="70">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="dark" round size="small">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" min-width="200" fixed="right">
+        <el-table-column label="操作" min-width="160" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="showEditDialog(row)">编辑</el-button>
             <el-button :type="row.status === 1 ? 'warning' : 'success'" link size="small" @click="handleToggle(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-popconfirm title="确定删除该会议室?" @confirm="handleDelete(row.id)">
+            <el-popconfirm title="确定删除?" @confirm="handleDelete(row.id)">
               <template #reference>
                 <el-button type="danger" link size="small">删除</el-button>
               </template>
@@ -71,12 +84,13 @@
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" width="600px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" width="640px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="如：大会议室A" />
         </el-form-item>
-        <el-form-item label="位置" prop="location">
+        <el-form-item label="位置">
           <el-input v-model="form.location" placeholder="如：3楼A301" />
         </el-form-item>
         <el-form-item label="容纳人数" prop="capacity">
@@ -89,7 +103,30 @@
           <el-input v-model="form.imageUrl" placeholder="会议室实景图片地址" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="会议室详细描述" />
+          <el-input v-model="form.description" type="textarea" :rows="2" placeholder="会议室详细描述" />
+        </el-form-item>
+
+        <el-divider content-position="left">使用规则</el-divider>
+        <el-form-item label="可预约时段">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <el-time-picker v-model="form.bookableStart" format="HH:mm" value-format="HH:mm" placeholder="开始时间" style="width: 140px" />
+            <span>~</span>
+            <el-time-picker v-model="form.bookableEnd" format="HH:mm" value-format="HH:mm" placeholder="结束时间" style="width: 140px" />
+          </div>
+        </el-form-item>
+        <el-form-item label="最大预约时长">
+          <el-input-number v-model="form.maxDuration" :min="30" :max="1440" :step="30" style="width: 200px" />
+          <span style="margin-left: 8px; color: #9ca3af; font-size: 13px">分钟</span>
+        </el-form-item>
+        <el-form-item label="提前预约天数">
+          <el-input-number v-model="form.advanceDays" :min="1" :max="90" style="width: 200px" />
+          <span style="margin-left: 8px; color: #9ca3af; font-size: 13px">天</span>
+        </el-form-item>
+        <el-form-item label="审批模式">
+          <el-radio-group v-model="form.needApproval">
+            <el-radio :value="0">免审批</el-radio>
+            <el-radio :value="1">需管理员审批</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -116,16 +153,14 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 
-const query = reactive({
-  page: 1, size: 10, keyword: '',
-  status: undefined as number | undefined,
-  minCapacity: undefined as number | undefined,
-})
+const query = reactive({ page: 1, size: 10, keyword: '', status: undefined as number | undefined })
 
 const form = reactive({
   id: undefined as number | undefined,
   name: '', location: '', capacity: 10,
   equipment: '', imageUrl: '', description: '',
+  bookableStart: '08:00', bookableEnd: '20:00',
+  maxDuration: 480, advanceDays: 7, needApproval: 0,
 })
 
 const rules: FormRules = {
@@ -145,20 +180,29 @@ async function loadData() {
 function resetQuery() {
   query.keyword = ''
   query.status = undefined
-  query.minCapacity = undefined
   query.page = 1
   loadData()
 }
 
 function showCreateDialog() {
   isEdit.value = false
-  Object.assign(form, { id: undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '' })
+  Object.assign(form, {
+    id: undefined, name: '', location: '', capacity: 10,
+    equipment: '', imageUrl: '', description: '',
+    bookableStart: '08:00', bookableEnd: '20:00',
+    maxDuration: 480, advanceDays: 7, needApproval: 0,
+  })
   dialogVisible.value = true
 }
 
 function showEditDialog(row: MeetingRoom) {
   isEdit.value = true
-  Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '' })
+  Object.assign(form, {
+    id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10,
+    equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '',
+    bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00',
+    maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0,
+  })
   dialogVisible.value = true
 }
 
@@ -167,13 +211,8 @@ async function handleSubmit() {
   if (!valid) return
   submitting.value = true
   try {
-    if (isEdit.value) {
-      await updateRoom(form)
-      ElMessage.success('更新成功')
-    } else {
-      await createRoom(form)
-      ElMessage.success('创建成功')
-    }
+    if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') }
+    else { await createRoom(form); ElMessage.success('创建成功') }
     dialogVisible.value = false
     loadData()
   } catch { /* */ } finally { submitting.value = false }

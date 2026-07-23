@@ -75,6 +75,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         room.setEquipment(dto.getEquipment());
         room.setImageUrl(dto.getImageUrl());
         room.setDescription(dto.getDescription());
+        room.setBookableStart(dto.getBookableStart() != null ? dto.getBookableStart() : "08:00");
+        room.setBookableEnd(dto.getBookableEnd() != null ? dto.getBookableEnd() : "20:00");
+        room.setMaxDuration(dto.getMaxDuration() != null ? dto.getMaxDuration() : 480);
+        room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : 7);
+        room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : 0);
         room.setStatus(1);
         meetingRoomRepository.insert(room);
     }
@@ -92,6 +97,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (dto.getEquipment() != null) room.setEquipment(dto.getEquipment());
         if (dto.getImageUrl() != null) room.setImageUrl(dto.getImageUrl());
         if (dto.getDescription() != null) room.setDescription(dto.getDescription());
+        if (dto.getBookableStart() != null) room.setBookableStart(dto.getBookableStart());
+        if (dto.getBookableEnd() != null) room.setBookableEnd(dto.getBookableEnd());
+        if (dto.getMaxDuration() != null) room.setMaxDuration(dto.getMaxDuration());
+        if (dto.getAdvanceDays() != null) room.setAdvanceDays(dto.getAdvanceDays());
+        if (dto.getNeedApproval() != null) room.setNeedApproval(dto.getNeedApproval());
         meetingRoomRepository.updateById(room);
     }
 
@@ -126,6 +136,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         vo.setImageUrl(room.getImageUrl());
         vo.setDescription(room.getDescription());
         vo.setStatus(room.getStatus());
+        vo.setBookableStart(room.getBookableStart());
+        vo.setBookableEnd(room.getBookableEnd());
+        vo.setMaxDuration(room.getMaxDuration());
+        vo.setAdvanceDays(room.getAdvanceDays());
+        vo.setNeedApproval(room.getNeedApproval());
         vo.setCreateTime(room.getCreateTime());
         return vo;
     }

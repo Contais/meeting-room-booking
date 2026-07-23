@@ -16,4 +16,9 @@ public class RoomUpdateDTO implements Serializable {
     private String equipment;
     private String imageUrl;
     private String description;
+    private String bookableStart;
+    private String bookableEnd;
+    private Integer maxDuration;
+    private Integer advanceDays;
+    private Integer needApproval;
 }

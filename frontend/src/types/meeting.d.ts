@@ -7,6 +7,11 @@ export interface MeetingRoom {
   imageUrl: string
   description: string
   status: number
+  bookableStart: string
+  bookableEnd: string
+  maxDuration: number
+  advanceDays: number
+  needApproval: number
   createTime: string
 }
 
@@ -15,7 +20,6 @@ export interface MeetingRoomPageQuery {
   size?: number
   keyword?: string
   status?: number
-  minCapacity?: number
 }
 
 export interface MeetingRoomPageResult {
@@ -28,10 +32,15 @@ export interface MeetingRoomPageResult {
 export interface Reservation {
   id: number
   roomId: number
+  roomName: string
   userId: number
+  username: string
+  subject: string
+  attendeeCount: number
+  contactPhone: string
+  remark: string
   startTime: string
   endTime: string
   status: number
   createTime: string
-  updateTime: string
 }
