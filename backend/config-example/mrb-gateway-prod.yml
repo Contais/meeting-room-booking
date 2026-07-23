@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://mrb-user
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+        - id: auth-service
+          uri: lb://mrb-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: meeting-service
+          uri: lb://mrb-meeting
+          predicates:
+            - Path=/api/meeting/**
+          filters:
+            - StripPrefix=1
