@@ -17,10 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,13 +48,16 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "结束时间必须晚于开始时间");
         }
 
-        // 3. 冲突检测：查询该会议室在该时段是否有已确认的预约
+        // 3. 使用规则校验
+        validateRoomRules(room, dto);
+
+        // 4. 冲突检测
         boolean hasConflict = checkTimeConflict(dto.getRoomId(), dto.getStartTime(), dto.getEndTime(), null);
         if (hasConflict) {
             throw new BusinessException(ErrorCode.RESERVATION_CONFLICT);
         }
 
-        // 4. 创建预约
+        // 5. 创建预约（根据审批模式设置初始状态）
         MeetingRoomReservation reservation = new MeetingRoomReservation();
         reservation.setRoomId(dto.getRoomId());
         reservation.setUserId(userId);
@@ -65,8 +67,46 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setRemark(dto.getRemark());
         reservation.setStartTime(dto.getStartTime());
         reservation.setEndTime(dto.getEndTime());
-        reservation.setStatus(1); // 直接确认（简化流程，不做审批）
+        reservation.setStatus(room.getNeedApproval() == 1 ? 0 : 1);
         reservationRepository.insert(reservation);
+    }
+
+    private void validateRoomRules(MeetingRoom room, ReservationCreateDTO dto) {
+        LocalDateTime start = dto.getStartTime();
+        LocalDateTime end = dto.getEndTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 3.1 校验提前预约天数
+        if (room.getAdvanceDays() != null && room.getAdvanceDays() > 0) {
+            LocalDate bookingDate = start.toLocalDate();
+            LocalDate maxDate = now.toLocalDate().plusDays(room.getAdvanceDays());
+            if (bookingDate.isAfter(maxDate)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
+                        "最多提前" + room.getAdvanceDays() + "天预约");
+            }
+        }
+
+        // 3.2 校验可预约时段
+        if (room.getBookableStart() != null && room.getBookableEnd() != null) {
+            LocalTime bookableStart = LocalTime.parse(room.getBookableStart());
+            LocalTime bookableEnd = LocalTime.parse(room.getBookableEnd());
+            LocalTime reservationStart = start.toLocalTime();
+            LocalTime reservationEnd = end.toLocalTime();
+
+            if (reservationStart.isBefore(bookableStart) || reservationEnd.isAfter(bookableEnd)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
+                        "预约时段须在 " + room.getBookableStart() + " ~ " + room.getBookableEnd() + " 之间");
+            }
+        }
+
+        // 3.3 校验最大预约时长
+        if (room.getMaxDuration() != null && room.getMaxDuration() > 0) {
+            long durationMinutes = ChronoUnit.MINUTES.between(start, end);
+            if (durationMinutes > room.getMaxDuration()) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
+                        "单次预约最长 " + room.getMaxDuration() + " 分钟");
+            }
+        }
     }
 
     @Override
@@ -96,7 +136,16 @@ public class ReservationServiceImpl implements ReservationService {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
         }
         IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
-        return result.convert(r -> toVO(r, null));
+
+        List<Long> roomIds = result.getRecords().stream()
+                .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
+        Map<Long, String> roomNameMap = Map.of();
+        if (!roomIds.isEmpty()) {
+            List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
+            roomNameMap = rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
+        }
+        Map<Long, String> finalRoomNameMap = roomNameMap;
+        return result.convert(r -> toVO(r, finalRoomNameMap));
     }
 
     @Override
@@ -132,7 +181,6 @@ public class ReservationServiceImpl implements ReservationService {
 
         IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
 
-        // 批量查询会议室名称
         List<Long> roomIds = result.getRecords().stream()
                 .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
         Map<Long, String> roomNameMap = Map.of();
