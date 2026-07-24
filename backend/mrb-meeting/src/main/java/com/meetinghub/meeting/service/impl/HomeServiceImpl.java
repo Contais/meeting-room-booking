@@ -3,6 +3,8 @@ package com.meetinghub.meeting.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
+import com.meetinghub.meeting.model.vo.PeakHourVO;
+import com.meetinghub.meeting.model.vo.RoomUsageVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.HomeService;
@@ -10,16 +12,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-/**
- * 首页统计服务实现
- */
 @Service
 @RequiredArgsConstructor
 public class HomeServiceImpl implements HomeService {
@@ -31,13 +34,11 @@ public class HomeServiceImpl implements HomeService {
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        // 会议室总数（启用）
         long roomCount = meetingRoomRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
         );
         stats.put("roomCount", roomCount);
 
-        // 今日预约数
         LocalDate today = LocalDate.now();
         LocalDateTime dayStart = today.atStartOfDay();
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
@@ -48,14 +49,12 @@ public class HomeServiceImpl implements HomeService {
         );
         stats.put("todayReservations", todayReservations);
 
-        // 待审批数
         long pendingApproval = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getStatus, 0)
         );
         stats.put("pendingApproval", pendingApproval);
 
-        // 本周预约数
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         long weekReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
@@ -65,7 +64,6 @@ public class HomeServiceImpl implements HomeService {
         );
         stats.put("weekReservations", weekReservations);
 
-        // 总预约数
         long totalReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .ne(MeetingRoomReservation::getStatus, 2)
@@ -73,5 +71,71 @@ public class HomeServiceImpl implements HomeService {
         stats.put("totalReservations", totalReservations);
 
         return stats;
+    }
+
+    @Override
+    public List<RoomUsageVO> getRoomUsage() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime dayStart = today.atStartOfDay();
+        LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
+        int bookableMinutes = 12 * 60;
+
+        List<MeetingRoom> rooms = meetingRoomRepository.selectList(
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
+        );
+        List<RoomUsageVO> result = new ArrayList<>();
+        for (MeetingRoom room : rooms) {
+            List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+                    new LambdaQueryWrapper<MeetingRoomReservation>()
+                            .eq(MeetingRoomReservation::getRoomId, room.getId())
+                            .ne(MeetingRoomReservation::getStatus, 2)
+                            .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
+            );
+            int usedMinutes = 0;
+            for (MeetingRoomReservation r : reservations) {
+                usedMinutes += (int) Duration.between(r.getStartTime(), r.getEndTime()).toMinutes();
+            }
+            RoomUsageVO vo = new RoomUsageVO();
+            vo.setRoomId(room.getId());
+            vo.setRoomName(room.getName());
+            vo.setUsedMinutes(usedMinutes);
+            vo.setTotalMinutes(bookableMinutes);
+            vo.setUsageRate(Math.min(1.0, (double) usedMinutes / bookableMinutes));
+            result.add(vo);
+        }
+        return result;
+    }
+
+    @Override
+    public List<PeakHourVO> getPeakHours() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime dayStart = today.atStartOfDay();
+        LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
+
+        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
+        );
+
+        Map<Integer, Long> hourMap = new TreeMap<>();
+        for (int h = 8; h < 20; h++) hourMap.put(h, 0L);
+
+        for (MeetingRoomReservation r : reservations) {
+            int startHour = r.getStartTime().getHour();
+            int endHour = r.getEndTime().getHour();
+            for (int h = startHour; h < endHour && h < 20; h++) {
+                hourMap.merge(h, 1L, Long::sum);
+            }
+        }
+
+        List<PeakHourVO> result = new ArrayList<>();
+        for (Map.Entry<Integer, Long> entry : hourMap.entrySet()) {
+            PeakHourVO vo = new PeakHourVO();
+            vo.setHour(entry.getKey());
+            vo.setCount(entry.getValue());
+            result.add(vo);
+        }
+        return result;
     }
 }

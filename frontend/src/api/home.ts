@@ -9,6 +9,14 @@ export interface HomeStats {
   totalReservations: number
 }
 
+export function getRoomUsage() {
+  return request.get('/api/meeting/home/room-usage')
+}
+
+export function getPeakHours() {
+  return request.get('/api/meeting/home/peak-hours')
+}
+
 export function getHomeStats(): Promise<Result<HomeStats>> {
   return request.get('/api/meeting/home/stats')
 }

@@ -30,3 +30,7 @@ export function approveReservation(id: number): Promise<Result<void>> {
 export function rejectReservation(id: number): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/reject/${id}`)
 }
+
+export function getSchedule(params: { date?: string; startDate?: string; endDate?: string }): Promise<Result<any>> {
+  return request.get('/api/meeting/reservation/schedule', { params })
+}

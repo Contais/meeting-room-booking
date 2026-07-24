@@ -20,6 +20,21 @@
       </el-col>
     </el-row>
 
+
+    <el-row :gutter="16" v-if="userStore.isAdmin()">
+      <el-col :span="12">
+        <div class="page-card chart-card">
+          <h3 class="section-title">会议室使用率（今日）</h3>
+          <v-chart class="chart" :option="usageChartOption" autoresize />
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <div class="page-card chart-card">
+          <h3 class="section-title">高峰时段分布</h3>
+          <v-chart class="chart" :option="peakChartOption" autoresize />
+        </div>
+      </el-col>
+    </el-row>
     <div class="page-card quick-actions">
       <h3 class="section-title">快捷操作</h3>
       <div class="action-grid">
@@ -33,13 +48,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted } from 'vue'
+import { reactive, computed, onMounted, ref } from 'vue'
 import { OfficeBuilding, Calendar, Clock, User, Setting, Bell, DataLine } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getHomeStats } from '@/api/home'
+import { getHomeStats, getRoomUsage, getPeakHours } from '@/api/home'
+import VChart from 'vue-echarts'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
 
 const userStore = useUserStore()
 const stats = reactive({ roomCount: 0, todayReservations: 0, pendingApproval: 0, weekReservations: 0, totalReservations: 0 })
+
+const usageChartOption = ref({})
+const peakChartOption = ref({})
 
 const statItems = computed(() => [
   { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)' },
@@ -59,7 +84,33 @@ const actionItems = computed(() => [
   ] : []),
 ])
 
-onMounted(async () => { try { const res = await getHomeStats(); Object.assign(stats, res.data) } catch { /* */ } })
+onMounted(async () => {
+  try {
+    const res = await getHomeStats(); Object.assign(stats, res.data)
+  } catch { /* */ }
+  if (userStore.isAdmin()) {
+    try {
+      const res = await getRoomUsage()
+      usageChartOption.value = {
+        tooltip: { trigger: 'axis' },
+        grid: { left: 40, right: 20, bottom: 40, top: 10 },
+        xAxis: { type: 'category', data: res.data.map((r: any) => r.roomName), axisLabel: { fontSize: 11 } },
+        yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
+        series: [{ type: 'bar', data: res.data.map((r: any) => Math.round(r.usageRate * 100)), itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#667eea' }, { offset: 1, color: '#764ba2' }] } } }]
+      }
+    } catch { /* */ }
+    try {
+      const res = await getPeakHours()
+      peakChartOption.value = {
+        tooltip: { trigger: 'axis' },
+        grid: { left: 40, right: 20, bottom: 40, top: 10 },
+        xAxis: { type: 'category', data: res.data.map((r: any) => r.hour + ':00'), axisLabel: { fontSize: 11 } },
+        yAxis: { type: 'value' },
+        series: [{ type: 'bar', data: res.data.map((r: any) => r.count), itemStyle: { borderRadius: [4, 4, 0, 0], color: '#4facfe' } }]
+      }
+    } catch { /* */ }
+  }
+})
 </script>
 
 <style scoped>
@@ -157,6 +208,9 @@ onMounted(async () => { try { const res = await getHomeStats(); Object.assign(st
   justify-content: center;
   color: #fff;
 }
+
+.chart-card { padding: 20px 24px; }
+.chart { width: 100%; height: 260px; }
 
 .action-item span {
   font-size: 12px;

@@ -5,6 +5,7 @@ import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 
+import com.meetinghub.meeting.model.vo.ScheduleVO;
 import java.util.List;
 
 /**
@@ -32,4 +33,7 @@ public interface ReservationService {
 
     /** 审批拒绝 */
     void rejectReservation(Long reservationId);
+
+    /** 日程视图数据 */
+    ScheduleVO getSchedule(String date, String startDate, String endDate);
 }

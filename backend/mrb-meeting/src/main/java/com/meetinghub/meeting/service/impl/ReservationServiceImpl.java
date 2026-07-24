@@ -20,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import com.meetinghub.meeting.model.vo.ScheduleReservationVO;
+import com.meetinghub.meeting.model.vo.ScheduleRoomVO;
+import com.meetinghub.meeting.model.vo.ScheduleVO;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -229,6 +233,66 @@ public class ReservationServiceImpl implements ReservationService {
             wrapper.ne(MeetingRoomReservation::getId, excludeId);
         }
         return reservationRepository.selectCount(wrapper) > 0;
+    }
+
+
+    @Override
+    public ScheduleVO getSchedule(String date, String startDate, String endDate) {
+        LocalDate start, end;
+        if (date != null && !date.isEmpty()) {
+            start = LocalDate.parse(date);
+            end = start;
+        } else if (startDate != null && endDate != null) {
+            start = LocalDate.parse(startDate);
+            end = LocalDate.parse(endDate);
+        } else {
+            start = LocalDate.now();
+            end = start;
+        }
+
+        LocalDateTime rangeStart = start.atStartOfDay();
+        LocalDateTime rangeEnd = end.atTime(LocalTime.MAX);
+
+        List<MeetingRoom> rooms = meetingRoomRepository.selectList(
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1).orderByAsc(MeetingRoom::getName)
+        );
+
+        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .lt(MeetingRoomReservation::getStartTime, rangeEnd)
+                        .gt(MeetingRoomReservation::getEndTime, rangeStart)
+        );
+
+        Map<Long, String> roomNameMap = rooms.stream()
+                .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
+
+        ScheduleVO vo = new ScheduleVO();
+        List<ScheduleRoomVO> roomVOs = new ArrayList<>();
+        for (MeetingRoom r : rooms) {
+            ScheduleRoomVO rvo = new ScheduleRoomVO();
+            rvo.setId(r.getId());
+            rvo.setName(r.getName());
+            rvo.setCapacity(r.getCapacity());
+            roomVOs.add(rvo);
+        }
+        vo.setRooms(roomVOs);
+
+        List<ScheduleReservationVO> rsvos = new ArrayList<>();
+        for (MeetingRoomReservation r : reservations) {
+            ScheduleReservationVO rvo = new ScheduleReservationVO();
+            rvo.setId(r.getId());
+            rvo.setRoomId(r.getRoomId());
+            rvo.setRoomName(roomNameMap.getOrDefault(r.getRoomId(), ""));
+            rvo.setSubject(r.getSubject());
+            rvo.setAttendeeCount(r.getAttendeeCount());
+            rvo.setStartTime(r.getStartTime());
+            rvo.setEndTime(r.getEndTime());
+            rvo.setStatus(r.getStatus());
+            rsvos.add(rvo);
+        }
+        vo.setReservations(rsvos);
+        return vo;
     }
 
     private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> roomNameMap) {

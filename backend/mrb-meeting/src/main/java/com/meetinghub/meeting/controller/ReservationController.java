@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import com.meetinghub.meeting.model.vo.ScheduleVO;
 import java.util.List;
 
 @RestController
@@ -48,6 +49,16 @@ public class ReservationController {
     public Result<List<ReservationVO>> listByRoomAndDate(@PathVariable Long roomId,
                                                          @PathVariable String date) {
         return Result.ok(reservationService.listByRoomAndDate(roomId, date));
+    }
+
+    // === 日程视图 ===
+
+    @GetMapping("/schedule")
+    public Result<ScheduleVO> getSchedule(
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return Result.ok(reservationService.getSchedule(date, startDate, endDate));
     }
 
     // === 管理接口 ===
