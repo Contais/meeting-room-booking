@@ -149,14 +149,12 @@ function isInRange(t: string) {
 
 function handleTimeOptionClick(t: string) {
   if (!reserveForm.startMinute || (reserveForm.startMinute && reserveForm.endMinute)) {
-    // 选开始时间（或重新选）
     reserveForm.startMinute = t
     reserveForm.endMinute = ''
   } else {
-    // 选结束时间
     if (t <= reserveForm.startMinute) {
+      reserveForm.endMinute = reserveForm.startMinute
       reserveForm.startMinute = t
-      reserveForm.endMinute = ''
     } else {
       reserveForm.endMinute = t
     }
@@ -245,7 +243,8 @@ onMounted(async () => {
 /* 时间段选择器 */
 .time-selector { border: 1px solid #dcdfe6; border-radius: 8px; overflow: hidden; }
 .time-selector-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafbfc; border-bottom: 1px solid #ebeef5; font-size: 13px; color: #606266; }
-.time-options { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; max-height: 160px; overflow-y: auto; }
+.time-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding: 10px 12px; max-height: 160px; overflow-y: auto; }
+.time-option { text-align: center; }
 .time-option {
   padding: 6px 12px; border-radius: 6px; border: 1px solid #dcdfe6;
   font-size: 13px; color: #606266; cursor: pointer; transition: all 0.15s;
