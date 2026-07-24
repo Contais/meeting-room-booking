@@ -34,7 +34,7 @@ public class ChatController {
      * @param conversationId 会话 ID（可选，为空则使用 session id）
      * @return Flux<String> 流式响应，Spring MVC 自动转为 SSE 格式
      */
-    @PostMapping(value = "/stream", produces = "text/event-stream;charset=UTF-8")
+    @PostMapping(value = "/stream", produces = "text/plain;charset=UTF-8")
     public Flux<String> chatStream(@RequestBody ChatRequest request,
                                    @RequestHeader(value = "X-Session-Id", required = false) String conversationId) {
         if (conversationId == null || conversationId.isEmpty()) {
