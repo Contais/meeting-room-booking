@@ -19,11 +19,11 @@
       >
         <template v-for="item in menuItems" :key="item.id">
           <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path || String(item.id)">
-            <template #title><el-icon><component :is="item.icon || 'Document'" /></el-icon><span>{{ item.name }}</span></template>
+            <template #title><el-icon><component :is="iconComponents[item.icon || 'Document']" /></el-icon><span>{{ item.name }}</span></template>
             <el-menu-item v-for="child in item.children" :key="child.id" :index="child.path">{{ child.name }}</el-menu-item>
           </el-sub-menu>
           <el-menu-item v-else :index="item.path">
-            <el-icon><component :is="item.icon || 'Document'" /></el-icon>
+            <el-icon><component :is="iconComponents[item.icon || 'Document']" /></el-icon>
             <span>{{ item.name }}</span>
           </el-menu-item>
         </template>
@@ -60,7 +60,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, ArrowDown, User, Calendar, Menu, HomeFilled, Document } from '@element-plus/icons-vue'
+import { ArrowDown } from '@element-plus/icons-vue'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getMyMenus } from '@/api/menu'
 import type { MenuItem } from '@/types/menu'
@@ -69,6 +70,12 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const menuItems = ref<MenuItem[]>([])
+
+// 注册所有 Element Plus 图标供动态菜单使用
+const icons = ElementPlusIconsVue
+const iconComponents = Object.fromEntries(
+  Object.entries(icons).map(([key, component]) => [key, component])
+)
 
 async function loadMenus() {
   try {

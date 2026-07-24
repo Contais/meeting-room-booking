@@ -44,7 +44,7 @@ import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { getMenuTree, createMenu, updateMenu, deleteMenu, saveRoleMenus } from '@/api/menu'
+import { getMenuTree, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import type { MenuItem } from '@/types/menu'
 
 const loading = ref(false); const submitting = ref(false)
@@ -60,8 +60,9 @@ const currentMenu = ref<MenuItem | null>(null); const selectedRoles = ref<string
 async function loadData() { loading.value = true; try { const res = await getMenuTree(); treeData.value = res.data } catch { /* */ } finally { loading.value = false } }
 function showCreateDialog(parentId?: number) { isEdit.value = false; Object.assign(form, { id: undefined, name: '', path: '', icon: '', parentId: parentId || undefined, sortOrder: 0, visible: 1 }); dialogVisible.value = true }
 function showEditDialog(row: MenuItem) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, path: row.path || '', icon: row.icon || '', parentId: row.parentId === 0 ? undefined : row.parentId, sortOrder: row.sortOrder, visible: row.visible }); dialogVisible.value = true }
-async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { const data = { ...form, parentId: form.parentId || 0 }; if (isEdit.value) { await updateMenu(data); ElMessage.success('更新成功') } else { await createMenu(data); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
+async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateMenu({ id: form.id!, name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('更新成功') } else { await createMenu({ name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该菜单?', '提示', { type: 'warning' }); await deleteMenu(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
+async function handleSaveRoleMenus() { /* TODO: 实现角色菜单权限保存 */ roleDialogVisible.value = false }
 onMounted(loadData)
 </script>
 
