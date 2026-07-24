@@ -3,16 +3,7 @@
     <div class="page-header"><h2>部门管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item">
-          <label>部门名称</label>
-          <el-input v-model="filterName" placeholder="请输入部门名称" clearable />
-        </div>
-        <div class="search-item">
-          <label>状态</label>
-          <el-select v-model="filterStatus" placeholder="请选择" clearable>
-            <el-option label="启用" :value="1" /><el-option label="禁用" :value="0" />
-          </el-select>
-        </div>
+        <div class="search-item"><el-input v-model="filterName" placeholder="请输入部门名称" clearable /></div>
       </div>
       <div class="search-actions">
         <el-button @click="filterName = ''; loadData()">重置</el-button>
@@ -72,7 +63,7 @@ import type { Department } from '@/types/department'
 const loading = ref(false); const submitting = ref(false)
 const treeData = ref<Department[]>([])
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const expandAll = ref(true); const filterName = ref(''); const filterStatus = ref(undefined as number | undefined)
+const expandAll = ref(true); const filterName = ref('')
 const form = reactive({ id: undefined as number | undefined, name: '', parentId: undefined as number | undefined, sortOrder: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
 
@@ -89,10 +80,10 @@ onMounted(loadData)
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
-.search-fields { display: flex; gap: 24px; flex: 1; }
+.search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
 .search-item { display: flex; flex-direction: column; gap: 6px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-.search-item :deep(.el-input) { width: 220px; }
+.search-item :deep(.el-input) { width: 200px; min-width: 160px; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

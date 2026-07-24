@@ -3,7 +3,7 @@
     <div class="page-header"><h2>会议室管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><label>名称</label><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></div>
+        <div class="search-item"><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></div>
         <template v-if="expanded">
           <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable /></div>
           <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable /></div>
@@ -101,7 +101,7 @@ onMounted(loadData)
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
-.search-fields { display: flex; gap: 24px; flex: 1; }
+.search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
 .search-item { display: flex; flex-direction: column; gap: 6px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
 .search-item :deep(.el-input) { width: 200px; }
