@@ -64,7 +64,7 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <TimeSlotCalendar :room-id="room.id" />
+        <TimeSlotCalendar :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
       </div>
     </template>
 
@@ -125,9 +125,13 @@ const reserveRules: FormRules = {
 
 function disablePastDate(date: Date) { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today }
 
-function showReserveDialog() {
-  Object.assign(reserveForm, { subject: '', startTime: '', endTime: '', attendeeCount: 1, contactPhone: '', remark: '' })
+function showReserveDialog(start?: string, end?: string) {
+  Object.assign(reserveForm, { subject: '', startTime: start || '', endTime: end || '', attendeeCount: 1, contactPhone: '', remark: '' })
   reserveDialogVisible.value = true
+}
+
+function handleTimeSelect(startTime: string, endTime: string) {
+  showReserveDialog(startTime, endTime)
 }
 
 async function handleReserve() {
