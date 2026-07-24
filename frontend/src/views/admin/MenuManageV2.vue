@@ -53,7 +53,7 @@
           </template>
         </el-table-column>
         <el-table-column label="权限标识" min-width="120">
-          <template #default="{ row }">
+          <template #default>
             <span style="color: #c0c4cc">-</span>
           </template>
         </el-table-column>
@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting } from '@element-plus/icons-vue'
@@ -166,9 +166,9 @@ async function handleSubmit() {
   if (!valid) return
   submitting.value = true
   try {
-    const data = { ...form, parentId: form.parentId || 0 }
-    if (isEdit.value) { await updateMenu(data); ElMessage.success('更新成功') }
-    else { await createMenu(data); ElMessage.success('创建成功') }
+    
+    if (isEdit.value) { await updateMenu({ id: form.id!, name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('更新成功') }
+    else { await createMenu({ name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('创建成功') }
     dialogVisible.value = false
     loadData()
   } catch { /* */ } finally { submitting.value = false }
