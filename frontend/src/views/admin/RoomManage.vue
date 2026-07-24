@@ -9,7 +9,7 @@
         </template>
         <!-- 展开：所有具体字段 -->
         <template v-else>
-          <div class="search-item"><label>名称</label><el-input v-model="query.keyword" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
