@@ -14,12 +14,12 @@ spring:
         namespace: ${NACOS_NAMESPACE:dev}
     gateway:
       routes:
-        - id: user-service
+        - id: uc-service
           uri: lb://mrb-user
           predicates:
-            - Path=/api/user/**
+            - Path=/api/uc/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
         - id: auth-service
           uri: lb://mrb-auth
           predicates:
