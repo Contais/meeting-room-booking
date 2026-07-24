@@ -75,8 +75,8 @@ onMounted(loadData)
     .search-item { display: flex; flex-direction: column; gap: 6px; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 220px; }
-    .search-keyword-input :deep(.el-input) { width: 640px; }
+    .search-item :deep(.el-select) { width: 260px; }
+    .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

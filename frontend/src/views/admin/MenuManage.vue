@@ -199,8 +199,8 @@ onMounted(loadData)
     .search-item { display: flex; flex-direction: column; gap: 6px; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 220px; }
-    .search-keyword-input :deep(.el-input) { width: 640px; }
+    .search-item :deep(.el-select) { width: 260px; }
+    .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 
 /* 表格卡片 */

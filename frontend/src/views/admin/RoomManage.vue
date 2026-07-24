@@ -40,7 +40,7 @@
         <el-table-column prop="capacity" label="容量" width="80" align="center" />
         <el-table-column prop="equipment" label="设备" min-width="150" show-overflow-tooltip />
         <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
-        <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免' }}</el-tag></template></el-table-column>
+        <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
@@ -110,8 +110,8 @@ onMounted(loadData)
     .search-item { display: flex; flex-direction: column; gap: 6px; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 220px; }
-    .search-keyword-input :deep(.el-input) { width: 640px; }
+    .search-item :deep(.el-select) { width: 260px; }
+    .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
