@@ -7,16 +7,12 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: user-service
+        - id: uc-service
           uri: lb://mrb-user
           predicates:
-            - Path=/api/user/**
-        - id: menu-service
-          uri: lb://mrb-user
-          predicates:
-            - Path=/api/menu/**
+            - Path=/api/uc/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
         - id: auth-service
           uri: lb://mrb-auth
           predicates:
