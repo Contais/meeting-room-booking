@@ -94,7 +94,8 @@ onMounted(loadData)
     .search-item { display: flex; flex-direction: column; gap: 6px; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 260px; }
+    .search-item :deep(.el-select),
+    .search-item :deep(.el-date-editor) { width: 260px !important; }
     .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }

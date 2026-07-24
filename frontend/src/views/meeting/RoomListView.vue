@@ -9,6 +9,7 @@
         </template>
         <template v-else>
           <div class="search-item"><label>名称</label><el-input v-model="filter.keyword" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入位置" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
         </template>
       </div>
@@ -54,17 +55,18 @@ const rooms = ref<MeetingRoom[]>([])
 const loading = ref(false); const expanded = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
-const filter = reactive({ keyword: '', minCapacity: undefined as number | undefined })
+const filter = reactive({ keyword: '', location: '', minCapacity: undefined as number | undefined })
 
 const filteredRooms = computed(() => rooms.value.filter(room => {
-  if (filter.keyword && !room.name.includes(filter.keyword) && !(room.location || '').includes(filter.keyword)) return false
+  if (filter.keyword && !room.name.includes(filter.keyword)) return false
+  if (filter.location && !(room.location || '').includes(filter.location)) return false
   if (filter.minCapacity && (!room.capacity || room.capacity < filter.minCapacity)) return false
   return true
 }))
 
 function goDetail(id: number) { router.push(`/meeting/rooms/${id}`) }
 function applyFilter() {}
-function resetFilter() { filter.keyword = ''; filter.minCapacity = undefined }
+function resetFilter() { filter.keyword = ''; filter.location = ''; filter.minCapacity = undefined }
 
 onMounted(async () => {
   loading.value = true
