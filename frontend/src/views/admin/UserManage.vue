@@ -1,5 +1,6 @@
 <template>
   <div class="page-view">
+    <div class="page-header"><h2>用户管理</h2></div>
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
@@ -199,6 +200,8 @@ onMounted(() => { loadData(); loadDeptTree() })
 </script>
 
 <style scoped>
+.page-header { margin-bottom: 0; }
+.page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 
 /* 搜索栏 */

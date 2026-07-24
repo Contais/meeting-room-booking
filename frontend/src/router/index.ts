@@ -34,10 +34,14 @@ const routes: RouteRecordRaw[] = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   NProgress.start()
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.token) { next({ name: 'Login', query: { redirect: to.fullPath } }); return }
+  // 刷新页面后恢复 userInfo
+  if (userStore.token && !userStore.userInfo) {
+    await userStore.fetchUserInfo()
+  }
   if (to.meta.requiresAdmin && !userStore.isAdmin()) { ElMessage.error('无权访问'); next('/home'); return }
   next()
 })
