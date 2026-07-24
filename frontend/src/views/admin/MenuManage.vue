@@ -196,9 +196,11 @@ onMounted(loadData)
   border: 1px solid #f0f0f0;
 }
 .search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
-.search-item { display: flex; flex-direction: column; gap: 6px; }
-.search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-.search-item :deep(.el-input), .search-item :deep(.el-select) { width: 220px; }
+    .search-item { display: flex; flex-direction: column; gap: 6px; }
+    .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
+    .search-item :deep(.el-input),
+    .search-item :deep(.el-select) { width: 220px; }
+    .search-keyword-input :deep(.el-input) { width: 640px; }
 .search-actions { display: flex; gap: 8px; }
 
 /* 表格卡片 */
