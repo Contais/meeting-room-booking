@@ -8,7 +8,11 @@ import java.io.Serializable;
 public class ReservationPageQuery implements Serializable {
     private Integer page = 1;
     private Integer size = 10;
+    private String keyword;
     private Long roomId;
     private Long userId;
     private Integer status;
+    private String contactPhone;
+    private String startTime;
+    private String endTime;
 }

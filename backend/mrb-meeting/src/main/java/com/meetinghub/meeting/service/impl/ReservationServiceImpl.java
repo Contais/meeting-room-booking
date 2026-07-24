@@ -9,12 +9,14 @@ import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
+import com.meetinghub.meeting.feign.UserFeignClient;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
@@ -35,6 +37,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
+    private final UserFeignClient userFeignClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -137,20 +140,40 @@ public class ReservationServiceImpl implements ReservationService {
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
                 .eq(MeetingRoomReservation::getUserId, userId)
                 .orderByDesc(MeetingRoomReservation::getStartTime);
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.like(MeetingRoomReservation::getSubject, query.getKeyword());
+        }
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
+        }
+        if (StringUtils.hasText(query.getStartTime())) {
+            wrapper.ge(MeetingRoomReservation::getStartTime, query.getStartTime());
+        }
+        if (StringUtils.hasText(query.getEndTime())) {
+            wrapper.le(MeetingRoomReservation::getEndTime, query.getEndTime());
         }
         IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
 
         List<Long> roomIds = result.getRecords().stream()
                 .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
+        List<Long> userIds = result.getRecords().stream()
+                .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
+        Map<Long, String> userNameMap = new java.util.HashMap<>();
+        for (Long uid : userIds) {
+            try {
+                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
+                if (userResult != null && userResult.getData() != null) {
+                    userNameMap.put(uid, userResult.getData().getUsername());
+                }
+            } catch (Exception e) { /* ignore */ }
+        }
         Map<Long, String> roomNameMap = Map.of();
         if (!roomIds.isEmpty()) {
             List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
             roomNameMap = rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
         }
         Map<Long, String> finalRoomNameMap = roomNameMap;
-        return result.convert(r -> toVO(r, finalRoomNameMap));
+        return result.convert(r -> toVO(r, finalRoomNameMap, userNameMap));
     }
 
     @Override
@@ -166,13 +189,16 @@ public class ReservationServiceImpl implements ReservationService {
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-        return reservations.stream().map(r -> toVO(r, null)).collect(Collectors.toList());
+        return reservations.stream().map(r -> toVO(r, null, null)).collect(Collectors.toList());
     }
 
     @Override
     public IPage<ReservationVO> listAllReservations(ReservationPageQuery query) {
         Page<MeetingRoomReservation> page = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.like(MeetingRoomReservation::getSubject, query.getKeyword());
+        }
         if (query.getRoomId() != null) {
             wrapper.eq(MeetingRoomReservation::getRoomId, query.getRoomId());
         }
@@ -182,19 +208,39 @@ public class ReservationServiceImpl implements ReservationService {
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
         }
+        if (StringUtils.hasText(query.getContactPhone())) {
+            wrapper.like(MeetingRoomReservation::getContactPhone, query.getContactPhone());
+        }
+        if (StringUtils.hasText(query.getStartTime())) {
+            wrapper.ge(MeetingRoomReservation::getStartTime, query.getStartTime());
+        }
+        if (StringUtils.hasText(query.getEndTime())) {
+            wrapper.le(MeetingRoomReservation::getEndTime, query.getEndTime());
+        }
         wrapper.orderByDesc(MeetingRoomReservation::getStartTime);
 
         IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
 
         List<Long> roomIds = result.getRecords().stream()
                 .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
+        List<Long> userIds = result.getRecords().stream()
+                .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
+        Map<Long, String> userNameMap = new java.util.HashMap<>();
+        for (Long uid : userIds) {
+            try {
+                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
+                if (userResult != null && userResult.getData() != null) {
+                    userNameMap.put(uid, userResult.getData().getUsername());
+                }
+            } catch (Exception e) { /* ignore */ }
+        }
         Map<Long, String> roomNameMap = Map.of();
         if (!roomIds.isEmpty()) {
             List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
             roomNameMap = rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
         }
         Map<Long, String> finalRoomNameMap = roomNameMap;
-        return result.convert(r -> toVO(r, finalRoomNameMap));
+        return result.convert(r -> toVO(r, finalRoomNameMap, userNameMap));
     }
 
     @Override
@@ -295,12 +341,13 @@ public class ReservationServiceImpl implements ReservationService {
         return vo;
     }
 
-    private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> roomNameMap) {
+    private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> roomNameMap, Map<Long, String> userNameMap) {
         ReservationVO vo = new ReservationVO();
         vo.setId(r.getId());
         vo.setRoomId(r.getRoomId());
         vo.setRoomName(roomNameMap != null ? roomNameMap.getOrDefault(r.getRoomId(), "") : "");
         vo.setUserId(r.getUserId());
+        vo.setUsername(userNameMap != null ? userNameMap.getOrDefault(r.getUserId(), "") : "");
         vo.setSubject(r.getSubject());
         vo.setAttendeeCount(r.getAttendeeCount());
         vo.setContactPhone(r.getContactPhone());

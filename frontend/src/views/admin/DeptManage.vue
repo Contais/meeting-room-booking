@@ -7,6 +7,12 @@
           <label>部门名称</label>
           <el-input v-model="filterName" placeholder="请输入部门名称" clearable />
         </div>
+        <div class="search-item">
+          <label>状态</label>
+          <el-select v-model="filterStatus" placeholder="请选择" clearable>
+            <el-option label="启用" :value="1" /><el-option label="禁用" :value="0" />
+          </el-select>
+        </div>
       </div>
       <div class="search-actions">
         <el-button @click="filterName = ''; loadData()">重置</el-button>
@@ -66,7 +72,7 @@ import type { Department } from '@/types/department'
 const loading = ref(false); const submitting = ref(false)
 const treeData = ref<Department[]>([])
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const expandAll = ref(true); const filterName = ref('')
+const expandAll = ref(true); const filterName = ref(''); const filterStatus = ref(undefined as number | undefined)
 const form = reactive({ id: undefined as number | undefined, name: '', parentId: undefined as number | undefined, sortOrder: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
 

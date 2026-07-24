@@ -3,16 +3,15 @@
     <div class="page-header"><h2>我的预约</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item">
-          <label>状态</label>
-          <el-select v-model="query.status" placeholder="请选择状态" clearable filterable>
-            <el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" />
-          </el-select>
-        </div>
+        <div class="search-item"><label>会议主题</label><el-input v-model="query.keyword" placeholder="请输入会议主题" clearable /></div>
+        <template v-if="expanded">
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable><el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" /></el-select></div>
+        </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetQuery">重置</el-button>
         <el-button type="primary" @click="loadData">查询</el-button>
+        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -52,12 +51,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
-const loading = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
-const query = reactive({ page: 1, size: 20, status: undefined as number | undefined })
+const loading = ref(false); const expanded = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
+const query = reactive({ page: 1, size: 20, keyword: '', status: undefined as number | undefined })
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }

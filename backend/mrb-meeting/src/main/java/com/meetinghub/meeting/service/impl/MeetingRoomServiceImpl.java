@@ -58,8 +58,23 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoom::getStatus, query.getStatus());
         }
+        if (StringUtils.hasText(query.getLocation())) {
+            wrapper.like(MeetingRoom::getLocation, query.getLocation());
+        }
+        if (StringUtils.hasText(query.getEquipment())) {
+            wrapper.like(MeetingRoom::getEquipment, query.getEquipment());
+        }
         if (query.getMinCapacity() != null) {
             wrapper.ge(MeetingRoom::getCapacity, query.getMinCapacity());
+        }
+        if (StringUtils.hasText(query.getBookableStart())) {
+            wrapper.ge(MeetingRoom::getBookableStart, query.getBookableStart());
+        }
+        if (StringUtils.hasText(query.getBookableEnd())) {
+            wrapper.le(MeetingRoom::getBookableEnd, query.getBookableEnd());
+        }
+        if (query.getNeedApproval() != null) {
+            wrapper.eq(MeetingRoom::getNeedApproval, query.getNeedApproval());
         }
         wrapper.orderByDesc(MeetingRoom::getCreateTime);
 

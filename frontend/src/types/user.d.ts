@@ -14,6 +14,7 @@ export interface UserPageQuery {
   page?: number
   size?: number
   keyword?: string
+  phone?: string
   status?: number
 }
 

@@ -4,18 +4,15 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item">
-          <label>菜单名称</label>
-          <el-input v-model="filterName" placeholder="请输入菜单名称" clearable />
-        </div>
-        <div class="search-item">
-          <label>路由地址</label>
-          <el-input v-model="filterPath" placeholder="请输入路由地址" clearable />
-        </div>
+        <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入菜单名称" clearable /></div>
+        <template v-if="expanded">
+          <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable /></div>
+        </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetFilter">重置</el-button>
         <el-button type="primary" @click="applyFilter">查询</el-button>
+        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -97,11 +94,11 @@
 import { ref, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { getMenuTree, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import type { MenuItem } from '@/types/menu'
 
-const loading = ref(false)
+const loading = ref(false); const expanded = ref(false)
 const submitting = ref(false)
 const treeData = ref<MenuItem[]>([])
 const filteredData = ref<MenuItem[]>([])

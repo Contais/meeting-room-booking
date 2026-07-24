@@ -92,7 +92,10 @@ public class UserServiceImpl implements UserService {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(query.getKeyword())) {
             wrapper.and(w -> w.like(User::getUsername, query.getKeyword())
-                    .or().like(User::getPhone, query.getKeyword()));
+                    .or().like(User::getRealName, query.getKeyword()));
+        }
+        if (StringUtils.hasText(query.getPhone())) {
+            wrapper.like(User::getPhone, query.getPhone());
         }
         if (query.getStatus() != null) {
             wrapper.eq(User::getStatus, query.getStatus());

@@ -19,6 +19,12 @@ export interface MeetingRoomPageQuery {
   page?: number
   size?: number
   keyword?: string
+  location?: string
+  equipment?: string
+  minCapacity?: number
+  bookableStart?: string
+  bookableEnd?: string
+  needApproval?: number
   status?: number
 }
 
@@ -43,4 +49,16 @@ export interface Reservation {
   endTime: string
   status: number
   createTime: string
+}
+
+export interface ReservationPageQuery {
+  page?: number
+  size?: number
+  keyword?: string
+  roomId?: number
+  userId?: number
+  status?: number
+  contactPhone?: string
+  startTime?: string
+  endTime?: string
 }
