@@ -21,32 +21,12 @@
         </div>
 
         <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">容纳人数</span>
-            <span class="info-value">{{ room.capacity || '-' }} 人</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">设备设施</span>
-            <span class="info-value">{{ room.equipment || '暂无' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">可预约时段</span>
-            <span class="info-value">{{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">最大预约时长</span>
-            <span class="info-value">{{ room.maxDuration || 480 }} 分钟</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">提前预约</span>
-            <span class="info-value">最多 {{ room.advanceDays || 7 }} 天</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">审批模式</span>
-            <el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">
-              {{ room.needApproval === 1 ? '需审批' : '免审批' }}
-            </el-tag>
-          </div>
+          <div class="info-item"><span class="info-label">容纳人数</span><span class="info-value">{{ room.capacity || '-' }} 人</span></div>
+          <div class="info-item"><span class="info-label">设备设施</span><span class="info-value">{{ room.equipment || '暂无' }}</span></div>
+          <div class="info-item"><span class="info-label">可预约时段</span><span class="info-value">{{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}</span></div>
+          <div class="info-item"><span class="info-label">最大预约时长</span><span class="info-value">{{ room.maxDuration || 480 }} 分钟</span></div>
+          <div class="info-item"><span class="info-label">提前预约</span><span class="info-value">最多 {{ room.advanceDays || 7 }} 天</span></div>
+          <div class="info-item"><span class="info-label">审批模式</span><el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ room.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></div>
         </div>
 
         <div v-if="room.description" class="description">
@@ -64,12 +44,12 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <TimeSlotCalendar :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
+        <TimeSlotCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
       </div>
     </template>
 
     <!-- 预约弹窗 -->
-    <el-dialog v-model="reserveDialogVisible" title="预约会议室" width="520px" destroy-on-close>
+    <el-dialog v-model="reserveDialogVisible" title="预约会议室" width="520px" destroy-on-close @close="onDialogClose">
       <div v-if="room" class="dialog-rules-tip">
         <el-icon><InfoFilled /></el-icon>
         可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
@@ -77,15 +57,34 @@
       <el-form ref="reserveFormRef" :model="reserveForm" :rules="reserveRules" label-width="0">
         <div class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
         <div class="dialog-form-item"><label>会议主题</label><el-input v-model="reserveForm.subject" placeholder="请输入会议主题" /></div>
-        <div class="dialog-form-item"><label>开始时间</label>
-          <el-date-picker v-model="reserveForm.startTime" type="datetime" placeholder="选择开始时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ss" :disabled-date="disablePastDate" />
+        <div class="dialog-form-item">
+          <label>开始时间</label>
+          <div class="time-selector">
+            <div class="time-selector-header">
+              <span>{{ selectedDateStr }}</span>
+              <el-radio-group v-model="timeStep" size="small">
+                <el-radio-button :value="15">15分钟</el-radio-button>
+                <el-radio-button :value="30">30分钟</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div class="time-options">
+              <div v-for="t in startTimeOptions" :key="t" class="time-option" :class="{ active: reserveForm.startMinute === t }" @click="reserveForm.startMinute = t">
+                {{ t }}
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="dialog-form-item"><label>结束时间</label>
-          <el-date-picker v-model="reserveForm.endTime" type="datetime" placeholder="选择结束时间" style="width: 100%" value-format="YYYY-MM-DDTHH:mm:ss" :disabled-date="disablePastDate" />
+        <div class="dialog-form-item">
+          <label>结束时间</label>
+          <div class="time-selector">
+            <div class="time-options">
+              <div v-for="t in endTimeOptions" :key="t" class="time-option" :class="{ active: reserveForm.endMinute === t }" @click="reserveForm.endMinute = t">
+                {{ t }}
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="dialog-form-item"><label>参会人数</label>
-          <el-input-number v-model="reserveForm.attendeeCount" :min="1" :max="room?.capacity || 100" style="width: 100%" />
-        </div>
+        <div class="dialog-form-item"><label>参会人数</label><el-input-number v-model="reserveForm.attendeeCount" :min="1" :max="room?.capacity || 100" style="width: 100%" /></div>
         <div class="dialog-form-item"><label>联系电话</label><el-input v-model="reserveForm.contactPhone" placeholder="请输入联系电话" /></div>
         <div class="dialog-form-item"><label>备注</label><el-input v-model="reserveForm.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
       </el-form>
@@ -98,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, OfficeBuilding, Location, Calendar, InfoFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -112,26 +111,82 @@ const route = useRoute()
 const router = useRouter()
 const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
+const calendarRef = ref<InstanceType<typeof TimeSlotCalendar>>()
 
+// 时间段选择
+const timeStep = ref(30)
 const reserveDialogVisible = ref(false)
 const reserveLoading = ref(false)
 const reserveFormRef = ref<FormInstance>()
-const reserveForm = reactive({ subject: '', startTime: '', endTime: '', attendeeCount: 1, contactPhone: '', remark: '' })
+const reserveForm = reactive({
+  subject: '', startTime: '', endTime: '',
+  startMinute: '', endMinute: '',
+  attendeeCount: 1, contactPhone: '', remark: ''
+})
 const reserveRules: FormRules = {
   subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }],
-  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+  startMinute: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endMinute: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
 }
 
-function disablePastDate(date: Date) { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today }
+const selectedDateStr = computed(() => {
+  if (!reserveForm.startTime) return '请选择日期'
+  return reserveForm.startTime.substring(0, 10).replace(/-/g, '年') + '月' + reserveForm.startTime.substring(8, 10) + '日'
+})
 
-function showReserveDialog(start?: string, end?: string) {
-  Object.assign(reserveForm, { subject: '', startTime: start || '', endTime: end || '', attendeeCount: 1, contactPhone: '', remark: '' })
+const startTimeOptions = computed(() => {
+  if (!reserveForm.startTime) return []
+  const startHour = parseInt((room.value?.bookableStart || '08:00').split(':')[0])
+  const endHour = parseInt((room.value?.bookableEnd || '20:00').split(':')[0])
+  const options: string[] = []
+  for (let h = startHour; h < endHour; h++) {
+    for (let m = 0; m < 60; m += timeStep.value) {
+      options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+    }
+  }
+  return options
+})
+
+const endTimeOptions = computed(() => {
+  if (!reserveForm.startMinute) return []
+  const [sh, sm] = reserveForm.startMinute.split(':').map(Number)
+  const options: string[] = []
+  const endHour = parseInt((room.value?.bookableEnd || '20:00').split(':')[0])
+  for (let h = sh; h <= endHour; h++) {
+    const startM = h === sh ? sm + timeStep.value : 0
+    for (let m = startM; m < 60; m += timeStep.value) {
+      if (h === endHour && m > 0) break
+      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      if (time !== reserveForm.startMinute) options.push(time)
+    }
+  }
+  return options
+})
+
+function handleTimeSelect(startTime: string, endTime: string) {
+  const startMin = startTime.substring(11, 16)
+  const endMin = endTime.substring(11, 16)
+  Object.assign(reserveForm, {
+    startTime, endTime,
+    startMinute: startMin, endMinute: endMin,
+    subject: '', attendeeCount: 1, contactPhone: '', remark: ''
+  })
   reserveDialogVisible.value = true
 }
 
-function handleTimeSelect(startTime: string, endTime: string) {
-  showReserveDialog(startTime, endTime)
+function onDialogClose() {
+  // 关闭弹窗时清空日历选中状态
+  calendarRef.value?.clearSelection()
+}
+
+function showReserveDialog() {
+  const dateStr = new Date().toISOString().substring(0, 10)
+  Object.assign(reserveForm, {
+    startTime: `${dateStr}T09:00:00`, endTime: '',
+    startMinute: '09:00', endMinute: '10:00',
+    subject: '', attendeeCount: 1, contactPhone: '', remark: ''
+  })
+  reserveDialogVisible.value = true
 }
 
 async function handleReserve() {
@@ -139,7 +194,16 @@ async function handleReserve() {
   if (!valid) return
   reserveLoading.value = true
   try {
-    await createReservation({ roomId: room.value!.id, ...reserveForm })
+    const dateStr = reserveForm.startTime.substring(0, 10)
+    await createReservation({
+      roomId: room.value!.id,
+      subject: reserveForm.subject,
+      startTime: `${dateStr}T${reserveForm.startMinute}:00`,
+      endTime: `${dateStr}T${reserveForm.endMinute}:00`,
+      attendeeCount: reserveForm.attendeeCount,
+      contactPhone: reserveForm.contactPhone,
+      remark: reserveForm.remark,
+    })
     ElMessage.success(room.value?.needApproval === 1 ? '预约已提交，等待管理员审批' : '预约成功')
     reserveDialogVisible.value = false
   } catch { /* */ } finally { reserveLoading.value = false }
@@ -153,34 +217,16 @@ onMounted(async () => {
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-
 .page-header { margin-bottom: 0; }
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 
-/* 信息卡片 */
-.detail-card {
-  background: #fff; border-radius: 12px; border: 1px solid #f0f0f0;
-  padding: 24px;
-}
-
-.card-header {
-  display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
-}
-
-.room-icon {
-  width: 48px; height: 48px; border-radius: 12px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  display: flex; align-items: center; justify-content: center; color: #fff;
-}
-
+.detail-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; padding: 24px; }
+.card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.room-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; }
 .room-info h2 { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
 .room-location { font-size: 13px; color: #909399; margin: 4px 0 0 0; display: flex; align-items: center; gap: 4px; }
 
-.info-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-  padding: 16px 0; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5;
-}
-
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 16px 0; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; }
 .info-item { display: flex; flex-direction: column; gap: 4px; }
 .info-label { font-size: 12px; color: #909399; }
 .info-value { font-size: 14px; color: #303133; font-weight: 500; }
@@ -188,20 +234,24 @@ onMounted(async () => {
 .description { margin-top: 16px; }
 .description h4 { font-size: 14px; font-weight: 600; color: #303133; margin: 0 0 8px 0; }
 .description p { font-size: 13px; color: #606266; line-height: 1.7; margin: 0; }
-
 .action-row { margin-top: 20px; display: flex; justify-content: flex-end; }
-
 .section-title { font-size: 15px; font-weight: 600; color: #303133; margin: 0 0 16px 0; }
 
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; }
 
-.dialog-rules-tip {
-  background: #ecf5ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px;
-  font-size: 13px; color: #409eff; display: flex; align-items: center; gap: 6px;
-}
+.dialog-rules-tip { background: #ecf5ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #409eff; display: flex; align-items: center; gap: 6px; }
 
-@media (max-width: 768px) {
-  .info-grid { grid-template-columns: repeat(2, 1fr); }
+/* 时间段选择器 */
+.time-selector { border: 1px solid #dcdfe6; border-radius: 8px; overflow: hidden; }
+.time-selector-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafbfc; border-bottom: 1px solid #ebeef5; font-size: 13px; color: #606266; }
+.time-options { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; max-height: 160px; overflow-y: auto; }
+.time-option {
+  padding: 6px 12px; border-radius: 6px; border: 1px solid #dcdfe6;
+  font-size: 13px; color: #606266; cursor: pointer; transition: all 0.15s;
 }
+.time-option:hover { border-color: #409eff; color: #409eff; }
+.time-option.active { background: #409eff; color: #fff; border-color: #409eff; }
+
+@media (max-width: 768px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

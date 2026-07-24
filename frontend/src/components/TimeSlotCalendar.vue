@@ -7,12 +7,18 @@
       <el-button size="small" @click="goToday">今天</el-button>
     </div>
 
-    <div class="time-slots" v-loading="loading">
+    <!-- 空状态 -->
+    <div v-if="!loading && reservations.length === 0 && timeSlots.every(s => s.status !== 'occupied')" class="empty-state">
+      <el-icon :size="40" color="#c0c4cc"><Calendar /></el-icon>
+      <p>当天没有会议预约</p>
+      <span>点击下方可预约时段开始预订</span>
+    </div>
+
+    <div v-else class="time-slots" v-loading="loading">
       <div v-for="slot in timeSlots" :key="slot.time" class="time-slot" :class="{
         available: slot.status === 'available',
         occupied: slot.status === 'occupied',
         past: slot.status === 'past',
-        outside: slot.status === 'outside',
         selected: isSelected(slot.time),
       }" @click="handleSlotClick(slot)">
         <div class="slot-time">{{ slot.time }}</div>
@@ -22,7 +28,6 @@
             <div class="slot-meta">{{ slot.reservation.contactPhone || '' }}</div>
           </template>
           <span v-else-if="slot.status === 'past'" class="slot-past">已过</span>
-          <span v-else-if="slot.status === 'outside'" class="slot-outside">不可用</span>
           <span v-else-if="isSelected(slot.time)" class="slot-selected-text">已选择</span>
           <span v-else class="slot-available">可预约</span>
         </div>
@@ -36,7 +41,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { ArrowLeft, ArrowRight, Check } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Check, Calendar } from '@element-plus/icons-vue'
 import { listByRoomAndDate } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
@@ -48,6 +53,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'select', startTime: string, endTime: string): void
+  (e: 'clear'): void
 }>()
 
 const selectedDate = ref(new Date())
@@ -57,7 +63,7 @@ const selectedTimes = ref<string[]>([])
 
 interface TimeSlot {
   time: string
-  status: 'available' | 'occupied' | 'past' | 'outside'
+  status: 'available' | 'occupied' | 'past'
   reservation: Reservation | null
 }
 
@@ -98,14 +104,18 @@ function isSelected(time: string) {
   return selectedTimes.value.includes(time)
 }
 
+/** 清空选中状态（供父组件调用） */
+function clearSelection() {
+  selectedTimes.value = []
+  emit('clear')
+}
+
 function handleSlotClick(slot: TimeSlot) {
   if (slot.status !== 'available' && !isSelected(slot.time)) return
 
   if (selectedTimes.value.length === 0) {
-    // 第一次点击：选中该时段
     selectedTimes.value = [slot.time]
   } else if (isSelected(slot.time)) {
-    // 点击已选中的时段：如果是最两端的，取消选择
     const first = selectedTimes.value[0]
     const last = selectedTimes.value[selectedTimes.value.length - 1]
     if (slot.time === first) {
@@ -113,27 +123,22 @@ function handleSlotClick(slot: TimeSlot) {
     } else if (slot.time === last) {
       selectedTimes.value = selectedTimes.value.slice(0, -1)
     } else {
-      // 点击中间的：重置选区
       selectedTimes.value = [slot.time]
     }
   } else {
-    // 点击未选中的时段：检查是否连续
     const allAvailable = getAvailableTimes()
     const clickedIdx = allAvailable.indexOf(slot.time)
     const firstIdx = allAvailable.indexOf(selectedTimes.value[0])
     const lastIdx = allAvailable.indexOf(selectedTimes.value[selectedTimes.value.length - 1])
 
     if (clickedIdx >= firstIdx && clickedIdx <= lastIdx + 1) {
-      // 往后扩展
       const range = allAvailable.slice(firstIdx, clickedIdx + 1)
-      // 检查范围内没有被占用的
       const hasOccupied = range.some(t => {
         const s = timeSlots.value.find(ts => ts.time === t)
         return s && s.status === 'occupied'
       })
       if (!hasOccupied) selectedTimes.value = range
     } else if (clickedIdx <= lastIdx && clickedIdx >= firstIdx - 1) {
-      // 往前扩展
       const range = allAvailable.slice(clickedIdx, lastIdx + 1)
       const hasOccupied = range.some(t => {
         const s = timeSlots.value.find(ts => ts.time === t)
@@ -141,12 +146,10 @@ function handleSlotClick(slot: TimeSlot) {
       })
       if (!hasOccupied) selectedTimes.value = range
     } else {
-      // 不连续，重新选
       selectedTimes.value = [slot.time]
     }
   }
 
-  // 发送选中范围
   if (selectedTimes.value.length > 0) {
     const dateStr = toDateString(selectedDate.value)
     const startTime = `${dateStr}T${selectedTimes.value[0]}:00`
@@ -203,6 +206,8 @@ async function loadReservations() {
   } catch { /* */ } finally { loading.value = false }
 }
 
+defineExpose({ clearSelection })
+
 watch(selectedDate, loadReservations)
 watch(() => [props.bookableStart, props.bookableEnd], buildTimeSlots)
 onMounted(loadReservations)
@@ -214,6 +219,14 @@ onMounted(loadReservations)
 .calendar-date { font-size: 15px; font-weight: 600; color: #303133; min-width: 140px; text-align: center; }
 .time-slots { display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; }
 
+/* 空状态 */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px 0; color: #909399;
+}
+.empty-state p { font-size: 15px; font-weight: 500; color: #606266; margin: 12px 0 4px 0; }
+.empty-state span { font-size: 13px; color: #c0c4cc; }
+
 .time-slot {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px;
   border-radius: 8px; transition: all 0.15s; cursor: default;
@@ -224,7 +237,6 @@ onMounted(loadReservations)
 .time-slot.selected:hover { background: #bfdbfe; }
 .time-slot.occupied { background: #fef2f2; border-left: 3px solid #ef4444; }
 .time-slot.past { background: #f9fafb; border-left: 3px solid #d1d5db; }
-.time-slot.outside { background: #f9fafb; border-left: 3px solid #d1d5db; }
 
 .slot-time { font-size: 13px; font-weight: 600; color: #374151; min-width: 50px; }
 .slot-info { flex: 1; }
@@ -232,7 +244,6 @@ onMounted(loadReservations)
 .slot-meta { font-size: 11px; color: #909399; margin-top: 2px; }
 .slot-available { font-size: 12px; color: #10b981; }
 .slot-past { font-size: 12px; color: #9ca3af; }
-.slot-outside { font-size: 12px; color: #c0c4cc; }
 .slot-selected-text { font-size: 12px; color: #3b82f6; font-weight: 500; }
 .slot-arrow { color: #10b981; font-size: 14px; }
 .time-slot.selected .slot-arrow { color: #3b82f6; }
