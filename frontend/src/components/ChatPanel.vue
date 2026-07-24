@@ -157,7 +157,7 @@ function scrollToBottom() {
 
 .chat-panel {
   position: absolute; bottom: 64px; right: 0;
-  width: 380px; height: 520px;
+  width: 440px; height: 640px;
   background: #fff; border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   display: flex; flex-direction: column;
