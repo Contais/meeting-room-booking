@@ -3,8 +3,13 @@
     <div class="page-header"><h2>会议室管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></div>
-        <template v-if="expanded">
+        <!-- 收起：关键字搜索 -->
+        <template v-if="!expanded">
+          <div class="search-item"><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></div>
+        </template>
+        <!-- 展开：所有具体字段 -->
+        <template v-else>
+          <div class="search-item"><label>名称</label><el-input v-model="query.keyword" placeholder="请输入名称" clearable /></div>
           <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable /></div>
           <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
@@ -88,7 +93,7 @@ const form = reactive({ id: undefined as number | undefined, name: '', location:
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 async function loadData() { loading.value = true; try { const res = await listRoomsAdmin(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
-function resetQuery() { query.keyword = ''; query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.page = 1; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 }); dialogVisible.value = true }
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
@@ -102,7 +107,7 @@ onMounted(loadData)
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
 .search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
-.search-item { display: flex; flex-direction: column; gap: 6px; }
+.search-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; max-width: 280px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
 .search-item :deep(.el-input) { width: 200px; }
 .search-actions { display: flex; gap: 8px; }

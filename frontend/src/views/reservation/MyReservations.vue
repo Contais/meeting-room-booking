@@ -60,7 +60,7 @@ const query = reactive({ page: 1, size: 20, keyword: '', status: undefined as nu
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
-function resetQuery() { query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.status = undefined; query.page = 1; loadData() }
 async function loadData() { loading.value = true; try { const res = await listMyReservations(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
 async function handleCancel(id: number) { try { await cancelReservation(id); ElMessage.success('已取消'); loadData() } catch { /* */ } }
 onMounted(loadData)
@@ -72,7 +72,7 @@ onMounted(loadData)
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
 .search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
-.search-item { display: flex; flex-direction: column; gap: 6px; }
+.search-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; max-width: 280px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
 .search-item :deep(.el-input) { width: 200px; }
 .search-actions { display: flex; gap: 8px; }
