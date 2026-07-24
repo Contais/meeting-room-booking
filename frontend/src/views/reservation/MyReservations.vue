@@ -1,27 +1,49 @@
 <template>
   <div class="page-view">
-    <div class="page-header"><h2>我的预约</h2></div>
-    <FilterBar :model="query" @search="loadData" @reset="resetQuery">
-      <el-form-item label="状态"><el-select v-model="query.status" placeholder="请选择状态" clearable filterable><el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" /></el-select></el-form-item>
-    </FilterBar>
-    <div class="table-card page-card">
-      <el-table :data="tableData" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" />
+    <div class="search-bar">
+      <div class="search-fields">
+        <div class="search-item">
+          <label>状态</label>
+          <el-select v-model="query.status" placeholder="请选择状态" clearable filterable>
+            <el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" />
+          </el-select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <el-button @click="resetQuery">重置</el-button>
+        <el-button type="primary" @click="loadData">查询</el-button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left"></div>
+        <div class="toolbar-right">
+          <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        </div>
+      </div>
+
+      <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+        <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="roomName" label="会议室" min-width="120" />
         <el-table-column prop="subject" label="会议主题" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="attendeeCount" label="人数" width="65" align="center" />
-        <el-table-column label="预约时段" min-width="180"><template #default="{ row }">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</template></el-table-column>
-        <el-table-column prop="status" label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small">{{ statusText(row.status) }}</el-tag></template></el-table-column>
+        <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
+        <el-table-column label="预约时段" min-width="190"><template #default="{ row }">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</template></el-table-column>
+        <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button v-if="row.status !== 2" type="danger" link @click="handleCancel(row.id)">取消</el-button>
-              <span v-else style="color:var(--text-muted)">-</span>
+              <el-button v-if="row.status !== 2" type="danger" link size="small" @click="handleCancel(row.id)">取消</el-button>
+              <span v-else style="color: #c0c4cc">-</span>
             </div>
           </template>
         </el-table-column>
       </el-table>
-      <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
+
+      <div class="pagination-wrap">
+        <span class="total-text">共 {{ total }} 条</span>
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="prev, pager, next, sizes" @size-change="loadData" @current-change="loadData" />
+      </div>
     </div>
   </div>
 </template>
@@ -29,12 +51,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import FilterBar from '@/components/FilterBar.vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
 const loading = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
-const query = reactive({ page: 1, size: 10, status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 20, status: undefined as number | undefined })
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
@@ -46,6 +68,16 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
-.action-buttons { display: flex; justify-content: center; gap: 8px; }
+.search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
+.search-fields { display: flex; gap: 24px; flex: 1; }
+.search-item { display: flex; flex-direction: column; gap: 6px; }
+.search-item label { font-size: 13px; color: #606266; font-weight: 500; }
+.search-item :deep(.el-input) { width: 200px; }
+.search-actions { display: flex; gap: 8px; }
+.table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
+.toolbar-right { display: flex; gap: 4px; }
+.action-buttons { display: flex; justify-content: center; gap: 4px; }
+.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid #f5f5f5; }
+.total-text { font-size: 13px; color: #909399; }
 </style>

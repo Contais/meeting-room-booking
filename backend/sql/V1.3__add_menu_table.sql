@@ -36,7 +36,6 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 (4, '日程视图', '/schedule', 'Calendar', 0, 4, 1, 1),
 (10, '系统管理', NULL, 'Setting', 0, 10, 1, 1),
 (11, '用户管理', '/admin/users', 'User', 10, 11, 1, 1),
-(16, '用户管理V2', '/admin/users-v2', 'User', 10, 16, 1, 1),
 (12, '部门管理', '/admin/departments', 'Menu', 10, 12, 1, 1),
 (13, '会议室管理', '/admin/rooms', 'OfficeBuilding', 10, 13, 1, 1),
 (14, '预约管理', '/admin/reservations', 'Calendar', 10, 14, 1, 1),
@@ -44,7 +43,7 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
 ('admin', 1), ('admin', 2), ('admin', 3), ('admin', 4),
-('admin', 10), ('admin', 11), ('admin', 16), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15);
+('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15);
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
 ('user', 1), ('user', 2), ('user', 3), ('user', 4);

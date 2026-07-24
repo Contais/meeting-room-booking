@@ -1,27 +1,59 @@
 <template>
   <div class="page-view">
-    <div class="page-header"><h2>会议室管理</h2></div>
-    <FilterBar :model="query" @search="loadData" @reset="resetQuery">
-      <el-form-item label="名称"><el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></el-form-item>
-      <el-form-item label="状态"><el-select v-model="query.status" placeholder="请选择状态" clearable filterable><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></el-form-item>
-    </FilterBar>
-    <div class="table-card page-card">
-      <div class="table-toolbar"><div class="table-toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增会议室</el-button></div></div>
-      <el-table :data="tableData" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" />
+    <div class="search-bar">
+      <div class="search-fields">
+        <div class="search-item">
+          <label>名称</label>
+          <el-input v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" />
+        </div>
+        <div class="search-item">
+          <label>状态</label>
+          <el-select v-model="query.status" placeholder="请选择状态" clearable filterable>
+            <el-option label="启用" :value="1" /><el-option label="禁用" :value="0" />
+          </el-select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <el-button @click="resetQuery">重置</el-button>
+        <el-button type="primary" @click="loadData">查询</el-button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增会议室</el-button>
+        </div>
+        <div class="toolbar-right">
+          <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        </div>
+      </div>
+
+      <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+        <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="name" label="名称" min-width="120" />
         <el-table-column prop="location" label="位置" min-width="100" />
-        <el-table-column prop="capacity" label="容量" width="70" align="center" />
-        <el-table-column prop="equipment" label="设备" min-width="140" show-overflow-tooltip />
-        <el-table-column label="时段" width="110"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
-        <el-table-column label="审批" width="80" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small">{{ row.needApproval === 1 ? '需审批' : '免' }}</el-tag></template></el-table-column>
-        <el-table-column prop="status" label="状态" width="70" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
+        <el-table-column prop="capacity" label="容量" width="80" align="center" />
+        <el-table-column prop="equipment" label="设备" min-width="150" show-overflow-tooltip />
+        <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
+        <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免' }}</el-tag></template></el-table-column>
+        <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
-          <template #default="{ row }"><div class="action-buttons"><el-button type="primary" link @click="showEditDialog(row)">编辑</el-button><el-button type="danger" link @click="handleDelete(row.id)">删除</el-button></div></template>
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
+              <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+            </div>
+          </template>
         </el-table-column>
       </el-table>
-      <div class="table-footer"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="loadData" @current-change="loadData" /></div>
+
+      <div class="pagination-wrap">
+        <span class="total-text">共 {{ total }} 条</span>
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="prev, pager, next, sizes" @size-change="loadData" @current-change="loadData" />
+      </div>
     </div>
+
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-divider content-position="left">基础信息</el-divider>
@@ -36,7 +68,7 @@
         <el-form-item label="提前天数"><el-input-number v-model="form.advanceDays" :min="1" :max="90" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">天</span></el-form-item>
         <el-form-item label="审批"><el-radio-group v-model="form.needApproval"><el-radio :value="0">免审批</el-radio><el-radio :value="1">需审批</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" class="btn-gradient" :loading="submitting" @click="handleSubmit">确定</el-button></template>
+      <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button></template>
     </el-dialog>
   </div>
 </template>
@@ -45,15 +77,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import FilterBar from '@/components/FilterBar.vue'
+import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import type { MeetingRoom } from '@/types/meeting'
 
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const query = reactive({ page: 1, size: 10, keyword: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 20, keyword: '', status: undefined as number | undefined })
 const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
@@ -68,6 +99,17 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
-.action-buttons { display: flex; justify-content: center; gap: 8px; }
+.search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
+.search-fields { display: flex; gap: 24px; flex: 1; }
+.search-item { display: flex; flex-direction: column; gap: 6px; }
+.search-item label { font-size: 13px; color: #606266; font-weight: 500; }
+.search-item :deep(.el-input) { width: 200px; }
+.search-actions { display: flex; gap: 8px; }
+.table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
+.toolbar-left { display: flex; gap: 8px; }
+.toolbar-right { display: flex; gap: 4px; }
+.action-buttons { display: flex; justify-content: center; gap: 4px; }
+.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid #f5f5f5; }
+.total-text { font-size: 13px; color: #909399; }
 </style>
