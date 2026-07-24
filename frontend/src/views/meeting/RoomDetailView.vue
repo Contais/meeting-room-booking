@@ -148,16 +148,18 @@ function isInRange(t: string) {
 }
 
 function handleTimeOptionClick(t: string) {
-  if (!reserveForm.startMinute || (reserveForm.startMinute && reserveForm.endMinute)) {
+  if (!reserveForm.startMinute) {
     reserveForm.startMinute = t
-    reserveForm.endMinute = ''
-  } else {
+  } else if (!reserveForm.endMinute) {
     if (t <= reserveForm.startMinute) {
       reserveForm.endMinute = reserveForm.startMinute
       reserveForm.startMinute = t
     } else {
       reserveForm.endMinute = t
     }
+  } else {
+    reserveForm.startMinute = t
+    reserveForm.endMinute = ''
   }
 }
 
