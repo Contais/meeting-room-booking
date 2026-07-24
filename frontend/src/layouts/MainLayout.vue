@@ -55,6 +55,7 @@
       </el-main>
     </el-container>
   </el-container>
+  <ChatPanel />
 </template>
 
 <script setup lang="ts">
@@ -64,6 +65,7 @@ import { ArrowDown } from '@element-plus/icons-vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getMyMenus } from '@/api/menu'
+import ChatPanel from '@/components/ChatPanel.vue'
 import type { MenuItem } from '@/types/menu'
 
 const route = useRoute()
