@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.service;
+package com.meetinghub.meeting.config;
 
 import com.meetinghub.meeting.function.MeetingRoomTools;
 import org.springframework.ai.chat.client.ChatClient;
@@ -19,9 +19,9 @@ import org.springframework.context.annotation.Configuration;
  * </p>
  */
 @Configuration
-public class ChatService {
+public class SpringAIConfiguration {
 
-    /**
+      /**
      * 内存聊天记忆（按 sessionId 隔离会话）
      */
     @Bean
@@ -40,21 +40,10 @@ public class ChatService {
      * @return ChatClient 实例
      */
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, MeetingRoomTools meetingRoomTools, ChatMemory chatMemory) {
+    public ChatClient chatClient(ChatModel chatModel, MeetingRoomTools meetingRoomTools, ChatMemory chatMemory,
+                                  @org.springframework.beans.factory.annotation.Value("classpath:prompt/chatbot-system-prompt.md") org.springframework.core.io.Resource systemPrompt) throws java.io.IOException {
         return ChatClient.builder(chatModel)
-                .defaultSystem("""
-                        你是一个会议室预约系统的智能助手。你可以帮助用户：
-                        1. 查询可用会议室
-                        2. 查询某个会议室的预约情况
-                        3. 查看今日预约统计
-                        
-                        回答要简洁友好。如果用户问的是与会议室无关的问题，你也可以正常回答。
-                        
-                        重要规则：
-                        - 不要在回答中包含任何系统内部标签（如 <system-reminder>、<thinking> 等）
-                        - 段落之间用 \n\n 分隔，列表项之间用 \n 分隔
-                        - 回答要自然口语化，像和朋友聊天一样
-                        """)
+                .defaultSystem(systemPrompt.getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
                 .defaultTools(meetingRoomTools)
                 .defaultAdvisors(
                         org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor.builder(chatMemory).build()
