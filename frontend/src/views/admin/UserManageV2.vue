@@ -111,23 +111,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import type { FormInstance } from 'element-plus'
 import { listUsers, createUser, updateUser, deleteUser } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 
 const loading = ref(false)
 const submitting = ref(false)
-const tableData = ref([])
+const tableData = ref<any[]>([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref(null)
+const formRef = ref<FormInstance>()
 const expanded = ref(false)
-const deptTree = ref([])
+const deptTree = ref<any[]>([])
 const selectedRows = ref([])
 
 const query = reactive({ page: 1, size: 20, username: '', phone: '', email: '', status: undefined })
@@ -162,14 +162,14 @@ function showCreateDialog() {
   dialogVisible.value = true
 }
 
-function showEditDialog(row) {
+function showEditDialog(row: any) {
   isEdit.value = true
   Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: row.departmentId || undefined })
   dialogVisible.value = true
 }
 
 async function handleSubmit() {
-  const valid = await formRef.value?.validate().catch(() => false)
+  const valid = await formRef.value?.validate().catch(() => false).catch(() => false)
   if (!valid) return
   submitting.value = true
   try {
@@ -180,7 +180,7 @@ async function handleSubmit() {
   } catch { /* */ } finally { submitting.value = false }
 }
 
-async function handleDelete(id) {
+async function handleDelete(id: number) {
   try {
     await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' })
     await deleteUser(id)
@@ -189,7 +189,7 @@ async function handleDelete(id) {
   } catch { /* */ }
 }
 
-function handleSelectionChange(val) { selectedRows.value = val }
+function handleSelectionChange(val: any) { selectedRows.value = val }
 
 async function loadDeptTree() {
   try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ }
