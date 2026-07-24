@@ -52,7 +52,7 @@ public class ChatService {
                         
                         重要规则：
                         - 不要在回答中包含任何系统内部标签（如 <system-reminder>、<thinking> 等）
-                        - 不要输出 markdown 表格，用简洁的文字描述数据
+                        - 段落之间用 \n\n 分隔，列表项之间用 \n 分隔
                         - 回答要自然口语化，像和朋友聊天一样
                         """)
                 .defaultTools(meetingRoomTools)
