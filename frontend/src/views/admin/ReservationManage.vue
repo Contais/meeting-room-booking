@@ -10,6 +10,7 @@
           <div class="search-item"><label>会议主题</label><el-input v-model="query.subject" placeholder="搜索会议主题或联系电话" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>联系电话</label><el-input v-model="query.contactPhone" placeholder="请输入联系电话" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已取消" :value="2" /></el-select></div>
+          <div class="search-item"><label>预约开始时间</label><el-date-picker v-model="query.startTime" type="datetime" placeholder="选择开始时间" value-format="YYYY-MM-DDTHH:mm:ss" style="width:100%" @change="loadData" /></div>
         </template>
       </div>
       <div class="search-actions">

@@ -9,6 +9,7 @@
         <template v-else>
           <div class="search-item"><label>会议主题</label><el-input v-model="query.subject" placeholder="搜索会议主题" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" /></el-select></div>
+          <div class="search-item"><label>预约开始时间</label><el-date-picker v-model="query.startTime" type="datetime" placeholder="选择开始时间" value-format="YYYY-MM-DDTHH:mm:ss" style="width:100%" @change="loadData" /></div>
         </template>
       </div>
       <div class="search-actions">
@@ -59,14 +60,14 @@ import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
 const loading = ref(false); const expanded = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
-const query = reactive({ page: 1, size: 20, keyword: '', subject: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 20, keyword: '', subject: '', startTime: '', status: undefined as number | undefined })
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
-function resetQuery() { query.keyword = ''; query.subject = ''; query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.subject = ''; query.startTime = ''; query.status = undefined; query.page = 1; loadData() }
 async function loadData() { loading.value = true; try { const res = await listMyReservations(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
 async function handleCancel(id: number) { try { await cancelReservation(id); ElMessage.success('已取消'); loadData() } catch { /* */ } }
 onMounted(loadData)

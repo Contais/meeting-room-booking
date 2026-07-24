@@ -3,7 +3,13 @@
     <div class="page-header"><h2>部门管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索部门名称" clearable @input="onSearchInput" /></div>
+        <template v-if="!expanded">
+          <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索部门名称" clearable @input="onSearchInput" /></div>
+        </template>
+        <template v-else>
+          <div class="search-item"><label>部门名称</label><el-input v-model="filterName" placeholder="请输入部门名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="filterStatus" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        </template>
       </div>
       <div class="search-actions">
         <el-button @click="filterName = ''; loadData()">重置</el-button>

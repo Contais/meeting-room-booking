@@ -4,9 +4,13 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" /></div>
-        <template v-if="expanded">
+        <template v-if="!expanded">
+          <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" /></div>
+        </template>
+        <template v-else>
+          <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="filterStatus" placeholder="请选择" clearable @change="applyFilter"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
         </template>
       </div>
       <div class="search-actions">
@@ -107,7 +111,7 @@ const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 const expandAll = ref(true)
 const filterName = ref('')
-const filterPath = ref('')
+const filterPath = ref(''); const filterStatus = ref(undefined as number | undefined)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 
@@ -143,7 +147,7 @@ function applyFilter() {
   }
 }
 
-function resetFilter() { filterName.value = ''; filterPath.value = ''; applyFilter() }
+function resetFilter() { filterName.value = ''; filterPath.value = ''; filterStatus.value = undefined; applyFilter() }
 function toggleExpandAll() {
   expandAll.value = !expandAll.value
   loadData()
