@@ -8,7 +8,7 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-if="!loading && reservations.length === 0 && timeSlots.every(s => s.status !== 'occupied')" class="empty-state">
+    <div v-if="!loading && timeSlots.length > 0 && timeSlots.every(s => s.status !== 'available')" class="empty-state">
       <el-icon :size="40" color="#c0c4cc"><Calendar /></el-icon>
       <p>当天没有会议预约</p>
       <span>点击下方可预约时段开始预订</span>
@@ -49,6 +49,7 @@ const props = defineProps<{
   roomId: number
   bookableStart?: string
   bookableEnd?: string
+  selectedDate?: string
 }>()
 
 const emit = defineEmits<{
@@ -206,7 +207,14 @@ async function loadReservations() {
   } catch { /* */ } finally { loading.value = false }
 }
 
-defineExpose({ clearSelection })
+defineExpose({ clearSelection, loadReservations })
+
+watch(() => props.selectedDate, (val) => {
+  if (val) {
+    const parts = val.split('-')
+    selectedDate.value = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+  }
+})
 
 watch(selectedDate, loadReservations)
 watch(() => [props.bookableStart, props.bookableEnd], buildTimeSlots)

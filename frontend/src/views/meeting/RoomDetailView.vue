@@ -44,7 +44,7 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <TimeSlotCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
+        <TimeSlotCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" :selected-date="reserveForm.selectedDate" @select="handleTimeSelect" />
       </div>
     </template>
 
@@ -57,6 +57,10 @@
       <el-form ref="reserveFormRef" :model="reserveForm" :rules="reserveRules" label-width="0">
         <div class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
         <div class="dialog-form-item"><label>会议主题</label><el-input v-model="reserveForm.subject" placeholder="请输入会议主题" /></div>
+        <div class="dialog-form-item">
+          <label>预约日期</label>
+          <el-date-picker v-model="reserveForm.selectedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" :disabled-date="disableFutureDate" @change="onDateChange" />
+        </div>
         <div class="dialog-form-item">
           <label>预约时间 {{ selectedDateStr }}</label>
           <div class="time-selector">
@@ -113,7 +117,7 @@ const reserveDialogVisible = ref(false)
 const reserveLoading = ref(false)
 const reserveFormRef = ref<FormInstance>()
 const reserveForm = reactive({
-  subject: '', startTime: '', endTime: '',
+  subject: '', startTime: '', endTime: '', selectedDate: '',
   startMinute: '', endMinute: '',
   attendeeCount: 1, contactPhone: '', remark: ''
 })
@@ -163,11 +167,25 @@ function handleTimeOptionClick(t: string) {
   }
 }
 
+function disableFutureDate(date: Date) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const maxDate = new Date(today)
+  maxDate.setDate(maxDate.getDate() + (room.value?.advanceDays || 7))
+  return date < today || date > maxDate
+}
+
+function onDateChange(val: string) {
+  if (val) {
+    reserveForm.startTime = `${val}T${reserveForm.startMinute || '09:00'}:00`
+  }
+}
+
 function handleTimeSelect(startTime: string, endTime: string) {
+  const dateStr = startTime.substring(0, 10)
   const startMin = startTime.substring(11, 16)
   const endMin = endTime.substring(11, 16)
   Object.assign(reserveForm, {
-    startTime, endTime,
+    startTime, endTime, selectedDate: dateStr,
     startMinute: startMin, endMinute: endMin,
     subject: '', attendeeCount: 1, contactPhone: '', remark: ''
   })
@@ -180,9 +198,10 @@ function onDialogClose() {
 }
 
 function showReserveDialog() {
-  const dateStr = new Date().toISOString().substring(0, 10)
+  const today = new Date()
+  const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
   Object.assign(reserveForm, {
-    startTime: `${dateStr}T09:00:00`, endTime: '',
+    startTime: `${dateStr}T09:00:00`, endTime: '', selectedDate: dateStr,
     startMinute: '09:00', endMinute: '10:00',
     subject: '', attendeeCount: 1, contactPhone: '', remark: ''
   })
@@ -245,7 +264,7 @@ onMounted(async () => {
 /* 时间段选择器 */
 .time-selector { border: 1px solid #dcdfe6; border-radius: 8px; overflow: hidden; }
 .time-selector-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafbfc; border-bottom: 1px solid #ebeef5; font-size: 13px; color: #606266; }
-.time-options { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 10px 12px; max-height: 160px; overflow-y: auto; }
+.time-options { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 10px 12px; max-height: 140px; overflow-y: auto; }
 .time-option { text-align: center; }
 .time-option {
   padding: 6px 12px; border-radius: 6px; border: 1px solid #dcdfe6;
