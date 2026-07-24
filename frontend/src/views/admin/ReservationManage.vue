@@ -3,7 +3,7 @@
     <div class="page-header"><h2>预约管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input v-model="query.keyword" placeholder="请输入会议主题" clearable /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议主题" clearable /></div>
         <template v-if="expanded">
           <div class="search-item"><label>联系电话</label><el-input v-model="query.contactPhone" placeholder="请输入联系电话" clearable /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable><el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已取消" :value="2" /></el-select></div>
@@ -83,8 +83,8 @@ onMounted(loadData)
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
-.search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
-.search-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; max-width: 280px; }
+.search-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; flex: 1; align-items: end; }
+.search-item { display: flex; flex-direction: column; gap: 6px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
 .search-item :deep(.el-input) { width: 200px; }
 .search-actions { display: flex; gap: 8px; }

@@ -4,7 +4,7 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input v-model="filterName" placeholder="请输入菜单名称" clearable /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入菜单名称" clearable /></div>
         <template v-if="expanded">
           <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable /></div>
         </template>
@@ -195,8 +195,8 @@ onMounted(loadData)
   display: flex; align-items: flex-end; justify-content: space-between;
   border: 1px solid #f0f0f0;
 }
-.search-fields { display: flex; gap: 16px; flex: 1; flex-wrap: wrap; align-items: flex-end; }
-.search-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; max-width: 280px; }
+.search-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; flex: 1; align-items: end; }
+.search-item { display: flex; flex-direction: column; gap: 6px; }
 .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
 .search-item :deep(.el-input) { width: 100%; }
 .search-actions { display: flex; gap: 8px; }
