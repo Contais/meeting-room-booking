@@ -29,21 +29,20 @@ CREATE TABLE IF NOT EXISTS `role_menu` (
     KEY `idx_menu_id` (`menu_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色菜单关联表';
 
--- 默认菜单
 INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `visible`, `status`) VALUES
 (1, '首页', '/home', 'HomeFilled', 0, 1, 1, 1),
 (2, '会议室', '/meeting/rooms', 'OfficeBuilding', 0, 2, 1, 1),
 (3, '我的预约', '/reservation/my', 'Calendar', 0, 3, 1, 1),
-(10, '部门管理', '/admin/departments', 'Menu', 0, 10, 1, 1),
-(11, '用户管理', '/admin/users', 'User', 0, 11, 1, 1),
-(12, '会议室管理', '/admin/rooms', 'OfficeBuilding', 0, 12, 1, 1),
-(13, '预约管理', '/admin/reservations', 'Calendar', 0, 13, 1, 1);
+(10, '系统管理', NULL, 'Setting', 0, 10, 1, 1),
+(11, '部门管理', '/admin/departments', 'Menu', 10, 11, 1, 1),
+(12, '用户管理', '/admin/users', 'User', 10, 12, 1, 1),
+(13, '会议室管理', '/admin/rooms', 'OfficeBuilding', 10, 13, 1, 1),
+(14, '预约管理', '/admin/reservations', 'Calendar', 10, 14, 1, 1),
+(15, '菜单管理', '/admin/menus', 'Menu', 10, 15, 1, 1);
 
--- admin 角色拥有所有菜单
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
 ('admin', 1), ('admin', 2), ('admin', 3),
-('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13);
+('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15);
 
--- user 角色拥有基础菜单
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
 ('user', 1), ('user', 2), ('user', 3);
