@@ -5,6 +5,7 @@
       <div class="search-fields">
         <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议主题" clearable @input="onSearchInput" /></div>
         <template v-if="expanded">
+          <div class="search-item"><label>会议主题</label><el-input v-model="query.subject" placeholder="请输入会议主题" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="已确认" :value="1" /><el-option label="待确认" :value="0" /><el-option label="已取消" :value="2" /></el-select></div>
         </template>
       </div>

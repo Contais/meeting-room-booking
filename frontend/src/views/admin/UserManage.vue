@@ -5,6 +5,7 @@
       <div class="search-fields">
         <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入用户名" clearable @input="onSearchInput" /></div>
         <template v-if="expanded">
+          <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="请输入用户名" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
         </template>
