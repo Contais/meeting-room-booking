@@ -91,7 +91,7 @@
       </el-form>
       <template #footer>
         <el-button @click="reserveDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="reserveLoading" @click="handleReserve">提交预约</el-button>
+        <el-button type="primary" :loading="reserveLoading" @click="handleReserve">确定</el-button>
       </template>
     </el-dialog>
   </div>
