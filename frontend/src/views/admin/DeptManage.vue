@@ -3,7 +3,7 @@
     <div class="page-header"><h2>部门管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入部门名称" clearable /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入部门名称" clearable @input="onSearchInput" /></div>
       </div>
       <div class="search-actions">
         <el-button @click="filterName = ''; loadData()">重置</el-button>
@@ -64,6 +64,8 @@ const loading = ref(false); const submitting = ref(false)
 const treeData = ref<Department[]>([])
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const expandAll = ref(true); const filterName = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(loadData, 300) }
 const form = reactive({ id: undefined as number | undefined, name: '', parentId: undefined as number | undefined, sortOrder: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
 

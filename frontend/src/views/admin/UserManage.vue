@@ -3,10 +3,10 @@
     <div class="page-header"><h2>用户管理</h2></div>
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入用户名" clearable /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入用户名" clearable @input="onSearchInput" /></div>
         <template v-if="expanded">
-          <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
         </template>
       </div>
       <div class="search-actions">
@@ -64,6 +64,9 @@ const form = reactive({ id: undefined as number | undefined, username: '', passw
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
+
 function resetQuery() { query.keyword = ''; query.phone = ''; query.status = undefined; query.page = 1; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
 function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }

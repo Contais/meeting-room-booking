@@ -9,6 +9,7 @@ public class RoomPageQuery implements Serializable {
     private Integer page = 1;
     private Integer size = 10;
     private String keyword;
+    private String name;
     private String location;
     private String equipment;
     private Integer minCapacity;

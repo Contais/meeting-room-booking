@@ -55,6 +55,9 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
             wrapper.and(w -> w.like(MeetingRoom::getName, query.getKeyword())
                     .or().like(MeetingRoom::getLocation, query.getKeyword()));
         }
+        if (StringUtils.hasText(query.getName())) {
+            wrapper.like(MeetingRoom::getName, query.getName());
+        }
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoom::getStatus, query.getStatus());
         }

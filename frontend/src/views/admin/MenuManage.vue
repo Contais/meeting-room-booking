@@ -4,9 +4,9 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入菜单名称" clearable /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" /></div>
         <template v-if="expanded">
-          <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable /></div>
+          <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" /></div>
         </template>
       </div>
       <div class="search-actions">
@@ -108,6 +108,8 @@ const formRef = ref<FormInstance>()
 const expandAll = ref(true)
 const filterName = ref('')
 const filterPath = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 
 const form = reactive({ id: undefined as number | undefined, name: '', path: '', icon: '', parentId: undefined as number | undefined, sortOrder: 0, visible: 1 })
 const rules: FormRules = { name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }] }

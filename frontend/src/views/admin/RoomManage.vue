@@ -5,15 +5,15 @@
       <div class="search-fields">
         <!-- 收起：关键字搜索 -->
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议室名称" clearable @keyup.enter="loadData" /></div>
+          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议室名称" clearable @input="onSearchInput" @keyup.enter="loadData" /></div>
         </template>
         <!-- 展开：所有具体字段 -->
         <template v-else>
-          <div class="search-item"><label>名称</label><el-input v-model="query.keyword" placeholder="请输入名称" clearable /></div>
-          <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable /></div>
-          <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-          <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
+          <div class="search-item"><label>名称</label><el-input v-model="query.keyword" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="loadData"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
         </template>
       </div>
       <div class="search-actions">
@@ -88,12 +88,18 @@ import type { MeetingRoom } from '@/types/meeting'
 const loading = ref(false); const submitting = ref(false); const expanded = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const query = reactive({ page: 1, size: 20, keyword: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 20, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined })
 const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 async function loadData() { loading.value = true; try { const res = await listRoomsAdmin(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
-function resetQuery() { query.keyword = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.page = 1; loadData() }
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300)
+}
+
+function resetQuery() { query.keyword = ''; query.name = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.page = 1; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 }); dialogVisible.value = true }
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
