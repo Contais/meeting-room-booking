@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { marked } from 'marked'
 import { useUserStore } from '@/stores/user'
 import { ChatDotRound, Close, Delete, Promotion } from '@element-plus/icons-vue'
 
@@ -129,9 +130,9 @@ function scrollToBottom() {
 }
 
 function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>')
+  // 清理 system-reminder 标签
+  const cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
+  return marked.parse(cleaned, { breaks: true }) as string
 }
 </script>
 

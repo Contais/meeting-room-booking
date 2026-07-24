@@ -49,6 +49,11 @@ public class ChatService {
                         3. 查看今日预约统计
                         
                         回答要简洁友好。如果用户问的是与会议室无关的问题，你也可以正常回答。
+                        
+                        重要规则：
+                        - 不要在回答中包含任何系统内部标签（如 <system-reminder>、<thinking> 等）
+                        - 不要输出 markdown 表格，用简洁的文字描述数据
+                        - 回答要自然口语化，像和朋友聊天一样
                         """)
                 .defaultTools(meetingRoomTools)
                 .defaultAdvisors(
