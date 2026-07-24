@@ -94,6 +94,9 @@ public class UserServiceImpl implements UserService {
             wrapper.and(w -> w.like(User::getUsername, query.getKeyword())
                     .or().like(User::getRealName, query.getKeyword()));
         }
+        if (StringUtils.hasText(query.getUsername())) {
+            wrapper.like(User::getUsername, query.getUsername());
+        }
         if (StringUtils.hasText(query.getPhone())) {
             wrapper.like(User::getPhone, query.getPhone());
         }

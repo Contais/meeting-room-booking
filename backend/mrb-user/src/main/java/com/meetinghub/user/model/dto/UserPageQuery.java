@@ -13,6 +13,7 @@ public class UserPageQuery implements Serializable {
     private Integer page = 1;
     private Integer size = 10;
     private String keyword;
+    private String username;
     private String phone;
     private Integer status;
     private Integer gender;

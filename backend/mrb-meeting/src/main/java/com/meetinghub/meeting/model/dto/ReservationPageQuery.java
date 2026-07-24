@@ -9,6 +9,7 @@ public class ReservationPageQuery implements Serializable {
     private Integer page = 1;
     private Integer size = 10;
     private String keyword;
+    private String subject;
     private Long roomId;
     private Long userId;
     private Integer status;

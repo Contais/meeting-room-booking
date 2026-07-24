@@ -143,6 +143,9 @@ public class ReservationServiceImpl implements ReservationService {
         if (StringUtils.hasText(query.getKeyword())) {
             wrapper.like(MeetingRoomReservation::getSubject, query.getKeyword());
         }
+        if (StringUtils.hasText(query.getSubject())) {
+            wrapper.like(MeetingRoomReservation::getSubject, query.getSubject());
+        }
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
         }
@@ -207,6 +210,9 @@ public class ReservationServiceImpl implements ReservationService {
         }
         if (query.getStatus() != null) {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
+        }
+        if (StringUtils.hasText(query.getSubject())) {
+            wrapper.like(MeetingRoomReservation::getSubject, query.getSubject());
         }
         if (StringUtils.hasText(query.getContactPhone())) {
             wrapper.like(MeetingRoomReservation::getContactPhone, query.getContactPhone());

@@ -56,14 +56,14 @@ import { listMyReservations, cancelReservation } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
 const loading = ref(false); const expanded = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
-const query = reactive({ page: 1, size: 20, keyword: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 20, keyword: '', subject: '', status: undefined as number | undefined })
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
-function resetQuery() { query.keyword = ''; query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.subject = ''; query.status = undefined; query.page = 1; loadData() }
 async function loadData() { loading.value = true; try { const res = await listMyReservations(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
 async function handleCancel(id: number) { try { await cancelReservation(id); ElMessage.success('已取消'); loadData() } catch { /* */ } }
 onMounted(loadData)
