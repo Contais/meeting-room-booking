@@ -6,7 +6,7 @@ import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Description;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ public class MeetingRoomTools {
     private final MeetingRoomRepository meetingRoomRepository;
     private final ReservationRepository reservationRepository;
 
-    @Description("查询所有可用的会议室列表，返回名称、位置、容量、设备信息")
+    @Tool(description = "查询所有可用的会议室列表，返回名称、位置、容量、设备信息")
     public String listAvailableRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
@@ -38,7 +38,7 @@ public class MeetingRoomTools {
         return sb.toString();
     }
 
-    @Description("查询指定日期某个会议室的预约情况，传入会议室名称和日期(yyyy-MM-dd格式)")
+    @Tool(description = "查询指定日期某个会议室的预约情况，传入会议室名称和日期(yyyy-MM-dd格式)")
     public String queryRoomReservations(Map<String, String> params) {
         String roomName = params.get("roomName");
         String date = params.get("date");
@@ -74,7 +74,7 @@ public class MeetingRoomTools {
         return sb.toString();
     }
 
-    @Description("查询所有会议室今天的整体预约统计，返回每个会议室的预约数量")
+    @Tool(description = "查询所有会议室今天的整体预约统计，返回每个会议室的预约数量")
     public String todayReservationStats() {
         LocalDate today = LocalDate.now();
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
