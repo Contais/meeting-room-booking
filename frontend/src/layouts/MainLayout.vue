@@ -17,34 +17,16 @@
         active-text-color="#ffffff"
         class="side-menu"
       >
-        <el-menu-item index="/home">
-          <el-icon><HomeFilled /></el-icon>
-          <span>首页</span>
-        </el-menu-item>
-        <el-menu-item index="/meeting/rooms">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>会议室</span>
-        </el-menu-item>
-        <el-menu-item index="/reservation/my">
-          <el-icon><Calendar /></el-icon>
-          <span>我的预约</span>
-        </el-menu-item>
-        <el-menu-item v-if="userStore.isAdmin()" index="/admin/departments">
-          <el-icon><Menu /></el-icon>
-          <span>部门管理</span>
-        </el-menu-item>
-        <el-menu-item v-if="userStore.isAdmin()" index="/admin/users">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item v-if="userStore.isAdmin()" index="/admin/rooms">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>会议室管理</span>
-        </el-menu-item>
-        <el-menu-item v-if="userStore.isAdmin()" index="/admin/reservations">
-          <el-icon><Calendar /></el-icon>
-          <span>预约管理</span>
-        </el-menu-item>
+        <template v-for="item in menuItems" :key="item.id">
+          <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path || String(item.id)">
+            <template #title><el-icon><component :is="item.icon || 'Document'" /></el-icon><span>{{ item.name }}</span></template>
+            <el-menu-item v-for="child in item.children" :key="child.id" :index="child.path">{{ child.name }}</el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="item.path">
+            <el-icon><component :is="item.icon || 'Document'" /></el-icon>
+            <span>{{ item.name }}</span>
+          </el-menu-item>
+        </template>
       </el-menu>
     </el-aside>
     <el-container>
@@ -76,18 +58,31 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, OfficeBuilding, ArrowDown, User, Calendar, Menu } from '@element-plus/icons-vue'
+import { OfficeBuilding, ArrowDown, User, Calendar, Menu, HomeFilled, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { getMyMenus } from '@/api/menu'
+import type { MenuItem } from '@/types/menu'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const menuItems = ref<MenuItem[]>([])
+
+async function loadMenus() {
+  try {
+    const res = await getMyMenus()
+    menuItems.value = res.data
+  } catch { /* */ }
+}
 
 function handleLogout() {
   userStore.logout()
   router.push('/login')
 }
+
+onMounted(loadMenus)
 </script>
 
 <style scoped>

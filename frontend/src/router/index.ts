@@ -22,6 +22,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'meeting/rooms', name: 'MeetingRooms', component: () => import('@/views/meeting/RoomListView.vue'), meta: { title: '会议室列表', requiresAuth: true } },
       { path: 'meeting/rooms/:id', name: 'MeetingRoomDetail', component: () => import('@/views/meeting/RoomDetailView.vue'), meta: { title: '会议室详情', requiresAuth: true } },
       { path: 'reservation/my', name: 'MyReservations', component: () => import('@/views/reservation/MyReservations.vue'), meta: { title: '我的预约', requiresAuth: true } },
+      { path: 'admin/menus', name: 'AdminMenus', component: () => import('@/views/admin/MenuManage.vue'), meta: { title: '菜单管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/departments', name: 'AdminDepartments', component: () => import('@/views/admin/DeptManage.vue'), meta: { title: '部门管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/users', name: 'AdminUsers', component: () => import('@/views/admin/UserManage.vue'), meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/reservations', name: 'AdminReservations', component: () => import('@/views/admin/ReservationManage.vue'), meta: { title: '预约管理', requiresAuth: true, requiresAdmin: true } },

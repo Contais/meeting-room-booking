@@ -11,6 +11,10 @@ spring:
           uri: lb://mrb-user
           predicates:
             - Path=/api/user/**
+        - id: menu-service
+          uri: lb://mrb-user
+          predicates:
+            - Path=/api/menu/**
           filters:
             - StripPrefix=1
         - id: auth-service

@@ -39,7 +39,11 @@ public enum ErrorCode {
     DEPARTMENT_NAME_DUPLICATE(1013, "部门名称已存在"),
     DEPARTMENT_HAS_CHILDREN(1014, "存在子部门，不允许删除"),
     DEPARTMENT_HAS_USERS(1015, "部门下有用户，不允许删除"),
-    DEPARTMENT_CIRCULAR(1016, "不能将部门移动到其子部门下");
+    DEPARTMENT_CIRCULAR(1016, "不能将部门移动到其子部门下"),
+
+    // 菜单相关
+    MENU_NOT_FOUND(1017, "菜单不存在"),
+    MENU_HAS_CHILDREN(1018, "存在子菜单，不允许删除");
 
     private final Integer code;
     private final String message;
