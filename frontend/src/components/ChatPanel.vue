@@ -104,22 +104,19 @@ async function sendMessage() {
     const reader = response.body?.getReader()
     if (!reader) return
 
-    const decoder = new TextDecoder()
+    const decoder = new TextDecoder('utf-8')
+    let accumulatedContent = ''
     while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n')
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = line.substring(5).trim()
-          if (data === '[DONE]') break
-          if (data) {
-            messages.value[msgIdx].content += data
-            await nextTick()
-            scrollToBottom()
-          }
-        }
+      try {
+        const { value, done } = await reader.read()
+        if (done) break
+        accumulatedContent += decoder.decode(value, { stream: true })
+        messages.value[msgIdx].content = accumulatedContent
+        await nextTick()
+        scrollToBottom()
+      } catch (readError) {
+        console.error('读取流错误:', readError)
+        break
       }
     }
   } catch (e) {
