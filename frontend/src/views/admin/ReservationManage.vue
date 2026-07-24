@@ -4,10 +4,10 @@
     <div class="search-bar">
       <div class="search-fields">
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议主题" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="搜索会议主题或联系电话" clearable @input="onSearchInput" /></div>
         </template>
         <template v-else>
-          <div class="search-item"><label>会议主题</label><el-input v-model="query.subject" placeholder="请输入会议主题" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>会议主题</label><el-input v-model="query.subject" placeholder="搜索会议主题或联系电话" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>联系电话</label><el-input v-model="query.contactPhone" placeholder="请输入联系电话" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已取消" :value="2" /></el-select></div>
         </template>

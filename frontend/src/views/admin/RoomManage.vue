@@ -5,7 +5,7 @@
       <div class="search-fields">
         <!-- 收起：关键字搜索 -->
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="请输入会议室名称" clearable @input="onSearchInput" @keyup.enter="loadData" /></div>
+          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="loadData" /></div>
         </template>
         <!-- 展开：所有具体字段 -->
         <template v-else>
@@ -61,7 +61,7 @@
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-divider content-position="left">基础信息</el-divider>
-        <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="请输入会议室名称" /></el-form-item>
+        <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="搜索会议室名称或位置" /></el-form-item>
         <el-form-item label="位置"><el-input v-model="form.location" placeholder="如：3楼A301" /></el-form-item>
         <el-form-item label="容纳人数" prop="capacity"><el-input-number v-model="form.capacity" :min="1" :max="1000" style="width:100%" /></el-form-item>
         <el-form-item label="设备"><el-input v-model="form.equipment" placeholder="投影仪,白板,视频会议系统" /></el-form-item>

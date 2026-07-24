@@ -4,7 +4,7 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" /></div>
+        <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" /></div>
         <template v-if="expanded">
           <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" /></div>
         </template>
@@ -78,7 +78,7 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑菜单' : '添加菜单'" width="520px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="菜单名称" prop="name"><el-input v-model="form.name" placeholder="请输入菜单名称" /></el-form-item>
+        <el-form-item label="菜单名称" prop="name"><el-input v-model="form.name" placeholder="搜索菜单名称" /></el-form-item>
         <el-form-item label="路由路径"><el-input v-model="form.path" placeholder="如: /admin/users（留空则为目录）" /></el-form-item>
         <el-form-item label="图标"><el-input v-model="form.icon" placeholder="如: HomeFilled" /></el-form-item>
         <el-form-item label="上级菜单"><el-tree-select v-model="form.parentId" :data="treeData" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="留空则为顶级菜单" style="width:100%" /></el-form-item>
