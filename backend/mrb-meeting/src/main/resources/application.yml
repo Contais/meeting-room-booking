@@ -28,9 +28,10 @@ mybatis-plus:
       id-type: auto
 
 # Spring AI - DeepSeek
-spring.ai.openai:
+spring.ai.deepseek:
   api-key: ${DEEPSEEK_API_KEY:your-api-key-here}
   base-url: https://api.deepseek.com
-  chat.options:
-    model: deepseek-chat
-    temperature: 0.7
+  chat:
+    options:
+      model: deepseek-chat
+      temperature: 0.7
