@@ -24,8 +24,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     private static final List<String> WHITE_LIST = List.of(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/uc/user/register",
-            "/api/meeting/chat/stream"
+            "/api/uc/user/register"
     );
 
     @Override

@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { useUserStore } from '@/stores/user'
 import { ChatDotRound, Close, Delete, Promotion } from '@element-plus/icons-vue'
 
 const visible = ref(false)
@@ -50,6 +51,7 @@ const inputText = ref('')
 const loading = ref(false)
 const messages = ref<{ role: string; content: string }[]>([])
 const messagesContainer = ref<HTMLElement>()
+const userStore = useUserStore()
 const sessionId = ref('')
 
 function togglePanel() { visible.value = !visible.value }
@@ -77,6 +79,7 @@ async function sendMessage() {
       headers: {
         'Content-Type': 'application/json',
         'X-Session-Id': sessionId.value,
+        'Authorization': userStore.token ? 'Bearer ' + userStore.token : '',
       },
       body: JSON.stringify({ message: text }),
     })
