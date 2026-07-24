@@ -58,27 +58,21 @@
         <div class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
         <div class="dialog-form-item"><label>会议主题</label><el-input v-model="reserveForm.subject" placeholder="请输入会议主题" /></div>
         <div class="dialog-form-item">
-          <label>开始时间</label>
+          <label>预约时间 {{ selectedDateStr }}</label>
           <div class="time-selector">
             <div class="time-selector-header">
-              <span>{{ selectedDateStr }}</span>
+              <span v-if="reserveForm.startMinute && reserveForm.endMinute" class="time-range-text">{{ reserveForm.startMinute }} ~ {{ reserveForm.endMinute }}</span>
+              <span v-else-if="reserveForm.startMinute" class="time-range-text">{{ reserveForm.startMinute }} ~ 请选择结束时间</span>
+              <span v-else class="time-range-text placeholder">请选择开始时间</span>
               <el-radio-group v-model="timeStep" size="small">
                 <el-radio-button :value="15">15分钟</el-radio-button>
                 <el-radio-button :value="30">30分钟</el-radio-button>
               </el-radio-group>
             </div>
             <div class="time-options">
-              <div v-for="t in startTimeOptions" :key="t" class="time-option" :class="{ active: reserveForm.startMinute === t }" @click="reserveForm.startMinute = t">
-                {{ t }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="dialog-form-item">
-          <label>结束时间</label>
-          <div class="time-selector">
-            <div class="time-options">
-              <div v-for="t in endTimeOptions" :key="t" class="time-option" :class="{ active: reserveForm.endMinute === t }" @click="reserveForm.endMinute = t">
+              <div v-for="t in timeOptions" :key="t" class="time-option"
+                :class="{ active: t === reserveForm.startMinute || t === reserveForm.endMinute, 'in-range': isInRange(t) }"
+                @click="handleTimeOptionClick(t)">
                 {{ t }}
               </div>
             </div>
@@ -131,37 +125,43 @@ const reserveRules: FormRules = {
 
 const selectedDateStr = computed(() => {
   if (!reserveForm.startTime) return '请选择日期'
-  return reserveForm.startTime.substring(0, 10).replace(/-/g, '年') + '月' + reserveForm.startTime.substring(8, 10) + '日'
+  const p = reserveForm.startTime.substring(0, 10).split('-'); return p[0] + '年' + p[1] + '月' + p[2] + '日'
 })
 
-const startTimeOptions = computed(() => {
+const timeOptions = computed(() => {
   if (!reserveForm.startTime) return []
   const startHour = parseInt((room.value?.bookableStart || '08:00').split(':')[0])
   const endHour = parseInt((room.value?.bookableEnd || '20:00').split(':')[0])
   const options: string[] = []
-  for (let h = startHour; h < endHour; h++) {
+  for (let h = startHour; h <= endHour; h++) {
     for (let m = 0; m < 60; m += timeStep.value) {
+      if (h === endHour && m > 0) break
       options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
     }
   }
   return options
 })
 
-const endTimeOptions = computed(() => {
-  if (!reserveForm.startMinute) return []
-  const [sh, sm] = reserveForm.startMinute.split(':').map(Number)
-  const options: string[] = []
-  const endHour = parseInt((room.value?.bookableEnd || '20:00').split(':')[0])
-  for (let h = sh; h <= endHour; h++) {
-    const startM = h === sh ? sm + timeStep.value : 0
-    for (let m = startM; m < 60; m += timeStep.value) {
-      if (h === endHour && m > 0) break
-      const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      if (time !== reserveForm.startMinute) options.push(time)
+function isInRange(t: string) {
+  if (!reserveForm.startMinute || !reserveForm.endMinute) return false
+  return t > reserveForm.startMinute && t < reserveForm.endMinute
+}
+
+function handleTimeOptionClick(t: string) {
+  if (!reserveForm.startMinute || (reserveForm.startMinute && reserveForm.endMinute)) {
+    // 选开始时间（或重新选）
+    reserveForm.startMinute = t
+    reserveForm.endMinute = ''
+  } else {
+    // 选结束时间
+    if (t <= reserveForm.startMinute) {
+      reserveForm.startMinute = t
+      reserveForm.endMinute = ''
+    } else {
+      reserveForm.endMinute = t
     }
   }
-  return options
-})
+}
 
 function handleTimeSelect(startTime: string, endTime: string) {
   const startMin = startTime.substring(11, 16)
@@ -252,6 +252,9 @@ onMounted(async () => {
 }
 .time-option:hover { border-color: #409eff; color: #409eff; }
 .time-option.active { background: #409eff; color: #fff; border-color: #409eff; }
+.time-option.in-range { background: #ecf5ff; border-color: #b3d8ff; color: #409eff; }
+.time-range-text { font-size: 14px; font-weight: 500; color: #303133; }
+.time-range-text.placeholder { color: #c0c4cc; font-weight: 400; }
 
 @media (max-width: 768px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
