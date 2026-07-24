@@ -88,7 +88,8 @@ onMounted(async () => {
     .search-item { display: flex; flex-direction: column; gap: 6px; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 260px; }
+    .search-item :deep(.el-select),
+    .search-item :deep(.el-input-number) { width: 260px; }
     .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 
