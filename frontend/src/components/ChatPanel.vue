@@ -130,9 +130,10 @@ function scrollToBottom() {
 }
 
 function renderMarkdown(text: string): string {
-  // 清理 system-reminder 标签
-  const cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
-  return marked.parse(cleaned, { breaks: true }) as string
+  // 清理 system-reminder 标签（流式拼接时可能被拆开）
+  let cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
+  cleaned = cleaned.replace(/<system-reminder>[\s\S]*$/, '')
+  return marked.parse(cleaned, { breaks: true, gfm: true }) as string
 }
 </script>
 
