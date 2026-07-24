@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@types/dompurify": "^3.0.5",
     "@vueuse/core": "^14.3.0",
     "axios": "^1.18.1",
+    "dompurify": "^3.4.12",
     "echarts": "^6.1.0",
     "element-plus": "^2.14.3",
     "marked": "^18.0.7",

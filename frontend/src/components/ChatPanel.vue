@@ -21,11 +21,16 @@
           </div>
           <div v-for="(msg, idx) in messages" :key="idx" class="chat-msg" :class="msg.role">
             <div class="msg-bubble">
-              <div class="msg-content" v-html="renderMarkdown(msg.content)"></div>
+              <div v-if="msg.role === 'user'" class="msg-text">{{ msg.content }}</div>
+              <div v-else class="msg-text markdown-content" v-html="renderMarkdown(msg.content)"></div>
             </div>
           </div>
           <div v-if="loading" class="chat-msg assistant">
-            <div class="msg-bubble"><div class="msg-content typing">思考中...</div></div>
+            <div class="msg-bubble">
+              <div class="msg-text">
+                <div class="typing-indicator"><span></span><span></span><span></span></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -41,21 +46,32 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { marked } from 'marked'
-import { useUserStore } from '@/stores/user'
+<script setup>
+import { ref, nextTick, onMounted } from 'vue'
 import { ChatDotRound, Close, Delete, Promotion } from '@element-plus/icons-vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import { useUserStore } from '@/stores/user'
 
+marked.setOptions({ breaks: true, gfm: true })
+
+const userStore = useUserStore()
 const visible = ref(false)
 const inputText = ref('')
 const loading = ref(false)
-const messages = ref<{ role: string; content: string }[]>([])
-const messagesContainer = ref<HTMLElement>()
-const userStore = useUserStore()
+const messages = ref([])
+const messagesContainer = ref(null)
 const sessionId = ref('')
 
 function togglePanel() { visible.value = !visible.value }
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  let cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
+  cleaned = cleaned.replace(/<system-reminder>[\s\S]*$/, '')
+  const html = marked.parse(cleaned)
+  return DOMPurify.sanitize(html, { ADD_TAGS: ['think', 'code', 'pre', 'span'], ADD_ATTR: ['class', 'language'] })
+}
 
 async function sendMessage() {
   const text = inputText.value.trim()
@@ -128,13 +144,6 @@ function scrollToBottom() {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 }
-
-function renderMarkdown(text: string): string {
-  // 清理 system-reminder 标签（流式拼接时可能被拆开）
-  let cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
-  cleaned = cleaned.replace(/<system-reminder>[\s\S]*$/, '')
-  return marked.parse(cleaned, { breaks: true, gfm: true }) as string
-}
 </script>
 
 <style scoped>
@@ -193,7 +202,29 @@ function renderMarkdown(text: string): string {
   border-bottom-left-radius: 4px;
 }
 
-.typing { color: #9ca3af; font-style: italic; }
+.msg-text { white-space: pre-wrap; }
+
+/* Markdown 内容样式 */
+.markdown-content :deep(p) { margin: 0.35rem 0; }
+.markdown-content :deep(p:first-child) { margin-top: 0; }
+.markdown-content :deep(p:last-child) { margin-bottom: 0; }
+.markdown-content :deep(ul), .markdown-content :deep(ol) { margin: 0.35rem 0; padding-left: 1.5rem; }
+.markdown-content :deep(li) { margin: 0.15rem 0; }
+.markdown-content :deep(strong) { font-weight: 600; }
+.markdown-content :deep(code) { background: rgba(0,0,0,0.06); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.85em; }
+.markdown-content :deep(pre code) { background: transparent; padding: 0; }
+.markdown-content :deep(pre) { background: #1d1d1f; color: #f5f5f7; padding: 0.75rem 1rem; border-radius: 10px; overflow-x: auto; margin: 0.5rem 0; }
+.markdown-content :deep(table) { border-collapse: collapse; margin: 0.5rem 0; width: 100%; font-size: 0.875rem; }
+.markdown-content :deep(th), .markdown-content :deep(td) { border: 1px solid #d2d2d7; padding: 0.35rem 0.6rem; text-align: left; }
+.markdown-content :deep(th) { background: rgba(0,0,0,0.03); font-weight: 600; }
+.markdown-content :deep(blockquote) { margin: 0.4rem 0; padding-left: 0.75rem; border-left: 2px solid #d2d2d7; color: #86868b; }
+
+/* 打字动画 */
+.typing-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+.typing-indicator span { width: 7px; height: 7px; border-radius: 50%; background: #86868b; animation: typing-bounce 1.2s ease-in-out infinite; }
+.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
 
 .chat-input { padding: 12px 16px; border-top: 1px solid #f0f0f0; }
 
