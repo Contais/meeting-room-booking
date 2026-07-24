@@ -66,7 +66,7 @@ import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment } from '@/api/department'
 import type { Department } from '@/types/department'
 
-const loading = ref(false); const submitting = ref(false)
+const loading = ref(false); const submitting = ref(false); const expanded = ref(false); const filterStatus = ref(undefined as number | undefined)
 const treeData = ref<Department[]>([])
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const expandAll = ref(true); const filterName = ref('')

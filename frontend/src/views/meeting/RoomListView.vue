@@ -4,18 +4,18 @@
     <!-- 搜索栏 -->
     <div class="search-bar">
       <div class="search-fields">
-        <div class="search-item">
-          <label>搜索</label>
-          <el-input v-model="filter.keyword" placeholder="请输入名称/位置" clearable @keyup.enter="applyFilter" />
-        </div>
-        <div class="search-item">
-          <label>最少人数</label>
-          <el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" />
-        </div>
+        <template v-if="!expanded">
+          <div class="search-item"><el-input class="search-keyword-input" v-model="filter.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" /></div>
+        </template>
+        <template v-else>
+          <div class="search-item"><label>名称</label><el-input v-model="filter.keyword" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
+        </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetFilter">重置</el-button>
         <el-button type="primary" @click="applyFilter">查询</el-button>
+        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -45,13 +45,15 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { OfficeBuilding, User, Monitor, Location } from '@element-plus/icons-vue'
+import { OfficeBuilding, User, Monitor, Location, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { listActiveRooms } from '@/api/meeting'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
 const rooms = ref<MeetingRoom[]>([])
-const loading = ref(false)
+const loading = ref(false); const expanded = ref(false)
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 const filter = reactive({ keyword: '', minCapacity: undefined as number | undefined })
 
 const filteredRooms = computed(() => rooms.value.filter(room => {
@@ -82,10 +84,12 @@ onMounted(async () => {
   display: flex; align-items: flex-end; justify-content: space-between;
   border: 1px solid #f0f0f0;
 }
-.search-fields { display: flex; gap: 24px; flex: 1; }
-.search-item { display: flex; flex-direction: column; gap: 6px; }
-.search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-.search-item :deep(.el-input) { width: 220px; }
+.search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
+    .search-item { display: flex; flex-direction: column; gap: 6px; }
+    .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
+    .search-item :deep(.el-input),
+    .search-item :deep(.el-select) { width: 260px; }
+    .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 
 /* 卡片网格 */
