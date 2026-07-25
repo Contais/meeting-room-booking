@@ -205,30 +205,24 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- 快速预约 -->
-    <el-dialog v-model="quickBookVisible" title="预约会议室" width="480px" destroy-on-close>
-      <el-form ref="quickBookFormRef" :model="quickBookForm" :rules="quickBookRules" label-width="80px">
-        <el-form-item label="会议室"><el-select v-model="quickBookForm.roomId" placeholder="请选择会议室" style="width:100%"><el-option v-for="room in rooms" :key="room.id" :label="room.name" :value="room.id" /></el-select></el-form-item>
-        <el-form-item label="日期"><el-date-picker v-model="quickBookForm.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
-        <el-form-item label="时段"><div style="display:flex;gap:8px;align-items:center"><el-time-select v-model="quickBookForm.startTime" :max-time="quickBookForm.endTime" placeholder="开始" start="00:00" step="00:30" end="23:30" style="width:140px" /><span>~</span><el-time-select v-model="quickBookForm.endTime" :min-time="quickBookForm.startTime" placeholder="结束" start="00:00" step="00:30" end="23:30" style="width:140px" /></div></el-form-item>
-        <el-form-item label="主题" prop="subject"><el-input v-model="quickBookForm.subject" placeholder="请输入会议主题" /></el-form-item>
-        <el-form-item label="人数"><el-input-number v-model="quickBookForm.attendeeCount" :min="1" :max="100" /></el-form-item>
-        <el-form-item label="联系电话"><el-input v-model="quickBookForm.contactPhone" placeholder="请输入联系电话" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="quickBookVisible = false">取消</el-button>
-        <el-button type="primary" :loading="quickBookSubmitting" @click="handleQuickBook">保存</el-button>
-      </template>
-    </el-dialog>
+    <!-- 预约弹窗 -->
+    <BookingDialog
+      v-model="bookingVisible"
+      :rooms="rooms"
+      :room-id="bookingRoomId"
+      :date="bookingDate"
+      :start-time="bookingStartTime"
+      :end-time="bookingEndTime"
+      @success="onBookingSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
-import { getSchedule, createReservation } from '@/api/reservation'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { getSchedule } from '@/api/reservation'
+import BookingDialog from '@/components/BookingDialog.vue'
 
 const viewMode = ref<'day' | 'week' | 'month'>('day')
 const currentDate = ref(new Date())
@@ -236,17 +230,13 @@ const rooms = ref<any[]>([])
 const reservations = ref<any[]>([])
 const detailVisible = ref(false)
 const currentReservation = ref<any>(null)
-const quickBookVisible = ref(false)
-const quickBookSubmitting = ref(false)
-const quickBookFormRef = ref<FormInstance>()
-const quickBookForm = reactive({ roomId: undefined as number | undefined, date: '', startTime: '', endTime: '', subject: '', attendeeCount: 1, contactPhone: '' })
-const quickBookRules: FormRules = {
-  roomId: [{ required: true, message: '请选择会议室', trigger: 'change' }],
-  date: [{ required: true, message: '请选择日期', trigger: 'change' }],
-  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
-  subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }]
-}
+
+// 预约弹窗相关
+const bookingVisible = ref(false)
+const bookingRoomId = ref<number | undefined>(undefined)
+const bookingDate = ref('')
+const bookingStartTime = ref('')
+const bookingEndTime = ref('')
 
 // ====== 时间配置 ======
 const START_HOUR = 0 // 数据从 00:00 开始
@@ -606,9 +596,12 @@ function dayEventStyle(r: any) {
 }
 function onDayCellClick(room: any, h: number) {
   if (ignoreDayClick.value) return
-  quickBookForm.roomId = room.id; quickBookForm.date = formatDate(currentDate.value)
-  quickBookForm.startTime = String(h).padStart(2, '0') + ':00'; quickBookForm.endTime = String(h + 1).padStart(2, '0') + ':00'
-  quickBookForm.subject = ''; quickBookForm.attendeeCount = 1; quickBookForm.contactPhone = ''; quickBookVisible.value = true
+  const dateStr = formatDate(currentDate.value)
+  bookingRoomId.value = room.id
+  bookingDate.value = dateStr
+  bookingStartTime.value = `${dateStr}T${String(h).padStart(2, '0')}:00:00`
+  bookingEndTime.value = `${dateStr}T${String(h + 1).padStart(2, '0')}:00:00`
+  bookingVisible.value = true
 }
 function onDayEventClick(r: any) {
   if (ignoreDayClick.value) return
@@ -634,9 +627,11 @@ function weekEventStyle(r: any) {
 }
 function onWeekCellClick(dateStr: string, h: number) {
   if (ignoreWeekClick.value) return
-  quickBookForm.roomId = undefined; quickBookForm.date = dateStr
-  quickBookForm.startTime = String(h).padStart(2, '0') + ':00'; quickBookForm.endTime = String(h + 1).padStart(2, '0') + ':00'
-  quickBookVisible.value = true
+  bookingRoomId.value = undefined
+  bookingDate.value = dateStr
+  bookingStartTime.value = `${dateStr}T${String(h).padStart(2, '0')}:00:00`
+  bookingEndTime.value = `${dateStr}T${String(h + 1).padStart(2, '0')}:00:00`
+  bookingVisible.value = true
 }
 function onWeekEventClick(r: any) {
   if (ignoreWeekClick.value) return
@@ -651,17 +646,28 @@ function buildMonthDays() {
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
   monthDays.value = Array.from({ length: 42 }, (_, i) => { const dt = new Date(ms); dt.setDate(dt.getDate() + i); const ds = formatDate(dt); return { date: dt.getDate(), dateStr: ds, currentMonth: dt.getMonth() === m, isToday: ds === today, reservations: reservations.value.filter(r => r.startTime.split('T')[0] === ds) } })
 }
-function onMonthCellClick(day: any) { quickBookForm.roomId = undefined; quickBookForm.date = day.dateStr; quickBookVisible.value = true }
+function onMonthCellClick(day: any) {
+  bookingRoomId.value = undefined
+  bookingDate.value = day.dateStr
+  bookingStartTime.value = ''
+  bookingEndTime.value = ''
+  bookingVisible.value = true
+}
 
 // ====== 导航 ======
 function goPrev() { const d = new Date(currentDate.value); if (viewMode.value === 'day') d.setDate(d.getDate() - 1); else if (viewMode.value === 'week') d.setDate(d.getDate() - 7); else d.setMonth(d.getMonth() - 1); currentDate.value = d }
 function goNext() { const d = new Date(currentDate.value); if (viewMode.value === 'day') d.setDate(d.getDate() + 1); else if (viewMode.value === 'week') d.setDate(d.getDate() + 7); else d.setMonth(d.getMonth() + 1); currentDate.value = d }
 function goToday() { currentDate.value = new Date() }
-function openQuickBook() { quickBookForm.roomId = undefined; quickBookForm.date = formatDate(currentDate.value); quickBookForm.startTime = '09:00'; quickBookForm.endTime = '10:00'; quickBookForm.subject = ''; quickBookForm.attendeeCount = 1; quickBookForm.contactPhone = ''; quickBookVisible.value = true }
-async function handleQuickBook() {
-  const v = await quickBookFormRef.value?.validate().catch(() => false); if (!v) return
-  quickBookSubmitting.value = true
-  try { await createReservation({ roomId: quickBookForm.roomId!, subject: quickBookForm.subject, attendeeCount: quickBookForm.attendeeCount, contactPhone: quickBookForm.contactPhone, startTime: `${quickBookForm.date}T${quickBookForm.startTime}:00`, endTime: `${quickBookForm.date}T${quickBookForm.endTime}:00` }); ElMessage.success('预约成功'); quickBookVisible.value = false; loadData() } catch { /* */ } finally { quickBookSubmitting.value = false }
+function openQuickBook() {
+  const dateStr = formatDate(currentDate.value)
+  bookingRoomId.value = undefined
+  bookingDate.value = dateStr
+  bookingStartTime.value = `${dateStr}T09:00:00`
+  bookingEndTime.value = `${dateStr}T10:00:00`
+  bookingVisible.value = true
+}
+function onBookingSuccess() {
+  loadData()
 }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] || 'info' }
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }

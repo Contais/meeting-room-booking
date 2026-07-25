@@ -131,14 +131,15 @@ async function loadData() {
 
 function applyFilter() {
   const result = JSON.parse(JSON.stringify(treeData.value))
-  if (filterName.value || filterPath.value) {
+  if (filterName.value || filterPath.value || filterStatus.value !== undefined) {
     const filterTree = (items: MenuItem[]): MenuItem[] => {
       return items.filter(item => {
         const nameMatch = !filterName.value || item.name.includes(filterName.value)
         const pathMatch = !filterPath.value || (item.path && item.path.includes(filterPath.value))
-        const childMatch = item.children && item.children.length > 0
+        const statusMatch = filterStatus.value === undefined || item.status === filterStatus.value
         if (item.children) item.children = filterTree(item.children)
-        return (nameMatch && pathMatch) || (childMatch && item.children && item.children.length > 0)
+        const hasChildren = item.children && item.children.length > 0
+        return (nameMatch && pathMatch && statusMatch) || (hasChildren && item.children && item.children.length > 0)
       })
     }
     filteredData.value = filterTree(result)

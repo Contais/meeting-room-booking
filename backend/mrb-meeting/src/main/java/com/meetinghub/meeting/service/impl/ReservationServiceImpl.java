@@ -158,10 +158,14 @@ public class ReservationServiceImpl implements ReservationService {
             wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
         }
         if (StringUtils.hasText(query.getStartTime())) {
-            wrapper.ge(MeetingRoomReservation::getStartTime, query.getStartTime());
+            // 搜索时间段包含该开始时间的预约：startTime <= query.startTime AND endTime >= query.startTime
+            wrapper.le(MeetingRoomReservation::getStartTime, query.getStartTime());
+            wrapper.ge(MeetingRoomReservation::getEndTime, query.getStartTime());
         }
         if (StringUtils.hasText(query.getEndTime())) {
-            wrapper.le(MeetingRoomReservation::getEndTime, query.getEndTime());
+            // 搜索时间段包含该结束时间的预约：startTime <= query.endTime AND endTime >= query.endTime
+            wrapper.le(MeetingRoomReservation::getStartTime, query.getEndTime());
+            wrapper.ge(MeetingRoomReservation::getEndTime, query.getEndTime());
         }
         IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
 

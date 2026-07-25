@@ -49,60 +49,25 @@
     </template>
 
     <!-- 预约弹窗 -->
-    <el-dialog v-model="reserveDialogVisible" title="预约会议室" width="520px" destroy-on-close @close="onDialogClose">
-      <div v-if="room" class="dialog-rules-tip">
-        <el-icon><InfoFilled /></el-icon>
-        可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
-      </div>
-      <el-form ref="reserveFormRef" :model="reserveForm" :rules="reserveRules" label-width="0">
-        <div class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
-        <div class="dialog-form-item"><label>会议主题</label><el-input v-model="reserveForm.subject" placeholder="请输入会议主题" /></div>
-        <div class="dialog-form-item">
-          <label>预约日期</label>
-          <el-date-picker v-model="reserveForm.selectedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" :disabled-date="disableFutureDate" @change="onDateChange" />
-        </div>
-        <div class="dialog-form-item">
-          <label>预约时间 {{ selectedDateStr }}</label>
-          <div class="time-selector">
-            <div class="time-selector-header">
-              <span v-if="reserveForm.startMinute && reserveForm.endMinute" class="time-range-text">{{ reserveForm.startMinute }} ~ {{ reserveForm.endMinute }}</span>
-              <span v-else-if="reserveForm.startMinute" class="time-range-text">{{ reserveForm.startMinute }} ~ 请选择结束时间</span>
-              <span v-else class="time-range-text placeholder">请选择开始时间</span>
-              <el-radio-group v-model="timeStep" size="small">
-                <el-radio-button :value="15">15分钟</el-radio-button>
-                <el-radio-button :value="30">30分钟</el-radio-button>
-              </el-radio-group>
-            </div>
-            <div class="time-options">
-              <div v-for="t in timeOptions" :key="t" class="time-option"
-                :class="{ active: t === reserveForm.startMinute || t === reserveForm.endMinute, 'in-range': isInRange(t) }"
-                @click="handleTimeOptionClick(t)">
-                {{ t }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="dialog-form-item"><label>参会人数</label><el-input-number v-model="reserveForm.attendeeCount" :min="1" :max="room?.capacity || 100" style="width: 100%" /></div>
-        <div class="dialog-form-item"><label>联系电话</label><el-input v-model="reserveForm.contactPhone" placeholder="请输入联系电话" /></div>
-        <div class="dialog-form-item"><label>备注</label><el-input v-model="reserveForm.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
-      </el-form>
-      <template #footer>
-        <el-button @click="reserveDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="reserveLoading" @click="handleReserve">确定</el-button>
-      </template>
-    </el-dialog>
+    <BookingDialog
+      v-model="reserveDialogVisible"
+      :room="room"
+      :room-id="room?.id"
+      :date="bookingDate"
+      :start-time="bookingStartTime"
+      :end-time="bookingEndTime"
+      @success="onBookingSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, OfficeBuilding, Location, Calendar, InfoFilled } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ArrowLeft, OfficeBuilding, Location, Calendar } from '@element-plus/icons-vue'
 import { getRoomById } from '@/api/meeting'
-import { createReservation } from '@/api/reservation'
 import RoomScheduleView from '@/components/RoomScheduleView.vue'
+import BookingDialog from '@/components/BookingDialog.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const route = useRoute()
@@ -111,121 +76,29 @@ const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
 const calendarRef = ref<InstanceType<typeof RoomScheduleView>>()
 
-// 时间段选择
-const timeStep = ref(30)
 const reserveDialogVisible = ref(false)
-const reserveLoading = ref(false)
-const reserveFormRef = ref<FormInstance>()
-const reserveForm = reactive({
-  subject: '', startTime: '', endTime: '', selectedDate: '',
-  startMinute: '', endMinute: '',
-  attendeeCount: 1, contactPhone: '', remark: ''
-})
-const reserveRules: FormRules = {
-  subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }],
-  startMinute: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endMinute: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
-}
-
-const selectedDateStr = computed(() => {
-  if (!reserveForm.startTime) return '请选择日期'
-  const p = reserveForm.startTime.substring(0, 10).split('-'); return p[0] + '年' + p[1] + '月' + p[2] + '日'
-})
-
-const timeOptions = computed(() => {
-  if (!reserveForm.startTime) return []
-  const startHour = parseInt((room.value?.bookableStart || '08:00').split(':')[0])
-  const endHour = parseInt((room.value?.bookableEnd || '20:00').split(':')[0])
-  const options: string[] = []
-  for (let h = startHour; h <= endHour; h++) {
-    for (let m = 0; m < 60; m += timeStep.value) {
-      if (h === endHour && m > 0) break
-      options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
-    }
-  }
-  return options
-})
-
-function isInRange(t: string) {
-  if (!reserveForm.startMinute || !reserveForm.endMinute) return false
-  return t > reserveForm.startMinute && t < reserveForm.endMinute
-}
-
-function handleTimeOptionClick(t: string) {
-  if (!reserveForm.startMinute) {
-    reserveForm.startMinute = t
-  } else if (!reserveForm.endMinute) {
-    if (t <= reserveForm.startMinute) {
-      reserveForm.endMinute = reserveForm.startMinute
-      reserveForm.startMinute = t
-    } else {
-      reserveForm.endMinute = t
-    }
-  } else {
-    reserveForm.startMinute = t
-    reserveForm.endMinute = ''
-  }
-}
-
-function disableFutureDate(date: Date) {
-  const today = new Date(); today.setHours(0, 0, 0, 0)
-  const maxDate = new Date(today)
-  maxDate.setDate(maxDate.getDate() + (room.value?.advanceDays || 7))
-  return date < today || date > maxDate
-}
-
-function onDateChange(val: string) {
-  if (val) {
-    reserveForm.startTime = `${val}T${reserveForm.startMinute || '09:00'}:00`
-  }
-}
-
-function handleTimeSelect(startTime: string, endTime: string) {
-  const dateStr = startTime.substring(0, 10)
-  const startMin = startTime.substring(11, 16)
-  const endMin = endTime.substring(11, 16)
-  Object.assign(reserveForm, {
-    startTime, endTime, selectedDate: dateStr,
-    startMinute: startMin, endMinute: endMin,
-    subject: '', attendeeCount: 1, contactPhone: '', remark: ''
-  })
-  reserveDialogVisible.value = true
-}
-
-function onDialogClose() {
-  // 关闭弹窗时刷新日历数据
-  calendarRef.value?.loadData()
-}
+const bookingDate = ref('')
+const bookingStartTime = ref('')
+const bookingEndTime = ref('')
 
 function showReserveDialog() {
   const today = new Date()
   const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
-  Object.assign(reserveForm, {
-    startTime: `${dateStr}T09:00:00`, endTime: '', selectedDate: dateStr,
-    startMinute: '09:00', endMinute: '10:00',
-    subject: '', attendeeCount: 1, contactPhone: '', remark: ''
-  })
+  bookingDate.value = dateStr
+  bookingStartTime.value = `${dateStr}T09:00:00`
+  bookingEndTime.value = `${dateStr}T10:00:00`
   reserveDialogVisible.value = true
 }
 
-async function handleReserve() {
-  const valid = await reserveFormRef.value?.validate().catch(() => false)
-  if (!valid) return
-  reserveLoading.value = true
-  try {
-    const dateStr = reserveForm.startTime.substring(0, 10)
-    await createReservation({
-      roomId: room.value!.id,
-      subject: reserveForm.subject,
-      startTime: `${dateStr}T${reserveForm.startMinute}:00`,
-      endTime: `${dateStr}T${reserveForm.endMinute}:00`,
-      attendeeCount: reserveForm.attendeeCount,
-      contactPhone: reserveForm.contactPhone,
-      remark: reserveForm.remark,
-    })
-    ElMessage.success(room.value?.needApproval === 1 ? '预约已提交，等待管理员审批' : '预约成功')
-    reserveDialogVisible.value = false
-  } catch { /* */ } finally { reserveLoading.value = false }
+function handleTimeSelect(startTime: string, endTime: string) {
+  bookingDate.value = startTime.substring(0, 10)
+  bookingStartTime.value = startTime
+  bookingEndTime.value = endTime
+  reserveDialogVisible.value = true
+}
+
+function onBookingSuccess() {
+  calendarRef.value?.loadData()
 }
 
 onMounted(async () => {
