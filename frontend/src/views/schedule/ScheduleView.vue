@@ -61,6 +61,14 @@
             :style="{ left: `${ROOM_COLUMN_WIDTH + dayWorkHoursLeft}px`, width: `${dayWorkHoursWidth}px` }"
           ></div>
           <div
+            class="day-work-hours-boundary"
+            :style="{ left: `${ROOM_COLUMN_WIDTH + dayWorkHoursLeft}px` }"
+          ></div>
+          <div
+            class="day-work-hours-boundary"
+            :style="{ left: `${ROOM_COLUMN_WIDTH + dayWorkHoursLeft + dayWorkHoursWidth}px` }"
+          ></div>
+          <div
             v-if="showDayNowLine"
             class="day-now-column"
             :style="{ left: `${ROOM_COLUMN_WIDTH + dayNowLineLeft}px` }"
@@ -126,10 +134,12 @@
           <div class="wk-grid-wrap">
             <div class="wk-grid" :style="{ height: weekTrackHeight + 'px' }">
               <div class="wk-work-hours-band" :style="{ top: `${weekWorkHoursTop}px`, height: `${weekWorkHoursHeight}px` }"></div>
+              <div class="wk-work-hours-boundary" :style="{ top: `${weekWorkHoursTop}px` }"></div>
+              <div class="wk-work-hours-boundary" :style="{ top: `${weekWorkHoursTop + weekWorkHoursHeight}px` }"></div>
               <div v-for="d in weekDays" :key="d.dateStr" class="wk-col">
                 <div v-for="h in allHours" :key="h" class="wk-cell" @click="onWeekCellClick(d.dateStr, h)"></div>
               </div>
-              <div v-if="showWeekNowLine" class="wk-now-line" :style="{ top: `${weekNowLineTop}px` }">
+              <div v-if="showWeekNowLine" class="wk-now-line" :style="{ top: `${weekNowLineTop}px`, left: weekNowLineLeft, width: weekNowLineWidth }">
                 <span class="wk-now-label">{{ currentTimeLabel }}</span>
               </div>
               <div v-for="r in weekReservations" :key="r.id"
@@ -300,6 +310,9 @@ const showDayNowLine = computed(() => formatDate(currentDate.value) === todayStr
 const dayNowLineLeft = computed(() => dayEdgeGap.value + (currentMinutes.value / (TOTAL_HOURS * 60)) * gridWidth.value)
 const showWeekNowLine = computed(() => weekDays.value.some(d => d.dateStr === todayString.value))
 const weekNowLineTop = computed(() => weekEdgeGap + (currentMinutes.value / (TOTAL_HOURS * 60)) * weekHoursHeight)
+const weekNowLineTodayIndex = computed(() => weekDays.value.findIndex(d => d.dateStr === todayString.value))
+const weekNowLineLeft = computed(() => (weekNowLineTodayIndex.value / 7) * 100 + '%')
+const weekNowLineWidth = computed(() => (100 / 7) + '%')
 const dayWorkHoursLeft = computed(() => dayEdgeGap.value + (WORK_START_HOUR - START_HOUR) * hourWidth.value)
 const dayWorkHoursWidth = computed(() => (WORK_END_HOUR - WORK_START_HOUR) * hourWidth.value)
 const weekWorkHoursTop = computed(() => weekEdgeGap + (WORK_START_HOUR - START_HOUR) * WEEK_HOUR_HEIGHT)
@@ -757,6 +770,15 @@ onBeforeUnmount(() => {
   pointer-events: none;
   z-index: 0;
 }
+.day-work-hours-boundary {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
 .day-now-column {
   position: absolute;
   top: 0;
@@ -848,7 +870,22 @@ onBeforeUnmount(() => {
 .week-body-wrap {
   flex: 1;
   overflow: auto;
+  max-height: 600px;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: #cbd5e1 #f3f4f6;
   cursor: grab;
+}
+.week-body-wrap::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.week-body-wrap::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+.week-body-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 2px solid #f3f4f6;
 }
 .week-view.dragging,
 .week-view.dragging * {
@@ -887,10 +924,17 @@ onBeforeUnmount(() => {
   pointer-events: none;
   z-index: 0;
 }
-.wk-now-line {
+.wk-work-hours-boundary {
   position: absolute;
   left: 0;
   right: 0;
+  height: 1px;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+.wk-now-line {
+  position: absolute;
   height: 2px;
   background: rgba(59, 130, 246, 0.8);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
