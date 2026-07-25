@@ -23,37 +23,67 @@
     </div>
 
     <!-- ==================== 日视图 ==================== -->
-    <div v-if="viewMode === 'day'" class="day-view page-card">
+    <div
+      v-if="viewMode === 'day'"
+      class="day-view page-card"
+      :class="{ dragging: dayDrag.active }"
+      :style="{ '--hour-width': `${hourWidth}px`, '--day-edge-gap': `${dayEdgeGap}px` }"
+    >
       <!-- 横轴刻度头（固定） -->
       <div class="day-header">
         <div class="room-col-header">会议室</div>
-        <div class="day-ticks-wrap" ref="dayHeaderRef">
-          <div class="day-ticks" :style="{ width: hoursWidth + 'px', transform: `translateX(${-headerScrollX}px)` }">
+        <div class="day-ticks-wrap">
+          <div class="day-ticks" :style="{ width: timelineWidth + 'px', transform: `translateX(${-headerScrollX}px)` }">
             <div v-for="h in allHours" :key="h" class="tick" >
               <span class="tick-label" >{{ String(h).padStart(2, '0') }}:00</span>
+              <span class="tick-mark"></span>
+            </div>
+            <div class="tick tick-end">
+              <span class="tick-label">24:00</span>
               <span class="tick-mark"></span>
             </div>
           </div>
         </div>
       </div>
       <!-- 内容区域（可滚动） -->
-      <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
+      <div
+        ref="dayBodyRef"
+        class="day-body-wrap"
+        @scroll="onDayScroll"
+        @pointerdown="onDayPointerDown"
+        @pointermove="onDayPointerMove"
+        @pointerup="onDayPointerUp"
+        @pointercancel="onDayPointerUp"
+      >
         <div class="day-body">
+          <div
+            class="day-work-hours-band"
+            :style="{ left: `${ROOM_COLUMN_WIDTH + dayWorkHoursLeft}px`, width: `${dayWorkHoursWidth}px` }"
+          ></div>
+          <div
+            v-if="showDayNowLine"
+            class="day-now-column"
+            :style="{ left: `${ROOM_COLUMN_WIDTH + dayNowLineLeft}px` }"
+          >
+            <span class="day-now-label">{{ currentTimeLabel }}</span>
+          </div>
           <div v-for="room in rooms" :key="room.id" class="day-row">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
               <div class="room-meta">{{ room.capacity }}人</div>
             </div>
-            <div class="day-grid" :style="{ width: hoursWidth + 'px' }">
-              <div v-for="h in allHours" :key="h" class="grid-cell" @click="onDayCellClick(room, h)"></div>
-            </div>
-            <div v-for="r in getRoomReservations(room.id)" :key="r.id"
-              class="day-event" :class="'s' + r.status"
-              :style="dayEventStyle(r)" @click="showDetail(r)">
-              <div class="evt-inner">
-                <div class="evt-title">{{ r.subject || '未命名' }}</div>
-                <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                <div class="evt-user">{{ r.username || '' }}</div>
+            <div class="day-grid-wrap" :style="{ width: dayTrackWidth + 'px' }">
+              <div class="day-grid" :style="{ width: gridWidth + 'px' }">
+                <div v-for="h in allHours" :key="h" class="grid-cell" @click="onDayCellClick(room, h)"></div>
+              </div>
+              <div v-for="r in getRoomReservations(room.id)" :key="r.id"
+                class="day-event" :class="'s' + r.status"
+                :style="dayEventStyle(r)" @click="onDayEventClick(r)">
+                <div class="evt-inner">
+                  <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                  <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                  <div class="evt-user">{{ r.username || '' }}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -62,7 +92,12 @@
     </div>
 
     <!-- ==================== 周视图 ==================== -->
-    <div v-if="viewMode === 'week'" class="week-view page-card">
+    <div
+      v-if="viewMode === 'week'"
+      class="week-view page-card"
+      :class="{ dragging: weekDrag.active }"
+      :style="{ '--week-edge-gap': `${weekEdgeGap}px` }"
+    >
       <div class="week-header">
         <div class="wk-corner"></div>
         <div v-for="d in weekDays" :key="d.dateStr" class="wk-day" :class="{ today: d.isToday }">
@@ -70,10 +105,18 @@
           <div class="wk-day-num">{{ d.dayNum }}</div>
         </div>
       </div>
-      <div class="week-body-wrap" ref="weekBodyRef" @scroll="onWeekScroll">
+      <div
+        ref="weekBodyRef"
+        class="week-body-wrap"
+        @scroll="onWeekScroll"
+        @pointerdown="onWeekPointerDown"
+        @pointermove="onWeekPointerMove"
+        @pointerup="onWeekPointerUp"
+        @pointercancel="onWeekPointerUp"
+      >
         <div class="week-body">
           <!-- 纵轴时间刻度（固定在左侧） -->
-          <div class="wk-times" :style="{ height: hoursWidth + 'px' }">
+          <div class="wk-times" :style="{ height: weekTrackHeight + 'px' }">
             <div v-for="h in allHours" :key="h" class="wk-time" :class="{ 'wk-time-now': isCurrentHour(h) }">
               <span class="wk-time-label" :class="{ 'wk-time-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
               <span class="wk-time-mark"></span>
@@ -81,13 +124,17 @@
           </div>
           <!-- 网格区域 -->
           <div class="wk-grid-wrap">
-            <div class="wk-grid" :style="{ height: hoursWidth + 'px' }">
+            <div class="wk-grid" :style="{ height: weekTrackHeight + 'px' }">
+              <div class="wk-work-hours-band" :style="{ top: `${weekWorkHoursTop}px`, height: `${weekWorkHoursHeight}px` }"></div>
               <div v-for="d in weekDays" :key="d.dateStr" class="wk-col">
                 <div v-for="h in allHours" :key="h" class="wk-cell" @click="onWeekCellClick(d.dateStr, h)"></div>
               </div>
+              <div v-if="showWeekNowLine" class="wk-now-line" :style="{ top: `${weekNowLineTop}px` }">
+                <span class="wk-now-label">{{ currentTimeLabel }}</span>
+              </div>
               <div v-for="r in weekReservations" :key="r.id"
                 class="week-event" :class="'s' + r.status"
-                :style="weekEventStyle(r)" @click="showDetail(r)">
+                :style="weekEventStyle(r)" @click="onWeekEventClick(r)">
                 <div class="evt-inner">
                   <div class="evt-title">{{ r.subject || '未命名' }}</div>
                   <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -159,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
 import { getSchedule, createReservation } from '@/api/reservation'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -187,9 +234,24 @@ const quickBookRules: FormRules = {
 const START_HOUR = 0 // 数据从 00:00 开始
 const END_HOUR = 24 // 数据到 24:00 结束
 const TOTAL_HOURS = END_HOUR - START_HOUR
-const HOUR_WIDTH = 60 // 每小时宽度 px
-const hoursWidth = TOTAL_HOURS * HOUR_WIDTH // 总宽度
+const ROOM_COLUMN_WIDTH = 120
+const VISIBLE_HOURS = 9
+const DEFAULT_HOUR_WIDTH = 60
+const WEEK_HOUR_HEIGHT = 60
+const DAY_EDGE_GAP_RATIO = 0.35
+const WEEK_EDGE_GAP_RATIO = 0.35
 const VIEW_START = 9 // 视口默认从 09:00 开始
+const WORK_START_HOUR = 9
+const WORK_END_HOUR = 18
+const hourWidth = ref(DEFAULT_HOUR_WIDTH)
+const gridWidth = computed(() => TOTAL_HOURS * hourWidth.value)
+const dayEdgeGap = computed(() => hourWidth.value * DAY_EDGE_GAP_RATIO)
+const dayTrackWidth = computed(() => gridWidth.value + dayEdgeGap.value * 2)
+const timelineWidth = computed(() => dayTrackWidth.value + hourWidth.value)
+const weekHoursHeight = TOTAL_HOURS * WEEK_HOUR_HEIGHT
+const weekEdgeGap = WEEK_HOUR_HEIGHT * WEEK_EDGE_GAP_RATIO
+const weekTrackHeight = weekHoursHeight + weekEdgeGap * 2
+const nowTimestamp = ref(Date.now())
 
 const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
 
@@ -197,6 +259,51 @@ const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END
 const dayBodyRef = ref<HTMLElement>()
 const weekBodyRef = ref<HTMLElement>()
 const headerScrollX = ref(0)
+let dayBodyResizeObserver: ResizeObserver | null = null
+let dayInertiaFrame = 0
+let weekInertiaFrame = 0
+let nowTimer: number | undefined
+
+const dayDrag = reactive({
+  active: false,
+  pointerId: -1,
+  startX: 0,
+  startScrollLeft: 0,
+  lastX: 0,
+  lastTime: 0,
+  velocity: 0,
+  moved: false
+})
+const weekDrag = reactive({
+  active: false,
+  pointerId: -1,
+  startY: 0,
+  startScrollTop: 0,
+  lastY: 0,
+  lastTime: 0,
+  velocity: 0,
+  moved: false
+})
+const ignoreDayClick = ref(false)
+const ignoreWeekClick = ref(false)
+
+const todayString = computed(() => formatDate(new Date(nowTimestamp.value)))
+const currentMinutes = computed(() => {
+  const now = new Date(nowTimestamp.value)
+  return now.getHours() * 60 + now.getMinutes()
+})
+const currentTimeLabel = computed(() => {
+  const now = new Date(nowTimestamp.value)
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+})
+const showDayNowLine = computed(() => formatDate(currentDate.value) === todayString.value)
+const dayNowLineLeft = computed(() => dayEdgeGap.value + (currentMinutes.value / (TOTAL_HOURS * 60)) * gridWidth.value)
+const showWeekNowLine = computed(() => weekDays.value.some(d => d.dateStr === todayString.value))
+const weekNowLineTop = computed(() => weekEdgeGap + (currentMinutes.value / (TOTAL_HOURS * 60)) * weekHoursHeight)
+const dayWorkHoursLeft = computed(() => dayEdgeGap.value + (WORK_START_HOUR - START_HOUR) * hourWidth.value)
+const dayWorkHoursWidth = computed(() => (WORK_END_HOUR - WORK_START_HOUR) * hourWidth.value)
+const weekWorkHoursTop = computed(() => weekEdgeGap + (WORK_START_HOUR - START_HOUR) * WEEK_HOUR_HEIGHT)
+const weekWorkHoursHeight = computed(() => (WORK_END_HOUR - WORK_START_HOUR) * WEEK_HOUR_HEIGHT)
 
 // ====== 同步滚动 ======
 function onDayScroll() {
@@ -210,26 +317,213 @@ function onWeekScroll() {
 }
 
 // ====== 滚动到默认时间 ======
+function setDayScrollLeft(scrollLeft: number) {
+  if (!dayBodyRef.value) return
+  dayBodyRef.value.scrollLeft = scrollLeft
+  headerScrollX.value = scrollLeft
+}
+
+function setWeekScrollTop(scrollTop: number) {
+  if (!weekBodyRef.value) return
+  weekBodyRef.value.scrollTop = scrollTop
+}
+
+function cancelDayInertia() {
+  if (dayInertiaFrame) {
+    cancelAnimationFrame(dayInertiaFrame)
+    dayInertiaFrame = 0
+  }
+}
+
+function cancelWeekInertia() {
+  if (weekInertiaFrame) {
+    cancelAnimationFrame(weekInertiaFrame)
+    weekInertiaFrame = 0
+  }
+}
+
+function startDayInertia(initialVelocity: number) {
+  if (!dayBodyRef.value || Math.abs(initialVelocity) < 0.02) return
+  cancelDayInertia()
+  let velocity = initialVelocity
+  let lastTime = performance.now()
+  const step = (now: number) => {
+    if (!dayBodyRef.value) return
+    const dt = now - lastTime
+    lastTime = now
+    const nextScrollLeft = dayBodyRef.value.scrollLeft + velocity * dt
+    setDayScrollLeft(nextScrollLeft)
+    velocity *= Math.pow(0.95, dt / 16)
+    const atEdge = dayBodyRef.value.scrollLeft <= 0 || dayBodyRef.value.scrollLeft >= dayBodyRef.value.scrollWidth - dayBodyRef.value.clientWidth
+    if (Math.abs(velocity) < 0.02 || atEdge) {
+      dayInertiaFrame = 0
+      return
+    }
+    dayInertiaFrame = requestAnimationFrame(step)
+  }
+  dayInertiaFrame = requestAnimationFrame(step)
+}
+
+function startWeekInertia(initialVelocity: number) {
+  if (!weekBodyRef.value || Math.abs(initialVelocity) < 0.02) return
+  cancelWeekInertia()
+  let velocity = initialVelocity
+  let lastTime = performance.now()
+  const step = (now: number) => {
+    if (!weekBodyRef.value) return
+    const dt = now - lastTime
+    lastTime = now
+    weekBodyRef.value.scrollTop += velocity * dt
+    velocity *= Math.pow(0.95, dt / 16)
+    const atEdge = weekBodyRef.value.scrollTop <= 0 || weekBodyRef.value.scrollTop >= weekBodyRef.value.scrollHeight - weekBodyRef.value.clientHeight
+    if (Math.abs(velocity) < 0.02 || atEdge) {
+      weekInertiaFrame = 0
+      return
+    }
+    weekInertiaFrame = requestAnimationFrame(step)
+  }
+  weekInertiaFrame = requestAnimationFrame(step)
+}
+
+function updateDayHourWidth() {
+  if (!dayBodyRef.value) return
+  const viewportWidth = dayBodyRef.value.clientWidth - ROOM_COLUMN_WIDTH
+  if (viewportWidth <= 0) return
+  hourWidth.value = Number((viewportWidth / (VISIBLE_HOURS + DAY_EDGE_GAP_RATIO * 2)).toFixed(2))
+}
+
 function scrollToDefaultHour() {
-  const scrollLeft = VIEW_START * HOUR_WIDTH
+  updateDayHourWidth()
+  const scrollLeft = VIEW_START * hourWidth.value
+  const scrollTop = weekEdgeGap + VIEW_START * WEEK_HOUR_HEIGHT
   headerScrollX.value = scrollLeft
   // 多次尝试确保 DOM 渲染完成
   const tryScroll = (attempt: number) => {
     if (attempt > 10) return
     nextTick(() => {
       if (dayBodyRef.value) {
-        dayBodyRef.value.scrollLeft = scrollLeft
+        setDayScrollLeft(scrollLeft)
       }
       if (weekBodyRef.value) {
-        weekBodyRef.value.scrollTop = scrollLeft
+        setWeekScrollTop(scrollTop)
       }
       // 验证是否滚动成功
-      if (dayBodyRef.value && dayBodyRef.value.scrollLeft !== scrollLeft) {
+      const dayScrollPending = !!dayBodyRef.value && dayBodyRef.value.scrollLeft !== scrollLeft
+      const weekScrollPending = !!weekBodyRef.value && weekBodyRef.value.scrollTop !== scrollTop
+      if (dayScrollPending || weekScrollPending) {
         setTimeout(() => tryScroll(attempt + 1), 100)
       }
     })
   }
   setTimeout(() => tryScroll(0), 100)
+}
+
+function observeDayBodyResize() {
+  dayBodyResizeObserver?.disconnect()
+  if (!dayBodyRef.value || typeof ResizeObserver === 'undefined') return
+
+  dayBodyResizeObserver = new ResizeObserver(() => {
+    if (!dayBodyRef.value) return
+    const currentHourOffset = dayBodyRef.value.scrollLeft / hourWidth.value
+    updateDayHourWidth()
+    nextTick(() => {
+      setDayScrollLeft(currentHourOffset * hourWidth.value)
+    })
+  })
+
+  dayBodyResizeObserver.observe(dayBodyRef.value)
+}
+
+function onDayPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || !dayBodyRef.value) return
+  cancelDayInertia()
+  dayDrag.active = true
+  dayDrag.pointerId = event.pointerId
+  dayDrag.startX = event.clientX
+  dayDrag.startScrollLeft = dayBodyRef.value.scrollLeft
+  dayDrag.lastX = event.clientX
+  dayDrag.lastTime = performance.now()
+  dayDrag.velocity = 0
+  dayDrag.moved = false
+  dayBodyRef.value.setPointerCapture(event.pointerId)
+}
+
+function onDayPointerMove(event: PointerEvent) {
+  if (!dayDrag.active || dayDrag.pointerId !== event.pointerId || !dayBodyRef.value) return
+  const deltaX = event.clientX - dayDrag.startX
+  if (!dayDrag.moved && Math.abs(deltaX) > 4) {
+    dayDrag.moved = true
+  }
+  if (!dayDrag.moved) return
+  const now = performance.now()
+  const dt = Math.max(now - dayDrag.lastTime, 1)
+  dayDrag.velocity = -((event.clientX - dayDrag.lastX) / dt)
+  dayDrag.lastX = event.clientX
+  dayDrag.lastTime = now
+  setDayScrollLeft(dayDrag.startScrollLeft - deltaX)
+  event.preventDefault()
+}
+
+function onDayPointerUp(event: PointerEvent) {
+  if (!dayDrag.active || dayDrag.pointerId !== event.pointerId || !dayBodyRef.value) return
+  const didMove = dayDrag.moved
+  if (dayBodyRef.value.hasPointerCapture(event.pointerId)) {
+    dayBodyRef.value.releasePointerCapture(event.pointerId)
+  }
+  dayDrag.active = false
+  dayDrag.pointerId = -1
+  dayDrag.moved = false
+  if (didMove) {
+    startDayInertia(dayDrag.velocity * 18)
+    ignoreDayClick.value = true
+    setTimeout(() => { ignoreDayClick.value = false }, 0)
+  }
+}
+
+function onWeekPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || !weekBodyRef.value) return
+  cancelWeekInertia()
+  weekDrag.active = true
+  weekDrag.pointerId = event.pointerId
+  weekDrag.startY = event.clientY
+  weekDrag.startScrollTop = weekBodyRef.value.scrollTop
+  weekDrag.lastY = event.clientY
+  weekDrag.lastTime = performance.now()
+  weekDrag.velocity = 0
+  weekDrag.moved = false
+  weekBodyRef.value.setPointerCapture(event.pointerId)
+}
+
+function onWeekPointerMove(event: PointerEvent) {
+  if (!weekDrag.active || weekDrag.pointerId !== event.pointerId || !weekBodyRef.value) return
+  const deltaY = event.clientY - weekDrag.startY
+  if (!weekDrag.moved && Math.abs(deltaY) > 4) {
+    weekDrag.moved = true
+  }
+  if (!weekDrag.moved) return
+  const now = performance.now()
+  const dt = Math.max(now - weekDrag.lastTime, 1)
+  weekDrag.velocity = -((event.clientY - weekDrag.lastY) / dt)
+  weekDrag.lastY = event.clientY
+  weekDrag.lastTime = now
+  weekBodyRef.value.scrollTop = weekDrag.startScrollTop - deltaY
+  event.preventDefault()
+}
+
+function onWeekPointerUp(event: PointerEvent) {
+  if (!weekDrag.active || weekDrag.pointerId !== event.pointerId || !weekBodyRef.value) return
+  const didMove = weekDrag.moved
+  if (weekBodyRef.value.hasPointerCapture(event.pointerId)) {
+    weekBodyRef.value.releasePointerCapture(event.pointerId)
+  }
+  weekDrag.active = false
+  weekDrag.pointerId = -1
+  weekDrag.moved = false
+  if (didMove) {
+    startWeekInertia(weekDrag.velocity * 18)
+    ignoreWeekClick.value = true
+    setTimeout(() => { ignoreWeekClick.value = false }, 0)
+  }
 }
 
 const weekDays = computed(() => {
@@ -259,14 +553,6 @@ const dateDisplay = computed(() => {
 
 function formatDate(dt: Date) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` }
 function formatTime(t: string) { return t ? t.substring(11, 16) : '' }
-function timeToPct(t: string) {
-  const hour = parseInt(t.substring(11, 13))
-  const minute = parseInt(t.substring(14, 16))
-  const totalMinutes = TOTAL_HOURS * 60
-  const minutes = (hour - START_HOUR) * 60 + minute
-  return (minutes / totalMinutes) * 100
-}
-function durPct(s: string, e: string) { return timeToPct(e) - timeToPct(s) }
 function isCurrentHour(h: number) { return new Date().getHours() === h }
 
 
@@ -278,6 +564,7 @@ async function loadData() {
   else if (viewMode.value === 'week') { p.startDate = formatDate(weekDays.value[0].date); p.endDate = formatDate(weekDays.value[6].date) }
   else { const ms = new Date(d.getFullYear(), d.getMonth(), 1); ms.setDate(ms.getDate() - ms.getDay()); const me = new Date(ms); me.setDate(me.getDate() + 41); p.startDate = formatDate(ms); p.endDate = formatDate(me) }
   try { const r = await getSchedule(p); rooms.value = r.data.rooms || []; reservations.value = r.data.reservations || []; if (viewMode.value === 'month') buildMonthDays() } catch { /* */ }
+  await nextTick()
   scrollToDefaultHour()
 }
 
@@ -292,31 +579,47 @@ function dayEventStyle(r: any) {
   const end = new Date(r.endTime)
   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
-  const leftPx = (startMinutes / (TOTAL_HOURS * 60)) * hoursWidth
-  const widthPx = (durationMinutes / (TOTAL_HOURS * 60)) * hoursWidth
-  return { left: (100 + leftPx) + 'px', width: widthPx + 'px' }
+  const leftPx = dayEdgeGap.value + (startMinutes / (TOTAL_HOURS * 60)) * gridWidth.value
+  const widthPx = (durationMinutes / (TOTAL_HOURS * 60)) * gridWidth.value
+  return { left: leftPx + 'px', width: widthPx + 'px' }
 }
 function onDayCellClick(room: any, h: number) {
+  if (ignoreDayClick.value) return
   quickBookForm.roomId = room.id; quickBookForm.date = formatDate(currentDate.value)
   quickBookForm.startTime = String(h).padStart(2, '0') + ':00'; quickBookForm.endTime = String(h + 1).padStart(2, '0') + ':00'
   quickBookForm.subject = ''; quickBookForm.attendeeCount = 1; quickBookForm.contactPhone = ''; quickBookVisible.value = true
+}
+function onDayEventClick(r: any) {
+  if (ignoreDayClick.value) return
+  showDetail(r)
 }
 
 // ====== 周视图 ======
 function weekEventStyle(r: any) {
   const di = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
   if (di < 0) return { display: 'none' }
+  const start = new Date(r.startTime)
+  const end = new Date(r.endTime)
+  const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
+  const durationMinutes = (end.getTime() - start.getTime()) / 60000
+  const topPx = weekEdgeGap + (startMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight
+  const heightPx = Math.max((durationMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight, 16)
   return {
     left: (di / 7 * 100) + '%',
     width: (100 / 7) + '%',
-    top: timeToPct(r.startTime) + '%',
-    height: Math.max(durPct(r.startTime, r.endTime), 1) + '%'
+    top: topPx + 'px',
+    height: heightPx + 'px'
   }
 }
 function onWeekCellClick(dateStr: string, h: number) {
+  if (ignoreWeekClick.value) return
   quickBookForm.roomId = undefined; quickBookForm.date = dateStr
   quickBookForm.startTime = String(h).padStart(2, '0') + ':00'; quickBookForm.endTime = String(h + 1).padStart(2, '0') + ':00'
   quickBookVisible.value = true
+}
+function onWeekEventClick(r: any) {
+  if (ignoreWeekClick.value) return
+  showDetail(r)
 }
 
 // ====== 月视图 ======
@@ -344,7 +647,31 @@ function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '�
 function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
 
 watch([viewMode, currentDate], loadData)
-onMounted(loadData)
+watch(viewMode, async (mode) => {
+  await nextTick()
+  if (mode === 'day') {
+    observeDayBodyResize()
+  }
+  scrollToDefaultHour()
+})
+
+onMounted(async () => {
+  await nextTick()
+  observeDayBodyResize()
+  nowTimer = window.setInterval(() => {
+    nowTimestamp.value = Date.now()
+  }, 60000)
+  loadData()
+})
+
+onBeforeUnmount(() => {
+  cancelDayInertia()
+  cancelWeekInertia()
+  dayBodyResizeObserver?.disconnect()
+  if (nowTimer) {
+    clearInterval(nowTimer)
+  }
+})
 </script>
 
 <style scoped>
@@ -354,27 +681,157 @@ onMounted(loadData)
 .date-display { font-size: 14px; color: #303133; font-weight: 500; margin-left: 8px; }
 
 /* ========== 日视图 ========== */
-.day-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.day-view {
+  --room-column-width: 120px;
+  --hour-width: 60px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 .day-header { display: flex; border-bottom: 2px solid #e5e7eb; background: #fafbfc; flex-shrink: 0; }
-.room-col-header { width: 100px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; flex-shrink: 0; border-right: 1px solid #e5e7eb; position: sticky; left: 0; z-index: 3; background: #fafbfc; }
+.room-col-header {
+  width: var(--room-column-width);
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #fafbfc;
+}
 .day-ticks-wrap { flex: 1; overflow: hidden; }
-.day-ticks { display: flex; }
-.tick { width: 60px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; flex-shrink: 0; }
+.day-ticks {
+  display: flex;
+  position: relative;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 0 var(--day-edge-gap);
+}
+.tick {
+  width: var(--hour-width);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
 .tick-label { font-size: 11px; color: #6b7280; font-weight: 500; }
 .tick-mark { width: 1px; height: 6px; background: #d1d5db; margin-top: 4px; }
+.tick-end { position: relative; }
+.tick-end .tick-label {
+  transform: translateX(-50%);
+}
 
-.day-body-wrap { flex: 1; overflow: auto; max-height: 600px; }
-.day-body { position: relative; }
-.day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; overflow: hidden; }
-.room-label { width: 100px; padding: 6px 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; background: #fff; z-index: 2; position: sticky; left: 0; }
+.day-body-wrap {
+  flex: 1;
+  overflow: auto;
+  max-height: 600px;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: #cbd5e1 #f3f4f6;
+  cursor: grab;
+}
+.day-body-wrap::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.day-body-wrap::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+.day-body-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 2px solid #f3f4f6;
+}
+.day-body { position: relative; min-width: fit-content; }
+.day-work-hours-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.05);
+  pointer-events: none;
+  z-index: 0;
+}
+.day-now-column {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  z-index: 3;
+  pointer-events: none;
+}
+.day-now-column::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+.day-now-label {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+.day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; }
+.day-view.dragging,
+.day-view.dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.room-label {
+  width: var(--room-column-width);
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #fff;
+  z-index: 4;
+  position: sticky;
+  left: 0;
+}
 .room-name { font-size: 12px; font-weight: 600; color: #303133; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .room-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
-.day-grid { display: flex; flex-shrink: 0; }
-.grid-cell { width: 60px; border-right: 1px solid #f3f4f6; cursor: pointer; flex-shrink: 0; }
+.day-grid-wrap {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 0 var(--day-edge-gap);
+  overflow: hidden;
+}
+.day-grid { display: flex; flex-shrink: 0; height: 100%; }
+.grid-cell {
+  width: var(--hour-width);
+  box-sizing: border-box;
+  border-right: 1px solid #f3f4f6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
 .grid-cell:hover { background: #f9fafb; }
 
 .day-event { position: absolute; top: 4px; bottom: 4px; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.day-event { z-index: 2; }
 
 
 /* ========== 周视图 ========== */
@@ -388,9 +845,27 @@ onMounted(loadData)
 .wk-day-name { font-size: 11px; color: #9ca3af; }
 .wk-day-num { font-size: 14px; font-weight: 600; color: #303133; margin-top: 2px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
 
-.week-body-wrap { flex: 1; overflow: auto; }
+.week-body-wrap {
+  flex: 1;
+  overflow: auto;
+  cursor: grab;
+}
+.week-view.dragging,
+.week-view.dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
 .week-body { display: flex; position: relative; }
-.wk-times { width: 40px; flex-shrink: 0; position: sticky; left: 0; z-index: 2; background: #fff; }
+.wk-times {
+  width: 40px;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  box-sizing: border-box;
+  padding: var(--week-edge-gap) 0;
+}
 .wk-time { height: 60px; display: flex; align-items: flex-start; padding-top: 0; border-bottom: 1px solid #f0f0f0; position: relative; }
 .wk-time-label { font-size: 11px; color: #9ca3af; position: absolute; top: -7px; left: 4px; background: #fff; padding: 0 2px; }
 .wk-time-now-label { color: #ef4444; font-weight: 600; }
@@ -398,16 +873,61 @@ onMounted(loadData)
 .wk-time-now .wk-time-mark { background: #ef4444; width: 10px; }
 
 .wk-grid-wrap { flex: 1; }
-.wk-grid { position: relative; display: flex; }
-.wk-col { flex: 1; display: flex; flex-direction: column; }
+.wk-grid {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  padding: var(--week-edge-gap) 0;
+}
+.wk-work-hours-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(59, 130, 246, 0.05);
+  pointer-events: none;
+  z-index: 0;
+}
+.wk-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  z-index: 1;
+  pointer-events: none;
+}
+.wk-now-line::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+.wk-now-label {
+  position: absolute;
+  top: -12px;
+  left: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+.wk-col { flex: 1; display: flex; flex-direction: column; position: relative; }
 .wk-cell { height: 60px; border-right: 1px solid #f3f4f6; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 .wk-cell:last-child { border-right: none; }
 .wk-cell:hover { background: #f9fafb; }
 
 .week-event { position: absolute; left: 0; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .week-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.wk-now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
-.wk-now-line::before { content: ''; position: absolute; top: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
+.week-event { z-index: 2; }
 
 /* ========== 通用预约块 ========== */
 .s0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
