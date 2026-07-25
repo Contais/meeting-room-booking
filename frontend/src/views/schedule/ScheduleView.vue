@@ -185,12 +185,12 @@ const quickBookRules: FormRules = {
 }
 
 // ====== 时间配置 ======
-const START_HOUR = 0 // 00:00
-const END_HOUR = 24 // 24:00
+const START_HOUR = 0 // 数据从 00:00 开始
+const END_HOUR = 24 // 数据到 24:00 结束
 const TOTAL_HOURS = END_HOUR - START_HOUR
 const HOUR_WIDTH = 60 // 每小时宽度 px
 const hoursWidth = TOTAL_HOURS * HOUR_WIDTH // 总宽度
-const DEFAULT_HOUR = 9 // 默认显示 09:00
+const VIEW_START = 9 // 视口默认从 09:00 开始
 const ROW_H = 64
 
 const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
@@ -214,7 +214,7 @@ function onWeekScroll() {
 // ====== 滚动到默认时间 ======
 function scrollToDefaultHour() {
   nextTick(() => {
-    const scrollLeft = DEFAULT_HOUR * HOUR_WIDTH
+    const scrollLeft = VIEW_START * HOUR_WIDTH
     if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
     if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
     if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
@@ -248,15 +248,22 @@ const dateDisplay = computed(() => {
 
 function formatDate(dt: Date) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` }
 function formatTime(t: string) { return t ? t.substring(11, 16) : '' }
-function timeToPct(t: string) { return ((parseInt(t.substring(11, 13)) - START_HOUR) + parseInt(t.substring(14, 16)) / 60) / TOTAL_HOURS * 100 }
+function timeToPct(t: string) {
+  const hour = parseInt(t.substring(11, 13))
+  const minute = parseInt(t.substring(14, 16))
+  const totalMinutes = TOTAL_HOURS * 60
+  const minutes = (hour - START_HOUR) * 60 + minute
+  return (minutes / totalMinutes) * 100
+}
 function durPct(s: string, e: string) { return timeToPct(e) - timeToPct(s) }
 function isCurrentHour(h: number) { return new Date().getHours() === h }
 
-// 当前时间精确到分钟的位置百分比
+// 当前时间精确到分钟的位置百分比（相对于 00:00-24:00）
 const currentTimePercent = computed(() => {
   const now = new Date()
+  const totalMinutes = TOTAL_HOURS * 60
   const minutes = now.getHours() * 60 + now.getMinutes()
-  return (minutes / (24 * 60)) * 100
+  return (minutes / totalMinutes) * 100
 })
 
 
