@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meetinghub.meeting.repository.ReservationRepository">
+
+    <!-- 预约视图对象映射 -->
+    <resultMap id="ReservationVOMap" type="com.meetinghub.meeting.model.vo.ReservationVO">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomName" column="room_name"/>
+        <result property="userId" column="user_id"/>
+        <result property="subject" column="subject"/>
+        <result property="attendeeCount" column="attendee_count"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="remark" column="remark"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!--
+        我的预约分页查询：LEFT JOIN 会议室表获取会议室名称
+        说明：username 为跨服务数据，由 Service 层批量拉取后填充
+    -->
+    <select id="selectMyPage" resultMap="ReservationVOMap">
+        SELECT r.id, r.room_id, r.user_id, r.subject, r.attendee_count,
+               r.contact_phone, r.remark, r.start_time, r.end_time,
+               r.status, r.create_time, mr.name AS room_name
+        FROM meeting_room_reservation r
+        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
+        WHERE r.deleted = 0
+          AND r.user_id = #{userId}
+          <if test="query.keyword != null and query.keyword != ''">
+              AND r.subject LIKE CONCAT('%', #{query.keyword}, '%')
+          </if>
+          <if test="query.subject != null and query.subject != ''">
+              AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
+          </if>
+          <if test="query.status != null">
+              AND r.status = #{query.status}
+          </if>
+          <if test="query.startTime != null and query.startTime != ''">
+              AND r.start_time &lt;= #{query.startTime} AND r.end_time &gt;= #{query.startTime}
+          </if>
+          <if test="query.endTime != null and query.endTime != ''">
+              AND r.start_time &lt;= #{query.endTime} AND r.end_time &gt;= #{query.endTime}
+          </if>
+        ORDER BY r.start_time DESC
+    </select>
+
+    <!--
+        管理端预约分页查询：LEFT JOIN 会议室表获取会议室名称，支持多条件过滤
+        说明：username 为跨服务数据，由 Service 层批量拉取后填充
+    -->
+    <select id="selectAllPage" resultMap="ReservationVOMap">
+        SELECT r.id, r.room_id, r.user_id, r.subject, r.attendee_count,
+               r.contact_phone, r.remark, r.start_time, r.end_time,
+               r.status, r.create_time, mr.name AS room_name
+        FROM meeting_room_reservation r
+        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
+        WHERE r.deleted = 0
+          <if test="query.keyword != null and query.keyword != ''">
+              AND r.subject LIKE CONCAT('%', #{query.keyword}, '%')
+          </if>
+          <if test="query.subject != null and query.subject != ''">
+              AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
+          </if>
+          <if test="query.roomId != null">
+              AND r.room_id = #{query.roomId}
+          </if>
+          <if test="query.userId != null">
+              AND r.user_id = #{query.userId}
+          </if>
+          <if test="query.status != null">
+              AND r.status = #{query.status}
+          </if>
+          <if test="query.contactPhone != null and query.contactPhone != ''">
+              AND r.contact_phone LIKE CONCAT('%', #{query.contactPhone}, '%')
+          </if>
+          <if test="query.startTime != null and query.startTime != ''">
+              AND r.start_time &gt;= #{query.startTime}
+          </if>
+          <if test="query.endTime != null and query.endTime != ''">
+              AND r.end_time &lt;= #{query.endTime}
+          </if>
+        ORDER BY r.start_time DESC
+    </select>
+
+</mapper>

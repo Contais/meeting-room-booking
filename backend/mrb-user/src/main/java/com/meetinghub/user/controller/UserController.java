@@ -52,6 +52,14 @@ public class UserController {
         return Result.ok(dto);
     }
 
+    /**
+     * 批量查询用户名（id -> username），供跨服务回填展示名，消除 N+1 调用
+     */
+    @GetMapping("/internal/batch")
+    public Result<java.util.Map<Long, String>> batchUsernames(@RequestParam java.util.List<Long> ids) {
+        return Result.ok(userService.getUsernamesByIds(ids));
+    }
+
     @PostMapping("/register")
     public Result<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
         userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone());

@@ -21,7 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 用户服务实现
@@ -50,6 +54,17 @@ public class UserServiceImpl implements UserService {
     public User getUserByUsername(String username) {
         return userRepository.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, username)
+        );
+    }
+
+    @Override
+    public Map<Long, String> getUsernamesByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        List<User> users = userRepository.selectBatchIds(ids);
+        return users.stream().collect(
+                Collectors.toMap(User::getId, u -> u.getUsername() != null ? u.getUsername() : "")
         );
     }
 

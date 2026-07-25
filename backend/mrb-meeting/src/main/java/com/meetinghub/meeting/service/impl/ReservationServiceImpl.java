@@ -19,7 +19,6 @@ import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
@@ -144,51 +143,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public IPage<ReservationVO> listMyReservations(Long userId, ReservationPageQuery query) {
-        Page<MeetingRoomReservation> page = new Page<>(query.getPage(), query.getSize());
-        LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
-                .eq(MeetingRoomReservation::getUserId, userId)
-                .orderByDesc(MeetingRoomReservation::getStartTime);
-        if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.like(MeetingRoomReservation::getSubject, query.getKeyword());
-        }
-        if (StringUtils.hasText(query.getSubject())) {
-            wrapper.like(MeetingRoomReservation::getSubject, query.getSubject());
-        }
-        if (query.getStatus() != null) {
-            wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
-        }
-        if (StringUtils.hasText(query.getStartTime())) {
-            // 搜索时间段包含该开始时间的预约：startTime <= query.startTime AND endTime >= query.startTime
-            wrapper.le(MeetingRoomReservation::getStartTime, query.getStartTime());
-            wrapper.ge(MeetingRoomReservation::getEndTime, query.getStartTime());
-        }
-        if (StringUtils.hasText(query.getEndTime())) {
-            // 搜索时间段包含该结束时间的预约：startTime <= query.endTime AND endTime >= query.endTime
-            wrapper.le(MeetingRoomReservation::getStartTime, query.getEndTime());
-            wrapper.ge(MeetingRoomReservation::getEndTime, query.getEndTime());
-        }
-        IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
-
-        List<Long> roomIds = result.getRecords().stream()
-                .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
-        List<Long> userIds = result.getRecords().stream()
-                .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
-        Map<Long, String> userNameMap = new java.util.HashMap<>();
-        for (Long uid : userIds) {
-            try {
-                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
-                if (userResult != null && userResult.getData() != null) {
-                    userNameMap.put(uid, userResult.getData().getUsername());
-                }
-            } catch (Exception e) { /* ignore */ }
-        }
-        Map<Long, String> roomNameMap = Map.of();
-        if (!roomIds.isEmpty()) {
-            List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
-            roomNameMap = rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
-        }
-        Map<Long, String> finalRoomNameMap = roomNameMap;
-        return result.convert(r -> toVO(r, finalRoomNameMap, userNameMap));
+        // 复杂多条件 + JOIN 会议室名称，下沉到 ReservationRepository.xml
+        Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
+        IPage<ReservationVO> result = reservationRepository.selectMyPage(page, query, userId);
+        fillUsernames(result.getRecords());
+        return result;
     }
 
     @Override
@@ -209,56 +168,38 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public IPage<ReservationVO> listAllReservations(ReservationPageQuery query) {
-        Page<MeetingRoomReservation> page = new Page<>(query.getPage(), query.getSize());
-        LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.like(MeetingRoomReservation::getSubject, query.getKeyword());
-        }
-        if (query.getRoomId() != null) {
-            wrapper.eq(MeetingRoomReservation::getRoomId, query.getRoomId());
-        }
-        if (query.getUserId() != null) {
-            wrapper.eq(MeetingRoomReservation::getUserId, query.getUserId());
-        }
-        if (query.getStatus() != null) {
-            wrapper.eq(MeetingRoomReservation::getStatus, query.getStatus());
-        }
-        if (StringUtils.hasText(query.getSubject())) {
-            wrapper.like(MeetingRoomReservation::getSubject, query.getSubject());
-        }
-        if (StringUtils.hasText(query.getContactPhone())) {
-            wrapper.like(MeetingRoomReservation::getContactPhone, query.getContactPhone());
-        }
-        if (StringUtils.hasText(query.getStartTime())) {
-            wrapper.ge(MeetingRoomReservation::getStartTime, query.getStartTime());
-        }
-        if (StringUtils.hasText(query.getEndTime())) {
-            wrapper.le(MeetingRoomReservation::getEndTime, query.getEndTime());
-        }
-        wrapper.orderByDesc(MeetingRoomReservation::getStartTime);
+        // 复杂多条件 + JOIN 会议室名称，下沉到 ReservationRepository.xml
+        Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
+        IPage<ReservationVO> result = reservationRepository.selectAllPage(page, query);
+        fillUsernames(result.getRecords());
+        return result;
+    }
 
-        IPage<MeetingRoomReservation> result = reservationRepository.selectPage(page, wrapper);
-
-        List<Long> roomIds = result.getRecords().stream()
-                .map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
-        List<Long> userIds = result.getRecords().stream()
-                .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
+    /**
+     * 批量回填预约人用户名：一次 Feign 调用替代逐个拉取，消除 N+1
+     * 同时修复原实现将 userId 误作 username 传入 getUserForAuth 的问题
+     */
+    private void fillUsernames(List<ReservationVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Long> userIds = records.stream()
+                .map(ReservationVO::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (userIds.isEmpty()) {
+            return;
+        }
         Map<Long, String> userNameMap = new java.util.HashMap<>();
-        for (Long uid : userIds) {
-            try {
-                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
-                if (userResult != null && userResult.getData() != null) {
-                    userNameMap.put(uid, userResult.getData().getUsername());
-                }
-            } catch (Exception e) { /* ignore */ }
+        try {
+            var result = userFeignClient.batchUsernames(userIds);
+            if (result != null && result.getData() != null) {
+                userNameMap = result.getData();
+            }
+        } catch (Exception e) { /* 跨服务降级：用户名留空 */ }
+        for (ReservationVO vo : records) {
+            vo.setUsername(userNameMap.getOrDefault(vo.getUserId(), ""));
         }
-        Map<Long, String> roomNameMap = Map.of();
-        if (!roomIds.isEmpty()) {
-            List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
-            roomNameMap = rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
-        }
-        Map<Long, String> finalRoomNameMap = roomNameMap;
-        return result.convert(r -> toVO(r, finalRoomNameMap, userNameMap));
     }
 
     @Override

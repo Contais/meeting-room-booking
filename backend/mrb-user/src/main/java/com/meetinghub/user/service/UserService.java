@@ -5,6 +5,9 @@ import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
 
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * 用户服务接口
  */
@@ -19,6 +22,11 @@ public interface UserService {
      * 根据用户名查询用户
      */
     User getUserByUsername(String username);
+
+    /**
+     * 批量查询用户名（id -> username），用于跨服务回填展示名
+     */
+    Map<Long, String> getUsernamesByIds(Collection<Long> ids);
 
     /**
      * 用户注册
