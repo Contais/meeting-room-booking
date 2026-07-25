@@ -194,7 +194,7 @@ function handleTimeSelect(startTime: string, endTime: string) {
 
 function onDialogClose() {
   // 关闭弹窗时刷新日历数据
-  calendarRef.value?.loadReservations()
+  calendarRef.value?.loadData()
 }
 
 function showReserveDialog() {

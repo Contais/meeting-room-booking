@@ -79,7 +79,9 @@
             </div>
             <div v-for="r in dayReservations" :key="r.id"
               class="day-event" :class="'s' + r.status"
-              :style="dayEventStyle(r)" @click="onDayEventClick(r)">
+              :style="dayEventStyle(r)"
+              :title="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
+              @click="onDayEventClick(r)">
               <div class="evt-inner">
                 <div class="evt-title">{{ r.subject || '未命名' }}</div>
                 <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -134,7 +136,9 @@
               </div>
               <div v-for="r in weekReservations" :key="r.id"
                 class="week-event" :class="'s' + r.status"
-                :style="weekEventStyle(r)" @click="onWeekEventClick(r)">
+                :style="weekEventStyle(r)"
+                :title="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
+                @click="onWeekEventClick(r)">
                 <div class="evt-inner">
                   <div class="evt-title">{{ r.subject || '未命名' }}</div>
                   <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
