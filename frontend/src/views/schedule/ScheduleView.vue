@@ -24,31 +24,38 @@
 
     <!-- ==================== 日视图 ==================== -->
     <div v-if="viewMode === 'day'" class="day-view page-card">
+      <!-- 横轴刻度头（固定） -->
       <div class="day-header">
         <div class="room-col-header">会议室</div>
-        <div class="day-ticks">
-          <div v-for="h in dayHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
-            <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ h }}:00</span>
-            <span class="tick-mark"></span>
+        <div class="day-ticks-wrap" ref="dayHeaderRef">
+          <div class="day-ticks" :style="{ width: hoursWidth + 'px' }">
+            <div v-for="h in allHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
+              <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
+              <span class="tick-mark"></span>
+            </div>
           </div>
         </div>
       </div>
-      <div class="day-body">
-        <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
-          <div class="room-label">
-            <div class="room-name">{{ room.name }}</div>
-            <div class="room-meta">{{ room.capacity }}人</div>
-          </div>
-          <div class="day-grid">
-            <div v-for="h in dayHours" :key="h" class="grid-cell" @click="onDayCellClick(room, h)"></div>
-          </div>
-          <div v-for="r in getRoomReservations(room.id)" :key="r.id"
-            class="day-event" :class="'s' + r.status"
-            :style="dayEventStyle(r, rIdx)" @click="showDetail(r)">
-            <div class="evt-inner">
-              <div class="evt-title">{{ r.subject || '未命名' }}</div>
-              <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-              <div class="evt-user">{{ r.username || '' }}</div>
+      <!-- 内容区域（可滚动） -->
+      <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
+        <div class="day-body">
+          <div class="now-line" :style="{ left: `calc(100px + ${currentTimePercent}%)` }"></div>
+          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
+            <div class="room-label">
+              <div class="room-name">{{ room.name }}</div>
+              <div class="room-meta">{{ room.capacity }}人</div>
+            </div>
+            <div class="day-grid" :style="{ width: hoursWidth + 'px' }">
+              <div v-for="h in allHours" :key="h" class="grid-cell" @click="onDayCellClick(room, h)"></div>
+            </div>
+            <div v-for="r in getRoomReservations(room.id)" :key="r.id"
+              class="day-event" :class="'s' + r.status"
+              :style="dayEventStyle(r, rIdx)" @click="showDetail(r)">
+              <div class="evt-inner">
+                <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                <div class="evt-user">{{ r.username || '' }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -64,21 +71,30 @@
           <div class="wk-day-num">{{ d.dayNum }}</div>
         </div>
       </div>
-      <div class="week-body">
-        <div class="wk-times">
-          <div v-for="h in dayHours" :key="h" class="wk-time">{{ h }}:00</div>
-        </div>
-        <div class="wk-grid">
-          <div v-for="d in weekDays" :key="d.dateStr" class="wk-col">
-            <div v-for="h in dayHours" :key="h" class="wk-cell" @click="onWeekCellClick(d.dateStr, h)"></div>
+      <div class="week-body-wrap" ref="weekBodyRef" @scroll="onWeekScroll">
+        <div class="week-body">
+          <!-- 纵轴时间刻度（固定在左侧） -->
+          <div class="wk-times" :style="{ height: hoursWidth + 'px' }">
+            <div v-for="h in allHours" :key="h" class="wk-time" :class="{ 'wk-time-now': isCurrentHour(h) }">
+              <span class="wk-time-label" :class="{ 'wk-time-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
+              <span class="wk-time-mark"></span>
+            </div>
           </div>
-          <div v-for="r in weekReservations" :key="r.id"
-            class="week-event" :class="'s' + r.status"
-            :style="weekEventStyle(r)" @click="showDetail(r)">
-            <div class="evt-inner">
-              <div class="evt-title">{{ r.subject || '未命名' }}</div>
-              <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-              <div class="evt-user">{{ r.username || '' }}</div>
+          <!-- 网格区域 -->
+          <div class="wk-grid-wrap">
+            <div class="wk-grid" :style="{ height: hoursWidth + 'px' }">
+              <div v-for="d in weekDays" :key="d.dateStr" class="wk-col">
+                <div v-for="h in allHours" :key="h" class="wk-cell" @click="onWeekCellClick(d.dateStr, h)"></div>
+              </div>
+              <div v-for="r in weekReservations" :key="r.id"
+                class="week-event" :class="'s' + r.status"
+                :style="weekEventStyle(r)" @click="showDetail(r)">
+                <div class="evt-inner">
+                  <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                  <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                  <div class="evt-user">{{ r.username || '' }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -130,7 +146,7 @@
       <el-form ref="quickBookFormRef" :model="quickBookForm" :rules="quickBookRules" label-width="80px">
         <el-form-item label="会议室"><el-select v-model="quickBookForm.roomId" placeholder="请选择会议室" style="width:100%"><el-option v-for="room in rooms" :key="room.id" :label="room.name" :value="room.id" /></el-select></el-form-item>
         <el-form-item label="日期"><el-date-picker v-model="quickBookForm.date" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
-        <el-form-item label="时段"><div style="display:flex;gap:8px;align-items:center"><el-time-select v-model="quickBookForm.startTime" :max-time="quickBookForm.endTime" placeholder="开始" start="08:00" step="00:30" end="20:00" style="width:140px" /><span>~</span><el-time-select v-model="quickBookForm.endTime" :min-time="quickBookForm.startTime" placeholder="结束" start="08:00" step="00:30" end="20:00" style="width:140px" /></div></el-form-item>
+        <el-form-item label="时段"><div style="display:flex;gap:8px;align-items:center"><el-time-select v-model="quickBookForm.startTime" :max-time="quickBookForm.endTime" placeholder="开始" start="00:00" step="00:30" end="23:30" style="width:140px" /><span>~</span><el-time-select v-model="quickBookForm.endTime" :min-time="quickBookForm.startTime" placeholder="结束" start="00:00" step="00:30" end="23:30" style="width:140px" /></div></el-form-item>
         <el-form-item label="主题" prop="subject"><el-input v-model="quickBookForm.subject" placeholder="请输入会议主题" /></el-form-item>
         <el-form-item label="人数"><el-input-number v-model="quickBookForm.attendeeCount" :min="1" :max="100" /></el-form-item>
         <el-form-item label="联系电话"><el-input v-model="quickBookForm.contactPhone" placeholder="请输入联系电话" /></el-form-item>
@@ -144,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
 import { getSchedule, createReservation } from '@/api/reservation'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -168,12 +184,42 @@ const quickBookRules: FormRules = {
   subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }]
 }
 
-const START_HOUR = 8
-const END_HOUR = 20
+// ====== 时间配置 ======
+const START_HOUR = 0 // 00:00
+const END_HOUR = 24 // 24:00
 const TOTAL_HOURS = END_HOUR - START_HOUR
+const HOUR_WIDTH = 60 // 每小时宽度 px
+const hoursWidth = TOTAL_HOURS * HOUR_WIDTH // 总宽度
+const DEFAULT_HOUR = 9 // 默认显示 09:00
 const ROW_H = 64
 
-const dayHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
+const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
+
+// ====== 滚动容器引用 ======
+const dayHeaderRef = ref<HTMLElement>()
+const dayBodyRef = ref<HTMLElement>()
+const weekBodyRef = ref<HTMLElement>()
+
+// ====== 同步滚动 ======
+function onDayScroll() {
+  if (dayBodyRef.value && dayHeaderRef.value) {
+    dayHeaderRef.value.scrollLeft = dayBodyRef.value.scrollLeft
+  }
+}
+
+function onWeekScroll() {
+  // 周视图时间刻度在左侧固定，不需要同步
+}
+
+// ====== 滚动到默认时间 ======
+function scrollToDefaultHour() {
+  nextTick(() => {
+    const scrollLeft = DEFAULT_HOUR * HOUR_WIDTH
+    if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
+    if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
+    if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
+  })
+}
 
 const weekDays = computed(() => {
   const d = currentDate.value
@@ -204,6 +250,16 @@ function formatDate(dt: Date) { return `${dt.getFullYear()}-${String(dt.getMonth
 function formatTime(t: string) { return t ? t.substring(11, 16) : '' }
 function timeToPct(t: string) { return ((parseInt(t.substring(11, 13)) - START_HOUR) + parseInt(t.substring(14, 16)) / 60) / TOTAL_HOURS * 100 }
 function durPct(s: string, e: string) { return timeToPct(e) - timeToPct(s) }
+function isCurrentHour(h: number) { return new Date().getHours() === h }
+
+// 当前时间精确到分钟的位置百分比
+const currentTimePercent = computed(() => {
+  const now = new Date()
+  const minutes = now.getHours() * 60 + now.getMinutes()
+  return (minutes / (24 * 60)) * 100
+})
+
+
 
 async function loadData() {
   const d = currentDate.value; const p: Record<string, string> = {}
@@ -211,12 +267,7 @@ async function loadData() {
   else if (viewMode.value === 'week') { p.startDate = formatDate(weekDays.value[0].date); p.endDate = formatDate(weekDays.value[6].date) }
   else { const ms = new Date(d.getFullYear(), d.getMonth(), 1); ms.setDate(ms.getDate() - ms.getDay()); const me = new Date(ms); me.setDate(me.getDate() + 41); p.startDate = formatDate(ms); p.endDate = formatDate(me) }
   try { const r = await getSchedule(p); rooms.value = r.data.rooms || []; reservations.value = r.data.reservations || []; if (viewMode.value === 'month') buildMonthDays() } catch { /* */ }
-}
-
-// ====== 当前时间 ======
-function isCurrentHour(h: number) {
-  const now = new Date()
-  return now.getHours() === h
+  scrollToDefaultHour()
 }
 
 // ====== 日视图 ======
@@ -241,7 +292,7 @@ function weekEventStyle(r: any) {
     left: (di / 7 * 100) + '%',
     width: (100 / 7) + '%',
     top: timeToPct(r.startTime) + '%',
-    height: Math.max(durPct(r.startTime, r.endTime), 2) + '%'
+    height: Math.max(durPct(r.startTime, r.endTime), 1) + '%'
   }
 }
 function onWeekCellClick(dateStr: string, h: number) {
@@ -285,33 +336,36 @@ onMounted(loadData)
 .date-display { font-size: 14px; color: #303133; font-weight: 500; margin-left: 8px; }
 
 /* ========== 日视图 ========== */
-.day-view { padding: 0; overflow: hidden; }
-.day-header { display: flex; border-bottom: 2px solid #e5e7eb; background: #fafbfc; }
-.room-col-header { width: 100px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; flex-shrink: 0; border-right: 1px solid #e5e7eb; }
-.day-ticks { flex: 1; display: flex; }
-.tick { flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; }
+.day-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.day-header { display: flex; border-bottom: 2px solid #e5e7eb; background: #fafbfc; flex-shrink: 0; }
+.room-col-header { width: 100px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; flex-shrink: 0; border-right: 1px solid #e5e7eb; position: sticky; left: 0; z-index: 3; background: #fafbfc; }
+.day-ticks-wrap { flex: 1; overflow: hidden; }
+.day-ticks { display: flex; }
+.tick { width: 60px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; flex-shrink: 0; }
 .tick-label { font-size: 11px; color: #6b7280; font-weight: 500; }
 .tick-now-label { color: #ef4444; font-weight: 600; }
-.tick-mark { width: 1px; height: 6px; background: #9ca3af; margin-top: 4px; }
+.tick-mark { width: 1px; height: 6px; background: #d1d5db; margin-top: 4px; }
 .tick-now .tick-mark { background: #ef4444; height: 10px; }
 
+.day-body-wrap { flex: 1; overflow: auto; }
 .day-body { position: relative; }
 .day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; }
-.room-label { width: 100px; padding: 6px 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; background: #fff; z-index: 2; }
+.room-label { width: 100px; padding: 6px 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; background: #fff; z-index: 2; position: sticky; left: 0; }
 .room-name { font-size: 12px; font-weight: 600; color: #303133; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .room-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
-.day-grid { flex: 1; display: flex; }
-.grid-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; }
-.grid-cell:last-child { border-right: none; }
+.day-grid { display: flex; flex-shrink: 0; }
+.grid-cell { width: 60px; border-right: 1px solid #f3f4f6; cursor: pointer; flex-shrink: 0; }
 .grid-cell:hover { background: #f9fafb; }
 
 .day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; left: 100px; width: calc(100% - 100px); }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
+.now-line::before { content: ''; position: absolute; top: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
 
 /* ========== 周视图 ========== */
-.week-view { padding: 0; overflow: hidden; }
-.week-header { display: flex; border-bottom: 1px solid #e5e7eb; background: #fafbfc; }
-.wk-corner { width: 40px; flex-shrink: 0; border-right: 1px solid #e5e7eb; }
+.week-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.week-header { display: flex; border-bottom: 1px solid #e5e7eb; background: #fafbfc; flex-shrink: 0; }
+.wk-corner { width: 40px; flex-shrink: 0; border-right: 1px solid #e5e7eb; position: sticky; left: 0; z-index: 3; background: #fafbfc; }
 .wk-day { flex: 1; padding: 6px 4px; text-align: center; border-right: 1px solid #f3f4f6; }
 .wk-day:last-child { border-right: none; }
 .wk-day.today { background: #ecf5ff; }
@@ -319,17 +373,26 @@ onMounted(loadData)
 .wk-day-name { font-size: 11px; color: #9ca3af; }
 .wk-day-num { font-size: 14px; font-weight: 600; color: #303133; margin-top: 2px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
 
+.week-body-wrap { flex: 1; overflow: auto; }
 .week-body { display: flex; position: relative; }
-.wk-times { width: 40px; flex-shrink: 0; }
-.wk-time { height: 64px; padding: 2px 4px; font-size: 11px; color: #9ca3af; display: flex; align-items: flex-start; }
-.wk-grid { flex: 1; position: relative; display: flex; }
+.wk-times { width: 40px; flex-shrink: 0; position: sticky; left: 0; z-index: 2; background: #fff; }
+.wk-time { height: 60px; display: flex; align-items: flex-start; padding-top: 0; border-bottom: 1px solid #f0f0f0; position: relative; }
+.wk-time-label { font-size: 11px; color: #9ca3af; position: absolute; top: -7px; left: 4px; background: #fff; padding: 0 2px; }
+.wk-time-now-label { color: #ef4444; font-weight: 600; }
+.wk-time-mark { position: absolute; top: 0; left: 0; width: 6px; height: 1px; background: #d1d5db; }
+.wk-time-now .wk-time-mark { background: #ef4444; width: 10px; }
+
+.wk-grid-wrap { flex: 1; }
+.wk-grid { position: relative; display: flex; }
 .wk-col { flex: 1; display: flex; flex-direction: column; }
-.wk-cell { height: 64px; border-right: 1px solid #f3f4f6; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.wk-cell { height: 60px; border-right: 1px solid #f3f4f6; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 .wk-cell:last-child { border-right: none; }
 .wk-cell:hover { background: #f9fafb; }
 
 .week-event { position: absolute; left: 0; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .week-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.wk-now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
+.wk-now-line::before { content: ''; position: absolute; top: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
 
 /* ========== 通用预约块 ========== */
 .s0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
