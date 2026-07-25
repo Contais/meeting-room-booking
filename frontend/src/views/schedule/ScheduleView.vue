@@ -3,8 +3,8 @@
     <!-- 顶部控制栏 -->
     <div class="control-bar">
       <div class="control-left">
+        <el-button size="small" @click="goToday">今天</el-button>
         <el-button-group size="small">
-          <el-button @click="goToday">今天</el-button>
           <el-button @click="goPrev"><el-icon><ArrowLeft /></el-icon></el-button>
           <el-button @click="goNext"><el-icon><ArrowRight /></el-icon></el-button>
         </el-button-group>
