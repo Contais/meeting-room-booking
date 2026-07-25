@@ -82,7 +82,6 @@ const submitting = ref(false)
 const timeStep = ref(30)
 const bookedReservations = ref<any[]>([])
 const selectedRoomId = ref<number | undefined>(props.roomId)
-const hasAttemptedSubmit = ref(false)
 
 const currentRoom = computed(() => {
   if (props.room) return props.room
@@ -104,8 +103,18 @@ const form = reactive({
 
 const rules: FormRules = {
   subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }],
-  startMinute: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endMinute: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+  startMinute: [
+    {
+      validator: (_rule, _value, callback) => {
+        if (!form.startMinute || !form.endMinute) {
+          callback(new Error('请选择完整的预约时间段'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ],
   contactPhone: [{ pattern: /^[0-9]*$/, message: '联系电话只能输入数字', trigger: 'blur' }]
 }
 
@@ -168,10 +177,7 @@ function handleTimeOptionClick(t: string) {
     form.startMinute = t
     form.endMinute = ''
   }
-  // 选择时间段后，如果已尝试提交，清除错误提示
-  if (hasAttemptedSubmit.value && form.startMinute && form.endMinute) {
-    hasAttemptedSubmit.value = false
-  }
+  formRef.value?.validateField('startMinute').catch(() => false)
 }
 
 function disableFutureDate(date: Date) {
@@ -206,20 +212,11 @@ async function loadBookedReservations() {
 }
 
 async function handleSubmit() {
-  hasAttemptedSubmit.value = true
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   const roomId = props.roomId || selectedRoomId.value
   if (!roomId) {
     ElMessage.error('请选择会议室')
-    return
-  }
-  // 手动校验时间段
-  if (!form.startMinute || !form.endMinute) {
-    // 触发时间段字段的手动验证
-    await formRef.value?.validateField('startMinute').catch(() => false)
-    await formRef.value?.validateField('endMinute').catch(() => false)
-    ElMessage.error('请选择预约时间段')
     return
   }
   submitting.value = true
@@ -251,7 +248,7 @@ function handleClose() {
   form.contactPhone = ''
   form.remark = ''
   bookedReservations.value = []
-  hasAttemptedSubmit.value = false
+  formRef.value?.clearValidate()
   if (!props.roomId) {
     selectedRoomId.value = undefined
   }
@@ -260,8 +257,7 @@ function handleClose() {
 // 监听弹窗打开，初始化数据
 watch(visible, async (val) => {
   if (val) {
-    // 重置校验状态
-    hasAttemptedSubmit.value = false
+    formRef.value?.clearValidate()
     if (props.date) {
       form.selectedDate = props.date
       if (props.startTime) {
