@@ -84,7 +84,7 @@ onMounted(loadData)
     .search-item :deep(.el-input),
     .search-item :deep(.el-select),
     .search-item :deep(.el-date-editor) { width: 260px !important; }
-    .search-keyword-input { width: 640px !important; }
+    .search-item .search-keyword-input { width: 640px !important; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

@@ -12,8 +12,9 @@
         </template>
       </div>
       <div class="search-actions">
-        <el-button @click="filterName = ''; loadData()">重置</el-button>
+        <el-button @click="filterName = ''; filterStatus = undefined; loadData()">重置</el-button>
         <el-button type="primary" @click="loadData">查询</el-button>
+        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -28,7 +29,7 @@
         </div>
       </div>
 
-      <el-table :data="treeData" v-loading="loading" row-key="id" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+      <el-table :data="treeData" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
         <el-table-column prop="name" label="部门名称" min-width="220" />
         <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column label="状态" width="90" align="center">
@@ -62,7 +63,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment } from '@/api/department'
 import type { Department } from '@/types/department'
 

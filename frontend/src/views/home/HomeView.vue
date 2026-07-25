@@ -11,14 +11,12 @@
       </div>
     </div>
 
-    <el-row :gutter="16" class="stat-row">
-      <el-col :span="userStore.isAdmin() ? 4 : 6" v-for="(item, idx) in statItems" :key="idx">
-        <div class="stat-card">
-          <div class="stat-icon" :style="{ background: item.bg }"><el-icon :size="20"><component :is="item.icon" /></el-icon></div>
-          <div class="stat-info"><div class="stat-value">{{ item.value }}</div><div class="stat-label">{{ item.label }}</div></div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="stat-row">
+      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx">
+        <div class="stat-icon" :style="{ background: item.bg }"><el-icon :size="20"><component :is="item.icon" /></el-icon></div>
+        <div class="stat-info"><div class="stat-value">{{ item.value }}</div><div class="stat-label">{{ item.label }}</div></div>
+      </div>
+    </div>
 
 
     <el-row :gutter="16" v-if="userStore.isAdmin()">
@@ -145,9 +143,10 @@ onMounted(async () => {
 .c1 { width: 120px; height: 120px; }
 .c2 { width: 80px; height: 80px; position: absolute; top: -40px; left: -60px; }
 
-.stat-row { margin: 0; }
+.stat-row { display: flex; gap: 16px; margin: 0; }
 
 .stat-card {
+  flex: 1;
   background: #fff;
   border: 1px solid var(--border-light);
   border-radius: 16px;
