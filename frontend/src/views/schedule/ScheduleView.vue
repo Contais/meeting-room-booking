@@ -37,15 +37,13 @@
           <div class="time-cell" v-for="h in dayHours" :key="room.id + '-' + h"
             @click="onCellClick(room, h)"></div>
           <div v-for="r in getRoomReservations(room.id)" :key="r.id"
-            class="reservation-block" :class="'status-' + r.status"
+            class="reservation-block day-block" :class="'status-' + r.status"
             :style="dayBlockStyle(r)" @click="showDetail(r)">
-            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
-              <div class="block-inner">
-                <div class="block-subject">{{ r.subject || '未命名' }}</div>
-                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                <div class="block-user">{{ r.username || '' }}</div>
-              </div>
-            </el-tooltip>
+            <div class="block-inner">
+              <div class="block-subject">{{ r.subject || '未命名' }}</div>
+              <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+              <div class="block-user">{{ r.username || '' }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -68,13 +66,11 @@
           <div v-for="r in getWeekReservations(h)" :key="r.id"
             class="reservation-block week-block" :class="'status-' + r.status"
             :style="weekBlockStyle(r, h)" @click="showDetail(r)">
-            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
-              <div class="block-inner">
-                <div class="block-subject">{{ r.subject || '未命名' }}</div>
-                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                <div class="block-user">{{ r.username || '' }}</div>
-              </div>
-            </el-tooltip>
+            <div class="block-inner">
+              <div class="block-subject">{{ r.subject || '未命名' }}</div>
+              <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+              <div class="block-user">{{ r.username || '' }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -90,13 +86,12 @@
           class="month-cell" :class="{ 'other-month': !day.currentMonth, 'today': day.isToday }"
           @click="onMonthCellClick(day)">
           <div class="cell-date">{{ day.date }}</div>
-          <div class="cell-events" :class="{ 'expanded': expandedDays.has(day.dateStr) }">
+          <div class="cell-events">
             <div v-for="r in getDayReservations(day)" :key="r.id"
               class="cell-event" :class="'status-' + r.status"
+              :title="formatTime(r.startTime) + ' ' + (r.subject || '未命名')"
               @click.stop="showDetail(r)">
-              <el-tooltip :content="r.subject || '未命名'" placement="top" :show-after="300">
-                <span class="event-text">{{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}</span>
-              </el-tooltip>
+              {{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}
             </div>
             <div v-if="day.reservations.length > 3 && !expandedDays.has(day.dateStr)" 
               class="cell-more" @click.stop="toggleDayExpand(day.dateStr)">
@@ -117,6 +112,7 @@
         <el-descriptions-item label="会议室">{{ currentReservation.roomName }}</el-descriptions-item>
         <el-descriptions-item label="主题">{{ currentReservation.subject || '-' }}</el-descriptions-item>
         <el-descriptions-item label="时间段">{{ formatTime(currentReservation.startTime) }} - {{ formatTime(currentReservation.endTime) }}</el-descriptions-item>
+        <el-descriptions-item label="预约人">{{ currentReservation.username || '-' }}</el-descriptions-item>
         <el-descriptions-item label="参会人数">{{ currentReservation.attendeeCount || '-' }}</el-descriptions-item>
         <el-descriptions-item label="状态"><el-tag :type="statusType(currentReservation.status)" size="small">{{ statusText(currentReservation.status) }}</el-tag></el-descriptions-item>
       </el-descriptions>
@@ -209,7 +205,7 @@ const weekDays = computed(() => {
   const d = currentDate.value
   const startOfWeek = new Date(d)
   const day = startOfWeek.getDay()
-  startOfWeek.setDate(startOfWeek.getDate() - day)  // 回到周日
+  startOfWeek.setDate(startOfWeek.getDate() - day)
   
   const today = new Date()
   const todayStr = formatDate(today)
@@ -220,7 +216,7 @@ const weekDays = computed(() => {
     date.setDate(date.getDate() + i)
     const dateStr = formatDate(date)
     return {
-      date: date,
+      date,
       dateStr,
       dayName: dayNames[i],
       dayNum: date.getDate(),
@@ -249,6 +245,10 @@ function formatDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function formatTime(t: string) {
+  return t ? t.substring(11, 16) : ''
+}
+
 async function loadData() {
   const d = currentDate.value
   let params: Record<string, string> = {}
@@ -258,7 +258,7 @@ async function loadData() {
   } else if (viewMode.value === 'week') {
     const weekStart = new Date(d)
     const day = weekStart.getDay()
-    weekStart.setDate(weekStart.getDate() - day)  // 回到周日
+    weekStart.setDate(weekStart.getDate() - day)
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 6)
     params.startDate = formatDate(weekStart)
@@ -266,7 +266,7 @@ async function loadData() {
   } else {
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
     const dayOfWeek = monthStart.getDay()
-    monthStart.setDate(monthStart.getDate() - dayOfWeek)  // 回到周日
+    monthStart.setDate(monthStart.getDate() - dayOfWeek)
     const monthEnd = new Date(monthStart)
     monthEnd.setDate(monthEnd.getDate() + 41)
     params.startDate = formatDate(monthStart)
@@ -281,6 +281,7 @@ async function loadData() {
   } catch { /* */ }
 }
 
+// 日视图
 function getRoomReservations(roomId: number) {
   const today = formatDate(currentDate.value)
   return reservations.value.filter(r => {
@@ -289,16 +290,6 @@ function getRoomReservations(roomId: number) {
   })
 }
 
-// 获取周视图某小时的预约
-function getWeekReservations(hour: number) {
-  return reservations.value.filter(r => {
-    const start = new Date(r.startTime)
-    const startHour = start.getHours()
-    return startHour === hour
-  })
-}
-
-// 日视图预约块样式
 function dayBlockStyle(r: any) {
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
@@ -306,7 +297,6 @@ function dayBlockStyle(r: any) {
   const endHour = end.getHours() + end.getMinutes() / 60
   const duration = endHour - startHour
   
-  // 计算相对于时间区域的偏移
   const totalHours = END_HOUR - START_HOUR
   const leftPercent = ((startHour - START_HOUR) / totalHours) * 100
   const widthPercent = (duration / totalHours) * 100
@@ -321,7 +311,15 @@ function dayBlockStyle(r: any) {
   }
 }
 
-// 周视图预约块样式
+// 周视图
+function getWeekReservations(hour: number) {
+  return reservations.value.filter(r => {
+    const start = new Date(r.startTime)
+    const startHour = start.getHours()
+    return startHour === hour
+  })
+}
+
 function weekBlockStyle(r: any, _hour: number) {
   const dayIndex = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
   if (dayIndex < 0) return { display: 'none' }
@@ -331,11 +329,9 @@ function weekBlockStyle(r: any, _hour: number) {
   const startMinutes = start.getMinutes()
   const duration = (end.getTime() - start.getTime()) / 60000
   
-  // 计算相对于时间行内的偏移
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
-  // 每列宽度百分比（7列），加上时间标签列宽度
   const colWidth = 100 / 7
   const leftPercent = dayIndex * colWidth
   
@@ -348,11 +344,9 @@ function weekBlockStyle(r: any, _hour: number) {
   }
 }
 
+// 月视图
 function getDayReservations(day: any) {
-  if (expandedDays.value.has(day.dateStr)) {
-    return day.reservations
-  }
-  return day.reservations.slice(0, 3)
+  return expandedDays.value.has(day.dateStr) ? day.reservations : day.reservations.slice(0, 3)
 }
 
 function toggleDayExpand(dateStr: string) {
@@ -371,8 +365,8 @@ function buildMonthDays() {
   const todayStr = formatDate(today)
   
   const monthStart = new Date(year, month, 1)
-  const dayOfWeek = monthStart.getDay()  // 0=周日
-  monthStart.setDate(monthStart.getDate() - dayOfWeek)  // 回到周日
+  const dayOfWeek = monthStart.getDay()
+  monthStart.setDate(monthStart.getDate() - dayOfWeek)
   
   const days: any[] = []
   for (let i = 0; i < 42; i++) {
@@ -390,6 +384,7 @@ function buildMonthDays() {
   monthDays.value = days
 }
 
+// 导航
 function goPrev() {
   const d = new Date(currentDate.value)
   if (viewMode.value === 'day') d.setDate(d.getDate() - 1)
@@ -408,6 +403,7 @@ function goNext() {
 
 function goToday() { currentDate.value = new Date() }
 
+// 点击创建预约
 function onCellClick(room: any, hour: number) {
   quickBookForm.roomId = room.id
   quickBookForm.date = formatDate(currentDate.value)
@@ -420,6 +416,7 @@ function onCellClick(room: any, hour: number) {
 }
 
 function onWeekCellClick(dateStr: string, hour: number) {
+  quickBookForm.roomId = undefined
   quickBookForm.date = dateStr
   quickBookForm.startTime = String(hour).padStart(2, '0') + ':00'
   quickBookForm.endTime = String(hour + 1).padStart(2, '0') + ':00'
@@ -427,6 +424,7 @@ function onWeekCellClick(dateStr: string, hour: number) {
 }
 
 function onMonthCellClick(day: any) {
+  quickBookForm.roomId = undefined
   quickBookForm.date = day.dateStr
   quickBookVisible.value = true
 }
@@ -461,12 +459,6 @@ async function handleQuickBook() {
   } catch { /* */ } finally { quickBookSubmitting.value = false }
 }
 
-function formatTime(t: string) { return t ? t.replace('T', ' ').substring(11, 16) : '' }
-
-function getTooltipContent(r: any) {
-  const roomName = rooms.value.find(room => room.id === r.roomId)?.name || ''
-  return `${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${roomName}`
-}
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] || 'info' }
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
@@ -499,7 +491,7 @@ onMounted(loadData)
 .time-cell:last-child { border-right: none; }
 
 /* 预约色块 */
-.reservation-block { margin: 2px 4px; border-radius: 6px; padding: 4px 8px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
+.reservation-block { border-radius: 6px; padding: 4px 8px; font-size: 11px; overflow: hidden; cursor: pointer; transition: box-shadow 0.15s; }
 .reservation-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .status-0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
 .status-1 { background: #d1fae5; border-left: 3px solid #10b981; }
@@ -508,43 +500,42 @@ onMounted(loadData)
 .block-subject { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .block-time { font-size: 10px; color: #6b7280; margin-top: 2px; white-space: nowrap; }
 .block-user { font-size: 10px; color: #9ca3af; margin-top: 1px; white-space: nowrap; }
+.day-block { position: absolute; }
 
 /* 周视图 */
 .week-view { padding: 0; overflow: hidden; }
-.grid-header-row { display: flex; background: #fafbfc; border-bottom: 1px solid #e5e7eb; }
 .time-col-header { width: 60px; flex-shrink: 0; }
-.grid-body { position: relative; }
 .day-col { flex: 1; padding: 8px 4px; text-align: center; border-right: 1px solid #f3f4f6; }
 .day-col:last-child { border-right: none; }
 .day-col.today { background: #ecf5ff; }
 .day-col.today .day-date { background: #409eff; color: #fff; border-radius: 50%; }
 .day-name { font-size: 11px; color: #9ca3af; }
 .day-date { font-size: 14px; font-weight: 600; color: #303133; margin-top: 4px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
+.grid-body { position: relative; }
 .time-row { display: flex; border-bottom: 1px solid #f3f4f6; height: 80px; position: relative; }
 .time-label { width: 60px; padding: 8px; font-size: 11px; color: #9ca3af; border-right: 1px solid #e5e7eb; flex-shrink: 0; }
 .day-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
 .day-cell:last-child { border-right: none; }
 .day-cell:hover { background: #f9fafb; }
-.week-block { position: absolute; z-index: 1; }
+.week-block { position: absolute; }
 
 /* 月视图 */
 .month-view { padding: 16px; }
 .month-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid #e5e7eb; }
 .month-day-name { padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; }
 .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-.month-cell { min-height: 100px; border: 1px solid #f0f0f0; padding: 4px; cursor: pointer; transition: background 0.15s; }
+.month-cell { min-height: 100px; border: 1px solid #f0f0f0; padding: 4px; cursor: pointer; transition: background 0.15s; overflow: hidden; }
 .month-cell:hover { background: #f9fafb; }
 .month-cell.other-month { background: #fafbfc; }
 .month-cell.other-month .cell-date { color: #c0c4cc; }
 .month-cell.today { background: #ecf5ff; }
 .month-cell.today .cell-date { color: #409eff; font-weight: 600; }
 .cell-date { font-size: 12px; padding: 4px; }
-.cell-events { display: flex; flex-direction: column; gap: 2px; width: 100%; overflow: hidden; }
-.cell-events:not(.expanded) { max-height: 64px; }
-.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; height: 18px; line-height: 14px; width: 100%; box-sizing: border-box; overflow: hidden; }
-.event-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-events { display: flex; flex-direction: column; gap: 2px; }
+.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; }
 .cell-event.status-0 { background: #fef3cd; color: #92400e; }
 .cell-event.status-1 { background: #d1fae5; color: #065f46; }
 .cell-event.status-2 { background: #f3f4f6; color: #6b7280; }
-.cell-more { font-size: 11px; color: #9ca3af; padding: 2px 4px; }
+.cell-more { font-size: 11px; color: #9ca3af; padding: 2px 4px; cursor: pointer; }
+.cell-more:hover { color: #409eff; }
 </style>
