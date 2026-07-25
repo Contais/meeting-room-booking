@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { getSchedule, createReservation } from '@/api/reservation'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -246,7 +246,6 @@ function buildMonthDays() {
   const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
   
   const monthStart = new Date(year, month, 1)
-  const monthEnd = new Date(year, month + 1, 0)
   const startDay = monthStart.getDay() || 7
   
   const days: any[] = []
