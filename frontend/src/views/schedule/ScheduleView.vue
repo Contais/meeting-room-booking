@@ -29,9 +29,8 @@
         <div class="room-col-header">会议室</div>
         <div class="day-ticks-wrap" ref="dayHeaderRef">
           <div class="day-ticks" :style="{ width: hoursWidth + 'px', transform: `translateX(${-headerScrollX}px)` }">
-            <div class="now-line-header" :style="{ left: currentTimePx + 'px' }"></div>
-            <div v-for="h in allHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
-              <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
+            <div v-for="h in allHours" :key="h" class="tick" >
+              <span class="tick-label" >{{ String(h).padStart(2, '0') }}:00</span>
               <span class="tick-mark"></span>
             </div>
           </div>
@@ -196,7 +195,6 @@ const ROW_H = 64
 const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
 
 // ====== 滚动容器引用 ======
-const dayHeaderRef = ref<HTMLElement>()
 const dayBodyRef = ref<HTMLElement>()
 const weekBodyRef = ref<HTMLElement>()
 const headerScrollX = ref(0)
@@ -218,9 +216,9 @@ function scrollToDefaultHour() {
     setTimeout(() => {
       const scrollLeft = VIEW_START * HOUR_WIDTH
       if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
-      if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
+      headerScrollX.value = scrollLeft
       if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
-    }, 200)
+    }, 300)
   })
 }
 
@@ -261,13 +259,6 @@ function timeToPct(t: string) {
 function durPct(s: string, e: string) { return timeToPct(e) - timeToPct(s) }
 function isCurrentHour(h: number) { return new Date().getHours() === h }
 
-// 当前时间精确到分钟的像素位置（不含 room-label 宽度）
-const currentTimePx = computed(() => {
-  const now = new Date()
-  const totalMinutes = TOTAL_HOURS * 60
-  const minutes = now.getHours() * 60 + now.getMinutes()
-  return (minutes / totalMinutes) * hoursWidth
-})
 
 
 
@@ -353,9 +344,7 @@ onMounted(loadData)
 .day-ticks { display: flex; }
 .tick { width: 60px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; flex-shrink: 0; }
 .tick-label { font-size: 11px; color: #6b7280; font-weight: 500; }
-.tick-now-label { color: #ef4444; font-weight: 600; }
 .tick-mark { width: 1px; height: 6px; background: #d1d5db; margin-top: 4px; }
-.tick-now .tick-mark { background: #ef4444; height: 10px; }
 
 .day-body-wrap { flex: 1; overflow: auto; }
 .day-body { position: relative; }
@@ -369,8 +358,7 @@ onMounted(loadData)
 
 .day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; left: 100px; width: calc(100% - 100px); }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.now-line-header { position: absolute; top: 0; height: 30px; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
-.now-line-header::before { content: ''; position: absolute; bottom: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
+
 
 /* ========== 周视图 ========== */
 .week-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
