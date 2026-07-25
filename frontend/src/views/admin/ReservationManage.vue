@@ -56,7 +56,7 @@
 
       <div class="pagination-wrap">
         <span class="total-text">共 {{ total }} 条</span>
-        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="prev, pager, next, sizes" @size-change="loadData" @current-change="loadData" />
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="prev, pager, next, sizes, jumper" @size-change="onSizeChange" @current-change="loadData" />
       </div>
     </div>
   </div>
@@ -70,7 +70,7 @@ import { listAllReservations, approveReservation, rejectReservation, cancelReser
 import type { Reservation } from '@/types/reservation'
 
 const loading = ref(false); const expanded = ref(false); const tableData = ref<Reservation[]>([]); const total = ref(0)
-const query = reactive({ page: 1, size: 20, keyword: '', subject: '', contactPhone: '', startTime: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 10, keyword: '', subject: '', contactPhone: '', startTime: '', status: undefined as number | undefined })
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(0, 16) : '' }
@@ -78,6 +78,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
 function resetQuery() { query.keyword = ''; query.subject = ''; query.contactPhone = ''; query.startTime = ''; query.status = undefined; query.page = 1; loadData() }
+function onSizeChange() { query.page = 1; loadData() }
 async function loadData() { loading.value = true; try { const res = await listAllReservations(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
 async function handleApprove(id: number) { try { await approveReservation(id); ElMessage.success('通过'); loadData() } catch { /* */ } }
 async function handleReject(id: number) { try { await rejectReservation(id); ElMessage.success('已拒绝'); loadData() } catch { /* */ } }

@@ -41,7 +41,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="pagination-wrap"><span class="total-text">共 {{ total }} 条</span><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="prev, pager, next, sizes" @size-change="loadData" @current-change="loadData" /></div>
+      <div class="pagination-wrap"><span class="total-text">共 {{ total }} 条</span><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="prev, pager, next, sizes, jumper" @size-change="onSizeChange" @current-change="loadData" /></div>
     </div>
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="480px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
@@ -70,10 +70,11 @@ const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const expanded = ref(false); const deptTree = ref<Department[]>([])
-const query = reactive({ page: 1, size: 20, keyword: '', username: '', phone: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 10, keyword: '', username: '', phone: '', status: undefined as number | undefined })
 const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined as number | undefined })
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
+function onSizeChange() { query.page = 1; loadData() }
 async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
