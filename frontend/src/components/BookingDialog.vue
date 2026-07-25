@@ -118,12 +118,6 @@ const rules: FormRules = {
   contactPhone: [{ pattern: /^[0-9]*$/, message: '联系电话只能输入数字', trigger: 'blur' }]
 }
 
-const selectedDateStr = computed(() => {
-  if (!form.selectedDate) return '请选择日期'
-  const p = form.selectedDate.split('-')
-  return p[0] + '年' + p[1] + '月' + p[2] + '日'
-})
-
 const timeOptions = computed(() => {
   if (!form.selectedDate || !currentRoom.value) return []
   const startHour = parseInt((currentRoom.value.bookableStart || '08:00').split(':')[0])

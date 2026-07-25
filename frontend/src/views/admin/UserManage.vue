@@ -9,12 +9,12 @@
         <template v-else>
           <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="搜索用户名或姓名" clearable @input="onSearchInput" /></div>
           <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="loadData"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="query.page = 1; loadData()"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
         </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetQuery">重置</el-button>
-        <el-button type="primary" @click="loadData">查询</el-button>
+        <el-button type="primary" @click="query.page = 1; loadData()">查询</el-button>
         <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
