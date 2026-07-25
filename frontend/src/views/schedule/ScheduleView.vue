@@ -39,7 +39,7 @@
       <!-- 内容区域（可滚动） -->
       <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
         <div class="day-body">
-          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
+          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row" :style="{ transform: `translateX(${-headerScrollX}px)` }">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
               <div class="room-meta">{{ room.capacity }}人</div>
@@ -212,13 +212,15 @@ function onWeekScroll() {
 
 // ====== 滚动到默认时间 ======
 function scrollToDefaultHour() {
+  const scrollLeft = VIEW_START * HOUR_WIDTH
+  headerScrollX.value = scrollLeft
   nextTick(() => {
-    setTimeout(() => {
-      const scrollLeft = VIEW_START * HOUR_WIDTH
-      if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
-      headerScrollX.value = scrollLeft
-      if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
-    }, 300)
+    if (dayBodyRef.value) {
+      dayBodyRef.value.scrollLeft = scrollLeft
+    }
+    if (weekBodyRef.value) {
+      weekBodyRef.value.scrollTop = scrollLeft
+    }
   })
 }
 
