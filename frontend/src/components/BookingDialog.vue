@@ -257,6 +257,8 @@ function handleClose() {
 // 监听弹窗打开，初始化数据
 watch(visible, async (val) => {
   if (val) {
+    // 重置校验状态
+    hasAttemptedSubmit.value = false
     if (props.date) {
       form.selectedDate = props.date
       if (props.startTime) {
