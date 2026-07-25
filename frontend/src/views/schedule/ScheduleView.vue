@@ -345,11 +345,12 @@ function weekBlockStyle(r: any, _hour: number) {
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
+  // 每列宽度百分比（7列）
   const colWidth = 100 / 7
   const leftPercent = dayIndex * colWidth
   
   return {
-    left: `calc(${leftPercent}% + 2px)`,
+    left: `calc(60px + ${leftPercent}% + 2px)`,
     width: `calc(${colWidth}% - 4px)`,
     top: `${top}%`,
     height: `${height}%`,
@@ -531,8 +532,8 @@ onMounted(loadData)
 .month-cell.today { background: #ecf5ff; }
 .month-cell.today .cell-date { color: #409eff; font-weight: 600; }
 .cell-date { font-size: 12px; padding: 4px; }
-.cell-events { display: flex; flex-direction: column; gap: 2px; }
-.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell-events { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; }
 .cell-event.status-0 { background: #fef3cd; color: #92400e; }
 .cell-event.status-1 { background: #d1fae5; color: #065f46; }
 .cell-event.status-2 { background: #f3f4f6; color: #6b7280; }
