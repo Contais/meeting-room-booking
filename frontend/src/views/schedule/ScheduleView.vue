@@ -64,19 +64,16 @@
           <div class="time-label">{{ h }}:00</div>
           <div class="day-cell" v-for="d in weekDays" :key="d.dateStr + '-' + h"
             @click="onWeekCellClick(d.dateStr, h)"></div>
-          <!-- 按日期分组显示预约 -->
-          <template v-for="(dayReservations, dayIdx) in getWeekReservationsByDay(h)" :key="'day-' + dayIdx">
-            <div v-for="(r, roomIdx) in dayReservations" :key="r.id"
-              class="reservation-block week-block" :class="'status-' + r.status"
-              :style="weekBlockStyle(r, h, dayIdx, roomIdx, dayReservations.length)" @click="showDetail(r)">
-              <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
-                <div class="block-inner">
-                  <div class="block-subject">{{ r.subject || '未命名' }}</div>
-                  <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                </div>
-              </el-tooltip>
-            </div>
-          </template>
+          <div v-for="r in getWeekReservations(h)" :key="r.id"
+            class="reservation-block week-block" :class="'status-' + r.status"
+            :style="weekBlockStyle(r, h)" @click="showDetail(r)">
+            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
+              <div class="block-inner">
+                <div class="block-subject">{{ r.subject || '未命名' }}</div>
+                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+              </div>
+            </el-tooltip>
+          </div>
         </div>
       </div>
     </div>
@@ -288,24 +285,13 @@ function getRoomReservations(roomId: number) {
   })
 }
 
-// 按日期分组获取预约（用于周视图）
-function getWeekReservationsByDay(hour: number) {
-  const result: any[][] = []
-  
-  weekDays.value.forEach((day) => {
-    // 获取该日期、该小时开始的预约
-    const dayReservations = reservations.value.filter(r => {
-      const rDate = r.startTime.split('T')[0]
-      const start = new Date(r.startTime)
-      const startHour = start.getHours()
-      return rDate === day.dateStr && startHour === hour
-    })
-    
-    // 按会议室分组（同一会议室的预约垂直排列）
-    result.push(dayReservations)
+// 获取周视图某小时的预约
+function getWeekReservations(hour: number) {
+  return reservations.value.filter(r => {
+    const start = new Date(r.startTime)
+    const startHour = start.getHours()
+    return startHour === hour
   })
-  
-  return result
 }
 
 // 日视图预约块样式
@@ -332,36 +318,30 @@ function dayBlockStyle(r: any) {
 }
 
 // 周视图预约块样式
-function weekBlockStyle(r: any, _hour: number, dayIdx: number, roomIdx: number, totalRooms: number) {
+function weekBlockStyle(r: any, _hour: number) {
+  const dayIndex = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
+  if (dayIndex < 0) return { display: 'none' }
+  
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
   const startMinutes = start.getMinutes()
   const duration = (end.getTime() - start.getTime()) / 60000
   
-  // 计算跨小时数
-  const startHour = start.getHours()
-  const endHour = end.getHours() || 24
-  const crossHours = endHour - startHour
-  
   // 计算相对于时间行内的偏移
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
-  // 每列宽度百分比（7列），减去时间标签列宽度
+  // 每列宽度百分比（7列）
   const colWidth = 100 / 7
-  const leftPercent = dayIdx * colWidth
-  
-  // 每个会议室的高度占比（同一时间行内垂直排列）
-  const roomHeight = 100 / Math.max(totalRooms, 1)
-  const roomTop = roomIdx * roomHeight
+  const leftPercent = dayIndex * colWidth
   
   return {
     left: `calc(60px + ${leftPercent}% + 2px)`,
     width: `calc(${colWidth}% - 4px)`,
-    top: `calc(${top}% + ${roomTop}%)`,
-    height: `calc(${height}% * ${roomHeight / 100})`,
+    top: `${top}%`,
+    height: `${height}%`,
     position: 'absolute' as const,
-    zIndex: crossHours > 1 ? 2 : 1
+    zIndex: 1
   }
 }
 
