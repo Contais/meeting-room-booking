@@ -163,7 +163,10 @@ public class ReservationServiceImpl implements ReservationService {
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-        return reservations.stream().map(r -> toVO(r, null, null)).collect(Collectors.toList());
+        List<ReservationVO> vos = reservations.stream().map(r -> toVO(r, null, null)).collect(Collectors.toList());
+        // 批量回填预约人用户名，供前端已约时段展示
+        fillUsernames(vos);
+        return vos;
     }
 
     @Override
