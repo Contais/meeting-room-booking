@@ -27,8 +27,8 @@
       <div class="day-header">
         <div class="room-col-header">会议室</div>
         <div class="day-ticks">
-          <div v-for="h in dayHours" :key="h" class="tick">
-            <span class="tick-label">{{ h }}:00</span>
+          <div v-for="h in dayHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
+            <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ h }}:00</span>
             <span class="tick-mark"></span>
           </div>
         </div>
@@ -213,6 +213,12 @@ async function loadData() {
   try { const r = await getSchedule(p); rooms.value = r.data.rooms || []; reservations.value = r.data.reservations || []; if (viewMode.value === 'month') buildMonthDays() } catch { /* */ }
 }
 
+// ====== 当前时间 ======
+function isCurrentHour(h: number) {
+  const now = new Date()
+  return now.getHours() === h
+}
+
 // ====== 日视图 ======
 function getRoomReservations(roomId: number) {
   const today = formatDate(currentDate.value)
@@ -280,12 +286,14 @@ onMounted(loadData)
 
 /* ========== 日视图 ========== */
 .day-view { padding: 0; overflow: hidden; }
-.day-header { display: flex; border-bottom: 1px solid #e5e7eb; background: #fafbfc; }
+.day-header { display: flex; border-bottom: 2px solid #e5e7eb; background: #fafbfc; }
 .room-col-header { width: 100px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; flex-shrink: 0; border-right: 1px solid #e5e7eb; }
 .day-ticks { flex: 1; display: flex; }
 .tick { flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding-top: 8px; }
 .tick-label { font-size: 11px; color: #6b7280; font-weight: 500; }
-.tick-mark { width: 1px; height: 8px; background: #d1d5db; margin-top: 4px; }
+.tick-now-label { color: #ef4444; font-weight: 600; }
+.tick-mark { width: 1px; height: 6px; background: #9ca3af; margin-top: 4px; }
+.tick-now .tick-mark { background: #ef4444; height: 10px; }
 
 .day-body { position: relative; }
 .day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; }
