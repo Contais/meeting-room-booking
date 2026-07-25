@@ -134,7 +134,7 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 (1, '首页', '/home', 'HomeFilled', 0, 1, 1, 1),
 (2, '会议室', '/meeting/rooms', 'OfficeBuilding', 0, 2, 1, 1),
 (3, '我的预约', '/reservation/my', 'Calendar', 0, 3, 1, 1),
-(4, '日程视图', '/schedule', 'Calendar', 0, 4, 1, 1),
+(4, '日历视图', '/schedule', 'Calendar', 0, 4, 1, 1),
 (10, '系统管理', NULL, 'Setting', 0, 10, 1, 1),
 (11, '用户管理', '/admin/users', 'User', 10, 11, 1, 1),
 (12, '部门管理', '/admin/departments', 'Menu', 10, 12, 1, 1),
