@@ -88,13 +88,20 @@
           class="month-cell" :class="{ 'other-month': !day.currentMonth, 'today': day.isToday }"
           @click="onMonthCellClick(day)">
           <div class="cell-date">{{ day.date }}</div>
-          <div class="cell-events">
-            <div v-for="r in day.reservations.slice(0, 3)" :key="r.id"
+          <div class="cell-events" :class="{ 'expanded': expandedDays.has(day.dateStr) }">
+            <div v-for="r in getDayReservations(day)" :key="r.id"
               class="cell-event" :class="'status-' + r.status"
               @click.stop="showDetail(r)">
               {{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}
             </div>
-            <div v-if="day.reservations.length > 3" class="cell-more">+{{ day.reservations.length - 3 }}更多</div>
+            <div v-if="day.reservations.length > 3 && !expandedDays.has(day.dateStr)" 
+              class="cell-more" @click.stop="toggleDayExpand(day.dateStr)">
+              +{{ day.reservations.length - 3 }}更多
+            </div>
+            <div v-if="expandedDays.has(day.dateStr) && day.reservations.length > 3" 
+              class="cell-more" @click.stop="toggleDayExpand(day.dateStr)">
+              收起
+            </div>
           </div>
         </div>
       </div>
@@ -220,6 +227,7 @@ const weekDays = computed(() => {
 
 // 月日期
 const monthDays = ref<any[]>([])
+const expandedDays = ref<Set<string>>(new Set())
 
 const dateDisplay = computed(() => {
   const d = currentDate.value
@@ -356,6 +364,21 @@ function weekBlockStyle(r: any, _hour: number) {
     height: `${height}%`,
     position: 'absolute' as const,
     zIndex: crossHours > 1 ? 2 : 1
+  }
+}
+
+function getDayReservations(day: any) {
+  if (expandedDays.value.has(day.dateStr)) {
+    return day.reservations
+  }
+  return day.reservations.slice(0, 3)
+}
+
+function toggleDayExpand(dateStr: string) {
+  if (expandedDays.value.has(dateStr)) {
+    expandedDays.value.delete(dateStr)
+  } else {
+    expandedDays.value.add(dateStr)
   }
 }
 
@@ -532,8 +555,9 @@ onMounted(loadData)
 .month-cell.today { background: #ecf5ff; }
 .month-cell.today .cell-date { color: #409eff; font-weight: 600; }
 .cell-date { font-size: 12px; padding: 4px; }
-.cell-events { display: flex; flex-direction: column; gap: 2px; width: 100%; }
-.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; }
+.cell-events { display: flex; flex-direction: column; gap: 2px; width: 100%; overflow: hidden; }
+.cell-events:not(.expanded) { max-height: 60px; }
+.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; width: 100%; box-sizing: border-box; }
 .cell-event.status-0 { background: #fef3cd; color: #92400e; }
 .cell-event.status-1 { background: #d1fae5; color: #065f46; }
 .cell-event.status-2 { background: #f3f4f6; color: #6b7280; }
