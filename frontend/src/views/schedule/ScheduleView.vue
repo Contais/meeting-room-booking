@@ -278,27 +278,24 @@ function getHourReservations(hour: number) {
 
 // 日视图预约块样式
 function dayBlockStyle(r: any) {
-  const roomIndex = rooms.value.findIndex(room => room.id === r.roomId)
-  if (roomIndex < 0) return { display: 'none' }
-  
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
   const startHour = start.getHours() + start.getMinutes() / 60
   const endHour = end.getHours() + end.getMinutes() / 60
   const duration = endHour - startHour
   
-  const left = ((startHour - START_HOUR) / (END_HOUR - START_HOUR)) * 100
-  const width = (duration / (END_HOUR - START_HOUR)) * 100
-  
-  const rowHeight = 100 / rooms.value.length
-  const top = roomIndex * rowHeight
+  // 计算相对于时间区域的偏移
+  const totalHours = END_HOUR - START_HOUR
+  const leftPercent = ((startHour - START_HOUR) / totalHours) * 100
+  const widthPercent = (duration / totalHours) * 100
   
   return {
-    left: `calc(100px + ${left}%)`,
-    width: `calc(${width}% - 8px)`,
-    top: `calc(48px + ${top}% + 2px)`,
-    height: `calc(${rowHeight}% - 4px)`,
-    position: 'absolute' as const
+    left: `calc(${leftPercent}% + 2px)`,
+    width: `calc(${widthPercent}% - 4px)`,
+    top: '2px',
+    height: 'calc(100% - 4px)',
+    position: 'absolute' as const,
+    zIndex: 1
   }
 }
 
@@ -312,18 +309,20 @@ function weekBlockStyle(r: any, _hour: number) {
   const startMinutes = start.getMinutes()
   const duration = (end.getTime() - start.getTime()) / 60000
   
+  // 计算相对于时间行内的偏移
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
   const colWidth = 100 / 7
-  const left = dayIndex * colWidth
+  const leftPercent = dayIndex * colWidth
   
   return {
-    left: `calc(60px + ${left}%)`,
-    width: `calc(${colWidth}% - 8px)`,
-    top: `calc(${top}% + 2px)`,
+    left: `calc(${leftPercent}% + 2px)`,
+    width: `calc(${colWidth}% - 4px)`,
+    top: `${top}%`,
     height: `${height}%`,
-    position: 'absolute' as const
+    position: 'absolute' as const,
+    zIndex: 1
   }
 }
 
@@ -449,11 +448,11 @@ onMounted(loadData)
 .time-col:last-child { border-right: none; }
 
 .grid-body { position: relative; min-height: 500px; }
-.room-row { display: flex; border-bottom: 1px solid #f3f4f6; height: 80px; }
+.room-row { display: flex; border-bottom: 1px solid #f3f4f6; height: 80px; position: relative; }
 .room-label { width: 100px; padding: 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; }
 .room-name { font-size: 13px; font-weight: 600; color: #303133; }
 .room-meta { font-size: 11px; color: #9ca3af; margin-top: 4px; }
-.time-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+.time-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; min-width: 0; }
 .time-cell:hover { background: #f9fafb; }
 .time-cell:last-child { border-right: none; }
 
@@ -473,9 +472,10 @@ onMounted(loadData)
 .day-col.today .day-date { background: #409eff; color: #fff; border-radius: 50%; }
 .day-name { font-size: 11px; color: #9ca3af; }
 .day-date { font-size: 14px; font-weight: 600; color: #303133; margin-top: 4px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
-.time-row { position: relative; border-bottom: 1px solid #f3f4f6; height: 60px; }
-.time-label { width: 60px; padding: 8px; font-size: 11px; color: #9ca3af; border-right: 1px solid #e5e7eb; }
+.time-row { position: relative; border-bottom: 1px solid #f3f4f6; height: 80px; }
+.time-label { width: 60px; padding: 8px; font-size: 11px; color: #9ca3af; border-right: 1px solid #e5e7eb; flex-shrink: 0; }
 .day-cell { position: absolute; top: 0; bottom: 0; border-right: 1px solid #f3f4f6; cursor: pointer; }
+.day-cell:hover { background: #f9fafb; }
 .day-cell:hover { background: #f9fafb; }
 .week-block { height: calc(100% - 4px); }
 
