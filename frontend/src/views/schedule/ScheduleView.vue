@@ -39,7 +39,7 @@
       <!-- 内容区域（可滚动） -->
       <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
         <div class="day-body">
-          <div class="now-line" :style="{ left: `calc(100px + ${currentTimePercent}%)` }"></div>
+          <div class="now-line" :style="{ left: (100 + currentTimePx) + 'px' }"></div>
           <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
@@ -214,10 +214,12 @@ function onWeekScroll() {
 // ====== 滚动到默认时间 ======
 function scrollToDefaultHour() {
   nextTick(() => {
-    const scrollLeft = VIEW_START * HOUR_WIDTH
-    if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
-    if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
-    if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
+    setTimeout(() => {
+      const scrollLeft = VIEW_START * HOUR_WIDTH
+      if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
+      if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
+      if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
+    }, 50)
   })
 }
 
@@ -258,12 +260,12 @@ function timeToPct(t: string) {
 function durPct(s: string, e: string) { return timeToPct(e) - timeToPct(s) }
 function isCurrentHour(h: number) { return new Date().getHours() === h }
 
-// 当前时间精确到分钟的位置百分比（相对于 00:00-24:00）
-const currentTimePercent = computed(() => {
+// 当前时间精确到分钟的像素位置（不含 room-label 宽度）
+const currentTimePx = computed(() => {
   const now = new Date()
   const totalMinutes = TOTAL_HOURS * 60
   const minutes = now.getHours() * 60 + now.getMinutes()
-  return (minutes / totalMinutes) * 100
+  return (minutes / totalMinutes) * hoursWidth
 })
 
 
