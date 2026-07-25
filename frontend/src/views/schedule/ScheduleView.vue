@@ -84,17 +84,19 @@
               <div class="day-grid" :style="{ width: gridWidth + 'px' }">
                 <div v-for="h in allHours" :key="h" class="grid-cell" @click="onDayCellClick(room, h)"></div>
               </div>
-              <div v-for="r in getRoomReservations(room.id)" :key="r.id"
-                class="day-event" :class="'s' + r.status"
-                :style="dayEventStyle(r)"
-                :title="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}\n${r.roomName || ''}`"
-                @click="onDayEventClick(r)">
-                <div class="evt-inner">
-                  <div class="evt-title">{{ r.subject || '未命名' }}</div>
-                  <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                  <div class="evt-user">{{ r.username || '' }}</div>
+              <el-tooltip v-for="r in getRoomReservations(room.id)" :key="r.id"
+                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}\n${r.roomName || ''}`"
+                placement="top" raw-content>
+                <div class="day-event" :class="'s' + r.status"
+                  :style="dayEventStyle(r)"
+                  @click="onDayEventClick(r)">
+                  <div class="evt-inner">
+                    <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                    <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                    <div class="evt-user">{{ r.username || '' }}</div>
+                  </div>
                 </div>
-              </div>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -144,17 +146,19 @@
               <div v-if="showWeekNowLine" class="wk-now-line" :style="{ top: `${weekNowLineTop}px`, left: weekNowLineLeft, width: weekNowLineWidth }">
                 <span class="wk-now-label">{{ currentTimeLabel }}</span>
               </div>
-              <div v-for="r in weekReservations" :key="r.id"
-                class="week-event" :class="'s' + r.status"
-                :style="weekEventStyle(r)"
-                :title="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
-                @click="onWeekEventClick(r)">
-                <div class="evt-inner">
-                  <div class="evt-title">{{ r.subject || '未命名' }}</div>
-                  <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                  <div class="evt-user">{{ r.username || '' }}</div>
+              <el-tooltip v-for="r in weekReservations" :key="r.id"
+                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
+                placement="top" raw-content>
+                <div class="week-event" :class="'s' + r.status"
+                  :style="weekEventStyle(r)"
+                  @click="onWeekEventClick(r)">
+                  <div class="evt-inner">
+                    <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                    <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                    <div class="evt-user">{{ r.username || '' }}</div>
+                  </div>
                 </div>
-              </div>
+              </el-tooltip>
             </div>
           </div>
         </div>
