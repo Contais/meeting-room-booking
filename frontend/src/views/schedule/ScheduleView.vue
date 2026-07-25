@@ -1,8 +1,8 @@
 <template>
   <div class="page-view">
-    <div class="page-header">
-      <h2>日程视图</h2>
-      <div class="schedule-controls">
+    <!-- 顶部控制栏 -->
+    <div class="control-bar">
+      <div class="control-left">
         <el-radio-group v-model="viewMode" size="small">
           <el-radio-button value="day">日</el-radio-button>
           <el-radio-button value="week">周</el-radio-button>
@@ -15,31 +15,55 @@
         </el-button-group>
         <span class="date-display">{{ dateDisplay }}</span>
       </div>
+      <div class="control-right">
+        <el-button type="primary" size="small" @click="openQuickBook">
+          <el-icon><Plus /></el-icon> 创建日程
+        </el-button>
+      </div>
     </div>
 
-    <div class="schedule-container page-card">
-      <div class="schedule-grid" :style="{ gridTemplateRows: '60px repeat(' + rooms.length + ', 1fr)' }">
-        <!-- 左上角空白 -->
-        <div class="grid-corner"></div>
-        <!-- 横轴：时间列 -->
-        <div class="time-header" v-for="hour in timeSlots" :key="hour">{{ String(hour).padStart(2, '0') }}:00</div>
-        
-        <template v-for="room in rooms" :key="room.id">
-          <!-- 纵轴：会议室名称 -->
-          <div class="room-label">{{ room.name }}</div>
-          <!-- 每个会议室的时间单元格 -->
-          <div class="time-cell" v-for="hour in timeSlots" :key="room.id + '-' + hour"
-            @click="onCellClick(room, hour)"></div>
-        </template>
-        
-        <!-- 预约色块 -->
-        <div v-for="r in reservations" :key="r.id"
-          class="reservation-block"
-          :class="statusClass(r.status)"
-          :style="blockStyle(r)"
-          @click="showDetail(r)">
-          <div class="block-subject">{{ r.subject || '未命名' }}</div>
-          <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+    <!-- 日视图：横轴时间，纵轴会议室 -->
+    <div v-if="viewMode === 'day'" class="day-view page-card">
+      <div class="grid-header-row">
+        <div class="room-col-header">会议室</div>
+        <div class="time-col" v-for="h in dayHours" :key="h">{{ h }}:00</div>
+      </div>
+      <div class="grid-body">
+        <div v-for="room in rooms" :key="room.id" class="room-row">
+          <div class="room-label">
+            <div class="room-name">{{ room.name }}</div>
+            <div class="room-meta">{{ room.capacity }}人 | {{ room.equipment || '无设备' }}</div>
+          </div>
+          <div class="time-cell" v-for="h in dayHours" :key="room.id + '-' + h"
+            @click="onCellClick(room, h)"></div>
+          <div v-for="r in getRoomReservations(room.id)" :key="r.id"
+            class="reservation-block" :class="'status-' + r.status"
+            :style="dayBlockStyle(r)" @click="showDetail(r)">
+            <div class="block-content">{{ r.subject || '未命名' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 周视图：横轴日期，纵轴时间 -->
+    <div v-if="viewMode === 'week'" class="week-view page-card">
+      <div class="grid-header-row">
+        <div class="time-col-header"></div>
+        <div class="day-col" v-for="d in weekDays" :key="d.dateStr" :class="{ today: d.isToday }">
+          <div class="day-name">{{ d.dayName }}</div>
+          <div class="day-date">{{ d.dayNum }}</div>
+        </div>
+      </div>
+      <div class="grid-body">
+        <div v-for="h in dayHours" :key="h" class="time-row">
+          <div class="time-label">{{ h }}:00</div>
+          <div class="day-cell" v-for="d in weekDays" :key="d.dateStr + '-' + h"
+            @click="onWeekCellClick(d.dateStr, h)"></div>
+          <div v-for="r in getHourReservations(h)" :key="r.id"
+            class="reservation-block week-block" :class="'status-' + r.status"
+            :style="weekBlockStyle(r, h)" @click="showDetail(r)">
+            <div class="block-content">{{ r.subject || '未命名' }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -47,7 +71,7 @@
     <!-- 月视图 -->
     <div v-if="viewMode === 'month'" class="month-view page-card">
       <div class="month-header">
-        <div class="month-day-name" v-for="d in ['一', '二', '三', '四', '五', '六', '日']" :key="d">{{ d }}</div>
+        <div v-for="d in ['一', '二', '三', '四', '五', '六', '日']" :key="d" class="month-day-name">{{ d }}</div>
       </div>
       <div class="month-grid">
         <div v-for="(day, idx) in monthDays" :key="idx"
@@ -55,18 +79,30 @@
           @click="onMonthCellClick(day)">
           <div class="cell-date">{{ day.date }}</div>
           <div class="cell-events">
-            <div v-for="r in day.reservations" :key="r.id"
+            <div v-for="r in day.reservations.slice(0, 3)" :key="r.id"
               class="cell-event" :class="'status-' + r.status"
               @click.stop="showDetail(r)">
               {{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}
             </div>
+            <div v-if="day.reservations.length > 3" class="cell-more">+{{ day.reservations.length - 3 }}更多</div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 预约详情对话框 -->
+    <el-dialog v-model="detailVisible" title="预约详情" width="400px">
+      <el-descriptions :column="1" border v-if="currentReservation">
+        <el-descriptions-item label="会议室">{{ currentReservation.roomName }}</el-descriptions-item>
+        <el-descriptions-item label="主题">{{ currentReservation.subject || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="时间段">{{ formatTime(currentReservation.startTime) }} - {{ formatTime(currentReservation.endTime) }}</el-descriptions-item>
+        <el-descriptions-item label="参会人数">{{ currentReservation.attendeeCount || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="状态"><el-tag :type="statusType(currentReservation.status)" size="small">{{ statusText(currentReservation.status) }}</el-tag></el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
+
     <!-- 快速预约对话框 -->
-    <el-dialog v-model="quickBookVisible" title="快速预约" width="480px" destroy-on-close>
+    <el-dialog v-model="quickBookVisible" title="创建日程" width="480px" destroy-on-close>
       <el-form ref="quickBookFormRef" :model="quickBookForm" :rules="quickBookRules" label-width="80px">
         <el-form-item label="会议室">
           <el-select v-model="quickBookForm.roomId" placeholder="请选择会议室" style="width:100%">
@@ -95,40 +131,29 @@
       </el-form>
       <template #footer>
         <el-button @click="quickBookVisible = false">取消</el-button>
-        <el-button type="primary" :loading="quickBookSubmitting" @click="handleQuickBook">确定</el-button>
+        <el-button type="primary" :loading="quickBookSubmitting" @click="handleQuickBook">保存</el-button>
       </template>
-    </el-dialog>
-
-    <el-dialog v-model="detailVisible" title="预约详情" width="400px">
-      <el-descriptions :column="1" border v-if="currentReservation">
-        <el-descriptions-item label="会议室">{{ currentReservation.roomName }}</el-descriptions-item>
-        <el-descriptions-item label="主题">{{ currentReservation.subject || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="时间段">{{ formatTime(currentReservation.startTime) }} - {{ formatTime(currentReservation.endTime) }}</el-descriptions-item>
-        <el-descriptions-item label="参会人数">{{ currentReservation.attendeeCount || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="状态"><el-tag :type="statusType(currentReservation.status)" size="small">{{ statusText(currentReservation.status) }}</el-tag></el-descriptions-item>
-      </el-descriptions>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
 import { getSchedule, createReservation } from '@/api/reservation'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 
-const viewMode = ref('day')
+const viewMode = ref<'day' | 'week' | 'month'>('day')
 const currentDate = ref(new Date())
-const rooms = ref<{ id: number; name: string; capacity: number }[]>([])
-const reservations = ref<{ id: number; roomId: number; roomName: string; subject: string; startTime: string; endTime: string; status: number; attendeeCount: number }[]>([])
+const rooms = ref<any[]>([])
+const reservations = ref<any[]>([])
+
+// 预约详情
 const detailVisible = ref(false)
 const currentReservation = ref<any>(null)
 
-// 月视图相关
-const monthDays = ref<any[]>([])
-
-// 快速预约相关
+// 快速预约
 const quickBookVisible = ref(false)
 const quickBookSubmitting = ref(false)
 const quickBookFormRef = ref<FormInstance>()
@@ -149,74 +174,110 @@ const quickBookRules: FormRules = {
   subject: [{ required: true, message: '请输入会议主题', trigger: 'blur' }]
 }
 
+// 时间相关
 const START_HOUR = 8
 const END_HOUR = 20
-
-const timeSlots = computed(() => {
-  const slots = []
-  for (let h = START_HOUR; h < END_HOUR; h++) slots.push(h)
-  return slots
+const dayHours = computed(() => {
+  const hours = []
+  for (let h = START_HOUR; h < END_HOUR; h++) hours.push(h)
+  return hours
 })
+
+// 周日期
+const weekDays = computed(() => {
+  const d = currentDate.value
+  const startOfWeek = new Date(d)
+  const day = startOfWeek.getDay()
+  startOfWeek.setDate(startOfWeek.getDate() - (day === 0 ? 6 : day - 1))
+  
+  const today = new Date()
+  const todayStr = formatDate(today)
+  const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(startOfWeek)
+    date.setDate(date.getDate() + i)
+    const dateStr = formatDate(date)
+    return {
+      date: date,
+      dateStr,
+      dayName: dayNames[i],
+      dayNum: date.getDate(),
+      isToday: dateStr === todayStr
+    }
+  })
+})
+
+// 月日期
+const monthDays = ref<any[]>([])
 
 const dateDisplay = computed(() => {
   const d = currentDate.value
-  const fmt = (date: Date) => date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+  const fmt = (date: Date) => `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月${String(date.getDate()).padStart(2, '0')}日`
   if (viewMode.value === 'day') return fmt(d)
-  const weekEnd = new Date(d)
-  weekEnd.setDate(weekEnd.getDate() + 6)
-  return fmt(d) + ' ~ ' + fmt(weekEnd)
+  if (viewMode.value === 'week') {
+    const end = new Date(d)
+    end.setDate(end.getDate() + 6)
+    return `${fmt(d)} ~ ${fmt(end)}`
+  }
+  return `${d.getFullYear()}年${d.getMonth() + 1}月`
 })
+
+function formatDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 async function loadData() {
   const d = currentDate.value
-  const fmt = (date: Date) => date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
   let params: Record<string, string> = {}
+  
   if (viewMode.value === 'day') {
-    params.date = fmt(d)
+    params.date = formatDate(d)
   } else if (viewMode.value === 'week') {
-    const weekEnd = new Date(d)
+    const weekStart = new Date(d)
+    const day = weekStart.getDay()
+    weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1))
+    const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 6)
-    params.startDate = fmt(d)
-    params.endDate = fmt(weekEnd)
+    params.startDate = formatDate(weekStart)
+    params.endDate = formatDate(weekEnd)
   } else {
-    // 月视图
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
-    const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-    // 补充前后月份的日期
     const startDay = monthStart.getDay() || 7
     monthStart.setDate(monthStart.getDate() - startDay + 1)
-    const endDay = monthEnd.getDay() || 7
-    monthEnd.setDate(monthEnd.getDate() + (7 - endDay))
-    params.startDate = fmt(monthStart)
-    params.endDate = fmt(monthEnd)
+    const monthEnd = new Date(monthStart)
+    monthEnd.setDate(monthEnd.getDate() + 41)
+    params.startDate = formatDate(monthStart)
+    params.endDate = formatDate(monthEnd)
   }
+  
   try {
     const res = await getSchedule(params)
     rooms.value = res.data.rooms || []
     reservations.value = res.data.reservations || []
-    if (viewMode.value === 'month') {
-      buildMonthDays()
-    }
+    if (viewMode.value === 'month') buildMonthDays()
   } catch { /* */ }
 }
 
-function goPrev() {
-  const d = new Date(currentDate.value)
-  if (viewMode.value === 'day') d.setDate(d.getDate() - 1)
-  else d.setDate(d.getDate() - 7)
-  currentDate.value = d
+function getRoomReservations(roomId: number) {
+  const today = formatDate(currentDate.value)
+  return reservations.value.filter(r => {
+    const rDate = r.startTime.split('T')[0]
+    return r.roomId === roomId && rDate === today
+  })
 }
 
-function goNext() {
-  const d = new Date(currentDate.value)
-  if (viewMode.value === 'day') d.setDate(d.getDate() + 1)
-  else d.setDate(d.getDate() + 7)
-  currentDate.value = d
+function getHourReservations(hour: number) {
+  return reservations.value.filter(r => {
+    const start = new Date(r.startTime)
+    const end = new Date(r.endTime)
+    const h = start.getHours()
+    return h <= hour && end.getHours() > hour
+  })
 }
 
-function goToday() { currentDate.value = new Date() }
-
-function blockStyle(r: any) {
+// 日视图预约块样式
+function dayBlockStyle(r: any) {
   const roomIndex = rooms.value.findIndex(room => room.id === r.roomId)
   if (roomIndex < 0) return { display: 'none' }
   
@@ -226,37 +287,90 @@ function blockStyle(r: any) {
   const endHour = end.getHours() + end.getMinutes() / 60
   const duration = endHour - startHour
   
-  // 横轴位置（时间）
   const left = ((startHour - START_HOUR) / (END_HOUR - START_HOUR)) * 100
   const width = (duration / (END_HOUR - START_HOUR)) * 100
   
-  // 纵轴位置（会议室）
-  const roomHeight = 100 / rooms.value.length
-  const top = roomIndex * roomHeight
+  const rowHeight = 100 / rooms.value.length
+  const top = roomIndex * rowHeight
   
   return {
-    left: `calc(80px + ${left}%)`,
+    left: `calc(100px + ${left}%)`,
     width: `calc(${width}% - 8px)`,
-    top: `calc(60px + ${top}% + 2px)`,
-    height: `calc(${roomHeight}% - 4px)`,
+    top: `calc(48px + ${top}% + 2px)`,
+    height: `calc(${rowHeight}% - 4px)`,
     position: 'absolute' as const
   }
 }
 
-function statusClass(status: number) {
-  return { 0: 'status-pending', 1: 'status-confirmed', 2: 'status-cancelled' }[status] || ''
+// 周视图预约块样式
+function weekBlockStyle(r: any, _hour: number) {
+  const dayIndex = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
+  if (dayIndex < 0) return { display: 'none' }
+  
+  const start = new Date(r.startTime)
+  const end = new Date(r.endTime)
+  const startMinutes = start.getMinutes()
+  const duration = (end.getTime() - start.getTime()) / 60000
+  
+  const top = (startMinutes / 60) * 100
+  const height = Math.max((duration / 60) * 100, 20)
+  
+  const colWidth = 100 / 7
+  const left = dayIndex * colWidth
+  
+  return {
+    left: `calc(60px + ${left}%)`,
+    width: `calc(${colWidth}% - 8px)`,
+    top: `calc(${top}% + 2px)`,
+    height: `${height}%`,
+    position: 'absolute' as const
+  }
 }
 
-function statusType(status: number): string {
-  return { 0: 'warning', 1: 'success', 2: 'info' }[status] || 'info'
+function buildMonthDays() {
+  const d = currentDate.value
+  const year = d.getFullYear()
+  const month = d.getMonth()
+  const today = new Date()
+  const todayStr = formatDate(today)
+  
+  const monthStart = new Date(year, month, 1)
+  const startDay = monthStart.getDay() || 7
+  monthStart.setDate(monthStart.getDate() - startDay + 1)
+  
+  const days: any[] = []
+  for (let i = 0; i < 42; i++) {
+    const date = new Date(monthStart)
+    date.setDate(date.getDate() + i)
+    const dateStr = formatDate(date)
+    days.push({
+      date: date.getDate(),
+      dateStr,
+      currentMonth: date.getMonth() === month,
+      isToday: dateStr === todayStr,
+      reservations: reservations.value.filter(r => r.startTime.split('T')[0] === dateStr)
+    })
+  }
+  monthDays.value = days
 }
 
-function statusText(status: number) {
-  return { 0: '待确认', 1: '已确认', 2: '已取消' }[status] || '未知'
+function goPrev() {
+  const d = new Date(currentDate.value)
+  if (viewMode.value === 'day') d.setDate(d.getDate() - 1)
+  else if (viewMode.value === 'week') d.setDate(d.getDate() - 7)
+  else d.setMonth(d.getMonth() - 1)
+  currentDate.value = d
 }
 
-function formatTime(t: string) { return t ? t.replace('T', ' ').substring(11, 16) : '' }
-function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
+function goNext() {
+  const d = new Date(currentDate.value)
+  if (viewMode.value === 'day') d.setDate(d.getDate() + 1)
+  else if (viewMode.value === 'week') d.setDate(d.getDate() + 7)
+  else d.setMonth(d.getMonth() + 1)
+  currentDate.value = d
+}
+
+function goToday() { currentDate.value = new Date() }
 
 function onCellClick(room: any, hour: number) {
   quickBookForm.roomId = room.id
@@ -269,47 +383,23 @@ function onCellClick(room: any, hour: number) {
   quickBookVisible.value = true
 }
 
-function formatDate(date: Date) {
-  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
-}
-
-function buildMonthDays() {
-  const d = currentDate.value
-  const year = d.getFullYear()
-  const month = d.getMonth()
-  const today = new Date()
-  const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
-  
-  const monthStart = new Date(year, month, 1)
-  const startDay = monthStart.getDay() || 7
-  
-  const days: any[] = []
-  const startDate = new Date(monthStart)
-  startDate.setDate(startDate.getDate() - startDay + 1)
-  
-  for (let i = 0; i < 42; i++) {
-    const date = new Date(startDate)
-    date.setDate(date.getDate() + i)
-    const dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
-    days.push({
-      date: date.getDate(),
-      dateStr,
-      currentMonth: date.getMonth() === month,
-      isToday: dateStr === todayStr,
-      reservations: reservations.value.filter(r => {
-        const rDate = r.startTime.split('T')[0]
-        return rDate === dateStr
-      })
-    })
-  }
-  monthDays.value = days
+function onWeekCellClick(dateStr: string, hour: number) {
+  quickBookForm.date = dateStr
+  quickBookForm.startTime = String(hour).padStart(2, '0') + ':00'
+  quickBookForm.endTime = String(hour + 1).padStart(2, '0') + ':00'
+  quickBookVisible.value = true
 }
 
 function onMonthCellClick(day: any) {
   quickBookForm.date = day.dateStr
+  quickBookVisible.value = true
+}
+
+function openQuickBook() {
   quickBookForm.roomId = undefined
-  quickBookForm.startTime = ''
-  quickBookForm.endTime = ''
+  quickBookForm.date = formatDate(currentDate.value)
+  quickBookForm.startTime = '09:00'
+  quickBookForm.endTime = '10:00'
   quickBookForm.subject = ''
   quickBookForm.attendeeCount = 1
   quickBookForm.contactPhone = ''
@@ -326,16 +416,19 @@ async function handleQuickBook() {
       subject: quickBookForm.subject,
       attendeeCount: quickBookForm.attendeeCount,
       contactPhone: quickBookForm.contactPhone,
-      startTime: quickBookForm.date + 'T' + quickBookForm.startTime + ':00',
-      endTime: quickBookForm.date + 'T' + quickBookForm.endTime + ':00'
+      startTime: `${quickBookForm.date}T${quickBookForm.startTime}:00`,
+      endTime: `${quickBookForm.date}T${quickBookForm.endTime}:00`
     })
     ElMessage.success('预约成功')
     quickBookVisible.value = false
     loadData()
-  } catch { /* */ } finally {
-    quickBookSubmitting.value = false
-  }
+  } catch { /* */ } finally { quickBookSubmitting.value = false }
 }
+
+function formatTime(t: string) { return t ? t.replace('T', ' ').substring(11, 16) : '' }
+function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] || 'info' }
+function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
+function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
 
 watch([viewMode, currentDate], loadData)
 onMounted(loadData)
@@ -343,75 +436,65 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; }
-.page-header h2 { margin: 0; }
-.schedule-controls { display: flex; align-items: center; gap: 12px; }
-.date-display { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
 
-.schedule-container { overflow-x: auto; padding: 0; }
-.schedule-grid { 
-  display: grid; 
-  position: relative; 
-  min-height: 500px;
-  grid-template-columns: 80px repeat(12, 1fr);
-}
+.control-bar { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12px; padding: 12px 20px; border: 1px solid #f0f0f0; }
+.control-left { display: flex; align-items: center; gap: 12px; }
+.date-display { font-size: 14px; color: #303133; font-weight: 500; margin-left: 8px; }
 
-.grid-corner {
-  background: #fafbfc; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light);
-}
+/* 日视图 */
+.day-view { padding: 0; overflow: hidden; }
+.grid-header-row { display: flex; background: #fafbfc; border-bottom: 1px solid #e5e7eb; }
+.room-col-header { width: 100px; padding: 12px; font-size: 12px; font-weight: 600; color: #6b7280; border-right: 1px solid #e5e7eb; }
+.time-col { flex: 1; padding: 12px 4px; font-size: 11px; font-weight: 500; color: #6b7280; text-align: center; border-right: 1px solid #f3f4f6; }
+.time-col:last-child { border-right: none; }
 
-.time-header {
-  padding: 8px 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary);
-  background: #fafbfc; border-bottom: 1px solid var(--border-light); border-right: 1px solid #f0f0f0;
-  text-align: center; position: sticky; top: 0; z-index: 2;
-}
-
-.room-label {
-  padding: 8px; font-size: 12px; font-weight: 500; color: var(--text-primary);
-  border-bottom: 1px solid #f0f0f0; border-right: 1px solid var(--border-light);
-  display: flex; align-items: center; background: #fff;
-}
-
-.time-cell {
-  border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;
-  min-height: 60px; cursor: pointer; transition: background 0.15s;
-}
+.grid-body { position: relative; min-height: 500px; }
+.room-row { display: flex; border-bottom: 1px solid #f3f4f6; height: 80px; }
+.room-label { width: 100px; padding: 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; }
+.room-name { font-size: 13px; font-weight: 600; color: #303133; }
+.room-meta { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+.time-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
 .time-cell:hover { background: #f9fafb; }
+.time-cell:last-child { border-right: none; }
 
-.reservation-block {
-  margin: 2px; border-radius: 6px; padding: 4px 8px; font-size: 11px;
-  overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s;
-}
+/* 预约色块 */
+.reservation-block { margin: 2px 4px; border-radius: 6px; padding: 4px 8px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .reservation-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.status-0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
+.status-1 { background: #d1fae5; border-left: 3px solid #10b981; }
+.status-2 { background: #f3f4f6; border-left: 3px solid #9ca3af; }
+.block-content { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.status-pending { background: #fef3cd; border-left: 3px solid #f59e0b; }
-.status-confirmed { background: #d1fae5; border-left: 3px solid #10b981; }
-.status-cancelled { background: #f3f4f6; border-left: 3px solid #9ca3af; }
+/* 周视图 */
+.week-view { padding: 0; overflow: hidden; }
+.day-col { flex: 1; padding: 8px 4px; text-align: center; border-right: 1px solid #f3f4f6; }
+.day-col:last-child { border-right: none; }
+.day-col.today { background: #ecf5ff; }
+.day-col.today .day-date { background: #409eff; color: #fff; border-radius: 50%; }
+.day-name { font-size: 11px; color: #9ca3af; }
+.day-date { font-size: 14px; font-weight: 600; color: #303133; margin-top: 4px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
+.time-row { position: relative; border-bottom: 1px solid #f3f4f6; height: 60px; }
+.time-label { width: 60px; padding: 8px; font-size: 11px; color: #9ca3af; border-right: 1px solid #e5e7eb; }
+.day-cell { position: absolute; top: 0; bottom: 0; border-right: 1px solid #f3f4f6; cursor: pointer; }
+.day-cell:hover { background: #f9fafb; }
+.week-block { height: calc(100% - 4px); }
 
-.block-subject { font-weight: 600; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.block-time { color: #6b7280; margin-top: 2px; }
-
-/* 月视图样式 */
+/* 月视图 */
 .month-view { padding: 16px; }
-.month-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border-light); }
-.month-day-name { padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.month-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid #e5e7eb; }
+.month-day-name { padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; }
 .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-.month-cell {
-  min-height: 100px; border: 1px solid #f0f0f0; padding: 4px;
-  cursor: pointer; transition: background 0.15s;
-}
+.month-cell { min-height: 100px; border: 1px solid #f0f0f0; padding: 4px; cursor: pointer; transition: background 0.15s; }
 .month-cell:hover { background: #f9fafb; }
 .month-cell.other-month { background: #fafbfc; }
 .month-cell.other-month .cell-date { color: #c0c4cc; }
 .month-cell.today { background: #ecf5ff; }
-.month-cell.today .cell-date { color: var(--primary); font-weight: 600; }
+.month-cell.today .cell-date { color: #409eff; font-weight: 600; }
 .cell-date { font-size: 12px; padding: 4px; }
 .cell-events { display: flex; flex-direction: column; gap: 2px; }
-.cell-event {
-  font-size: 11px; padding: 2px 4px; border-radius: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cell-event.status-0 { background: #fef3cd; color: #92400e; }
 .cell-event.status-1 { background: #d1fae5; color: #065f46; }
 .cell-event.status-2 { background: #f3f4f6; color: #6b7280; }
+.cell-more { font-size: 11px; color: #9ca3af; padding: 2px 4px; }
 </style>
