@@ -39,7 +39,7 @@
       <!-- 内容区域（可滚动） -->
       <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
         <div class="day-body">
-          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
+          <div v-for="room in rooms" :key="room.id" class="day-row">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
               <div class="room-meta">{{ room.capacity }}人</div>
@@ -49,7 +49,7 @@
             </div>
             <div v-for="r in getRoomReservations(room.id)" :key="r.id"
               class="day-event" :class="'s' + r.status"
-              :style="dayEventStyle(r, rIdx)" @click="showDetail(r)">
+              :style="dayEventStyle(r)" @click="showDetail(r)">
               <div class="evt-inner">
                 <div class="evt-title">{{ r.subject || '未命名' }}</div>
                 <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -214,14 +214,23 @@ function onWeekScroll() {
 function scrollToDefaultHour() {
   const scrollLeft = VIEW_START * HOUR_WIDTH
   headerScrollX.value = scrollLeft
-  nextTick(() => {
-    if (dayBodyRef.value) {
-      dayBodyRef.value.scrollLeft = scrollLeft
-    }
-    if (weekBodyRef.value) {
-      weekBodyRef.value.scrollTop = scrollLeft
-    }
-  })
+  // 多次尝试确保 DOM 渲染完成
+  const tryScroll = (attempt: number) => {
+    if (attempt > 10) return
+    nextTick(() => {
+      if (dayBodyRef.value) {
+        dayBodyRef.value.scrollLeft = scrollLeft
+      }
+      if (weekBodyRef.value) {
+        weekBodyRef.value.scrollTop = scrollLeft
+      }
+      // 验证是否滚动成功
+      if (dayBodyRef.value && dayBodyRef.value.scrollLeft !== scrollLeft) {
+        setTimeout(() => tryScroll(attempt + 1), 100)
+      }
+    })
+  }
+  setTimeout(() => tryScroll(0), 100)
 }
 
 const weekDays = computed(() => {
@@ -278,7 +287,7 @@ function getRoomReservations(roomId: number) {
   const today = formatDate(currentDate.value)
   return reservations.value.filter(r => r.roomId === roomId && r.startTime.split('T')[0] === today)
 }
-function dayEventStyle(r: any, rIdx: number) {
+function dayEventStyle(r: any) {
   // 使用像素值计算位置，与 hoursWidth 对齐
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
@@ -286,7 +295,7 @@ function dayEventStyle(r: any, rIdx: number) {
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const leftPx = (startMinutes / (TOTAL_HOURS * 60)) * hoursWidth
   const widthPx = (durationMinutes / (TOTAL_HOURS * 60)) * hoursWidth
-  return { left: (100 + leftPx) + 'px', width: widthPx + 'px', top: rIdx * ROW_H + 4 + 'px', height: ROW_H - 8 + 'px' }
+  return { left: (100 + leftPx) + 'px', width: widthPx + 'px', top: '4px', height: (ROW_H - 8) + 'px' }
 }
 function onDayCellClick(room: any, h: number) {
   quickBookForm.roomId = room.id; quickBookForm.date = formatDate(currentDate.value)
