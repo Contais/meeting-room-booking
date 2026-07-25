@@ -29,6 +29,7 @@
         <div class="room-col-header">会议室</div>
         <div class="day-ticks-wrap" ref="dayHeaderRef">
           <div class="day-ticks" :style="{ width: hoursWidth + 'px' }">
+            <div class="now-line-header" :style="{ left: currentTimePx + 'px' }"></div>
             <div v-for="h in allHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
               <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
               <span class="tick-mark"></span>
@@ -39,7 +40,6 @@
       <!-- 内容区域（可滚动） -->
       <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
         <div class="day-body">
-          <div class="now-line" :style="{ left: (100 + currentTimePx) + 'px' }"></div>
           <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
@@ -219,7 +219,7 @@ function scrollToDefaultHour() {
       if (dayBodyRef.value) dayBodyRef.value.scrollLeft = scrollLeft
       if (dayHeaderRef.value) dayHeaderRef.value.scrollLeft = scrollLeft
       if (weekBodyRef.value) weekBodyRef.value.scrollTop = scrollLeft
-    }, 50)
+    }, 200)
   })
 }
 
@@ -368,8 +368,8 @@ onMounted(loadData)
 
 .day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; left: 100px; width: calc(100% - 100px); }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
-.now-line::before { content: ''; position: absolute; top: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
+.now-line-header { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
+.now-line-header::before { content: ''; position: absolute; bottom: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
 
 /* ========== 周视图 ========== */
 .week-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
