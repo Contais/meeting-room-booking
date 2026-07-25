@@ -39,7 +39,7 @@
       <!-- 内容区域（可滚动） -->
       <div class="day-body-wrap" ref="dayBodyRef" @scroll="onDayScroll">
         <div class="day-body">
-          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row" :style="{ transform: `translateX(${-headerScrollX}px)` }">
+          <div v-for="(room, rIdx) in rooms" :key="room.id" class="day-row">
             <div class="room-label">
               <div class="room-name">{{ room.name }}</div>
               <div class="room-meta">{{ room.capacity }}人</div>
@@ -279,7 +279,14 @@ function getRoomReservations(roomId: number) {
   return reservations.value.filter(r => r.roomId === roomId && r.startTime.split('T')[0] === today)
 }
 function dayEventStyle(r: any, rIdx: number) {
-  return { left: timeToPct(r.startTime) + '%', width: durPct(r.startTime, r.endTime) + '%', top: rIdx * ROW_H + 4 + 'px', height: ROW_H - 8 + 'px' }
+  // 使用像素值计算位置，与 hoursWidth 对齐
+  const start = new Date(r.startTime)
+  const end = new Date(r.endTime)
+  const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
+  const durationMinutes = (end.getTime() - start.getTime()) / 60000
+  const leftPx = (startMinutes / (TOTAL_HOURS * 60)) * hoursWidth
+  const widthPx = (durationMinutes / (TOTAL_HOURS * 60)) * hoursWidth
+  return { left: (100 + leftPx) + 'px', width: widthPx + 'px', top: rIdx * ROW_H + 4 + 'px', height: ROW_H - 8 + 'px' }
 }
 function onDayCellClick(room: any, h: number) {
   quickBookForm.roomId = room.id; quickBookForm.date = formatDate(currentDate.value)
@@ -358,7 +365,7 @@ onMounted(loadData)
 .grid-cell { width: 60px; border-right: 1px solid #f3f4f6; cursor: pointer; flex-shrink: 0; }
 .grid-cell:hover { background: #f9fafb; }
 
-.day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; left: 100px; width: calc(100% - 100px); }
+.day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 
