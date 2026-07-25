@@ -17,8 +17,7 @@
         <label>预约日期</label>
         <el-date-picker v-model="form.selectedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" :disabled-date="disableFutureDate" @change="onDateChange" />
       </div>
-      <div class="dialog-form-item">
-        <label>预约时间 {{ selectedDateStr }}</label>
+      <el-form-item label="预约时间" :error="hasAttemptedSubmit && (!form.startMinute || !form.endMinute) ? '请选择完整的预约时间段' : ''">
         <div class="time-selector">
           <div class="time-selector-header">
             <span v-if="form.startMinute && form.endMinute" class="time-range-text">{{ form.startMinute }} ~ {{ form.endMinute }}</span>
@@ -37,7 +36,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </el-form-item>
       <div class="dialog-form-item"><label>参会人数</label><el-input-number v-model="form.attendeeCount" :min="1" :max="currentRoom?.capacity || 100" style="width: 100%" /></div>
       <div class="dialog-form-item"><label>联系电话</label><el-input v-model="form.contactPhone" placeholder="请输入联系电话" @input="form.contactPhone = form.contactPhone.replace(/[^0-9]/g, '')" /></div>
       <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
@@ -83,6 +82,7 @@ const submitting = ref(false)
 const timeStep = ref(30)
 const bookedReservations = ref<any[]>([])
 const selectedRoomId = ref<number | undefined>(props.roomId)
+const hasAttemptedSubmit = ref(false)
 
 const currentRoom = computed(() => {
   if (props.room) return props.room
@@ -202,11 +202,17 @@ async function loadBookedReservations() {
 }
 
 async function handleSubmit() {
+  hasAttemptedSubmit.value = true
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   const roomId = props.roomId || selectedRoomId.value
   if (!roomId) {
     ElMessage.error('请选择会议室')
+    return
+  }
+  // 手动校验时间段
+  if (!form.startMinute || !form.endMinute) {
+    ElMessage.error('请选择预约时间段')
     return
   }
   submitting.value = true
@@ -238,6 +244,7 @@ function handleClose() {
   form.contactPhone = ''
   form.remark = ''
   bookedReservations.value = []
+  hasAttemptedSubmit.value = false
   if (!props.roomId) {
     selectedRoomId.value = undefined
   }

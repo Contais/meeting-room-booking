@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.config;
 
-import com.meetinghub.meeting.function.MeetingRoomTools;
+import com.meetinghub.meeting.tools.CommonTool;
+import com.meetinghub.meeting.tools.MeetingRoomTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
@@ -27,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class SpringAIConfiguration {
 
-/**
+    /**
      * 内存聊天记忆（按 sessionId 隔离会话）
      */
     @Bean
@@ -41,16 +42,18 @@ public class SpringAIConfiguration {
     /**
      * 构建 ChatClient，注入系统提示词、会话记忆和 Function Calling 工具
      *
-     * @param meetingRoomTools 会议室相关工具（查询会议室、预约统计等）
-     * @param chatMemory       聊天记忆
+     * @param meetingRoomTool 会议室相关工具（查询会议室、预约统计等）
+     * @param commonTool      通用工具（查询天气、时间等）
+     * @param chatMemory      聊天记忆
      * @return ChatClient 实例
      */
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, MeetingRoomTools meetingRoomTools, ChatMemory chatMemory,
-                                  @Value("classpath:prompt/chatbot-system-prompt.md") Resource systemPrompt) throws IOException {
+    public ChatClient chatClient(ChatModel chatModel, ChatMemory chatMemory,
+                                 MeetingRoomTool meetingRoomTool, CommonTool commonTool,
+                                 @Value("classpath:prompt/chatbot-system-prompt.md") Resource systemPrompt) throws IOException {
         return ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt.getContentAsString(StandardCharsets.UTF_8))
-                .defaultTools(meetingRoomTools)
+                .defaultTools(meetingRoomTool, commonTool)
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory).build()
                 )

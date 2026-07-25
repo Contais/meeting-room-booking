@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.function;
+package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @RequiredArgsConstructor
-public class MeetingRoomTools {
+public class MeetingRoomTool {
 
     private final MeetingRoomRepository meetingRoomRepository;
     private final ReservationRepository reservationRepository;
