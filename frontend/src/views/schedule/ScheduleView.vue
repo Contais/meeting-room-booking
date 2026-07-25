@@ -3,21 +3,21 @@
     <!-- 顶部控制栏 -->
     <div class="control-bar">
       <div class="control-left">
+        <el-button-group size="small">
+          <el-button @click="goToday">今天</el-button>
+          <el-button @click="goPrev"><el-icon><ArrowLeft /></el-icon></el-button>
+          <el-button @click="goNext"><el-icon><ArrowRight /></el-icon></el-button>
+        </el-button-group>
         <el-radio-group v-model="viewMode" size="small">
           <el-radio-button value="day">日</el-radio-button>
           <el-radio-button value="week">周</el-radio-button>
           <el-radio-button value="month">月</el-radio-button>
         </el-radio-group>
-        <el-button-group size="small">
-          <el-button @click="goPrev"><el-icon><ArrowLeft /></el-icon></el-button>
-          <el-button @click="goToday">今天</el-button>
-          <el-button @click="goNext"><el-icon><ArrowRight /></el-icon></el-button>
-        </el-button-group>
         <span class="date-display">{{ dateDisplay }}</span>
       </div>
       <div class="control-right">
         <el-button type="primary" size="small" @click="openQuickBook">
-          <el-icon><Plus /></el-icon> 创建日程
+          <el-icon><Plus /></el-icon> 预约会议室
         </el-button>
       </div>
     </div>
@@ -81,7 +81,7 @@
     <!-- 月视图 -->
     <div v-if="viewMode === 'month'" class="month-view page-card">
       <div class="month-header">
-        <div v-for="d in ['一', '二', '三', '四', '五', '六', '日']" :key="d" class="month-day-name">{{ d }}</div>
+        <div v-for="d in ['日', '一', '二', '三', '四', '五', '六']" :key="d" class="month-day-name">{{ d }}</div>
       </div>
       <div class="month-grid">
         <div v-for="(day, idx) in monthDays" :key="idx"
@@ -112,7 +112,7 @@
     </el-dialog>
 
     <!-- 快速预约对话框 -->
-    <el-dialog v-model="quickBookVisible" title="创建日程" width="480px" destroy-on-close>
+    <el-dialog v-model="quickBookVisible" title="预约会议室" width="480px" destroy-on-close>
       <el-form ref="quickBookFormRef" :model="quickBookForm" :rules="quickBookRules" label-width="80px">
         <el-form-item label="会议室">
           <el-select v-model="quickBookForm.roomId" placeholder="请选择会议室" style="width:100%">
@@ -193,16 +193,16 @@ const dayHours = computed(() => {
   return hours
 })
 
-// 周日期
+// 周日期（从周日开始）
 const weekDays = computed(() => {
   const d = currentDate.value
   const startOfWeek = new Date(d)
   const day = startOfWeek.getDay()
-  startOfWeek.setDate(startOfWeek.getDate() - (day === 0 ? 6 : day - 1))
+  startOfWeek.setDate(startOfWeek.getDate() - day)  // 回到周日
   
   const today = new Date()
   const todayStr = formatDate(today)
-  const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
   
   return Array.from({ length: 7 }, (_, i) => {
     const date = new Date(startOfWeek)
@@ -246,15 +246,15 @@ async function loadData() {
   } else if (viewMode.value === 'week') {
     const weekStart = new Date(d)
     const day = weekStart.getDay()
-    weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1))
+    weekStart.setDate(weekStart.getDate() - day)  // 回到周日
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 6)
     params.startDate = formatDate(weekStart)
     params.endDate = formatDate(weekEnd)
   } else {
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1)
-    const startDay = monthStart.getDay() || 7
-    monthStart.setDate(monthStart.getDate() - startDay + 1)
+    const dayOfWeek = monthStart.getDay()
+    monthStart.setDate(monthStart.getDate() - dayOfWeek)  // 回到周日
     const monthEnd = new Date(monthStart)
     monthEnd.setDate(monthEnd.getDate() + 41)
     params.startDate = formatDate(monthStart)
@@ -366,8 +366,8 @@ function buildMonthDays() {
   const todayStr = formatDate(today)
   
   const monthStart = new Date(year, month, 1)
-  const startDay = monthStart.getDay() || 7
-  monthStart.setDate(monthStart.getDate() - startDay + 1)
+  const dayOfWeek = monthStart.getDay()  // 0=周日
+  monthStart.setDate(monthStart.getDate() - dayOfWeek)  // 回到周日
   
   const days: any[] = []
   for (let i = 0; i < 42; i++) {
@@ -505,6 +505,7 @@ onMounted(loadData)
 
 /* 周视图 */
 .week-view { padding: 0; overflow: hidden; }
+.time-col-header { width: 60px; flex-shrink: 0; }
 .day-col { flex: 1; padding: 8px 4px; text-align: center; border-right: 1px solid #f3f4f6; }
 .day-col:last-child { border-right: none; }
 .day-col.today { background: #ecf5ff; }
