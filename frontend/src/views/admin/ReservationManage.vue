@@ -79,7 +79,7 @@ function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTim
 
 function resetQuery() { query.keyword = ''; query.subject = ''; query.contactPhone = ''; query.startTime = ''; query.status = undefined; query.page = 1; loadData() }
 function onSizeChange() { query.page = 1; loadData() }
-async function loadData() { loading.value = true; try { const res = await listAllReservations(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
+async function loadData() { loading.value = true; try { const res = await listAllReservations(query); tableData.value = res.data.records; total.value = Number(res.data.total) || 0 } catch { /* */ } finally { loading.value = false } }
 async function handleApprove(id: number) { try { await approveReservation(id); ElMessage.success('通过'); loadData() } catch { /* */ } }
 async function handleReject(id: number) { try { await rejectReservation(id); ElMessage.success('已拒绝'); loadData() } catch { /* */ } }
 async function handleCancel(id: number) { try { await cancelReservation(id); ElMessage.success('已取消'); loadData() } catch { /* */ } }

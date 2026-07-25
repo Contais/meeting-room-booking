@@ -75,7 +75,7 @@ const form = reactive({ id: undefined as number | undefined, username: '', passw
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 function onSizeChange() { query.page = 1; loadData() }
-async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = res.data.total } catch { /* */ } finally { loading.value = false } }
+async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = Number(res.data.total) || 0 } catch { /* */ } finally { loading.value = false } }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 

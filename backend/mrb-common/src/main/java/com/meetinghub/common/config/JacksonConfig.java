@@ -24,11 +24,10 @@ public class JacksonConfig {
         ObjectMapper mapper = new ObjectMapper();
 
         /**
-         * Long -> String（防前端精度丢失）
+         * Long -> String（防前端精度丢失，仅针对Long对象类型，不影响基本类型long如Page.total）
          */
         SimpleModule module = new SimpleModule();
         module.addSerializer(Long.class, ToStringSerializer.instance);
-        module.addSerializer(Long.TYPE, ToStringSerializer.instance);
         mapper.registerModule(module);
 
         /**
