@@ -39,7 +39,12 @@
           <div v-for="r in getRoomReservations(room.id)" :key="r.id"
             class="reservation-block" :class="'status-' + r.status"
             :style="dayBlockStyle(r)" @click="showDetail(r)">
-            <div class="block-content">{{ r.subject || '未命名' }}</div>
+            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
+              <div class="block-inner">
+                <div class="block-subject">{{ r.subject || '未命名' }}</div>
+                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+              </div>
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -62,7 +67,12 @@
           <div v-for="r in getHourReservations(h)" :key="r.id"
             class="reservation-block week-block" :class="'status-' + r.status"
             :style="weekBlockStyle(r, h)" @click="showDetail(r)">
-            <div class="block-content">{{ r.subject || '未命名' }}</div>
+            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
+              <div class="block-inner">
+                <div class="block-subject">{{ r.subject || '未命名' }}</div>
+                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+              </div>
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -267,12 +277,29 @@ function getRoomReservations(roomId: number) {
   })
 }
 
+// 存储已合并的预约ID，避免重复显示
+const mergedReservationIds = ref<Set<number>>(new Set())
+
 function getHourReservations(hour: number) {
+  mergedReservationIds.value.clear()
+  
   return reservations.value.filter(r => {
     const start = new Date(r.startTime)
     const end = new Date(r.endTime)
-    const h = start.getHours()
-    return h <= hour && end.getHours() > hour
+    const startHour = start.getHours()
+    const endHour = end.getHours() || 24
+    
+    // 只在预约开始的小时显示
+    if (startHour !== hour) return false
+    
+    // 标记这个预约在哪些小时显示
+    for (let h = startHour; h < endHour; h++) {
+      if (h !== startHour) {
+        mergedReservationIds.value.add(r.id)
+      }
+    }
+    
+    return true
   })
 }
 
@@ -309,6 +336,11 @@ function weekBlockStyle(r: any, _hour: number) {
   const startMinutes = start.getMinutes()
   const duration = (end.getTime() - start.getTime()) / 60000
   
+  // 计算跨小时数
+  const startHour = start.getHours()
+  const endHour = end.getHours() || 24
+  const crossHours = endHour - startHour
+  
   // 计算相对于时间行内的偏移
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
@@ -322,7 +354,7 @@ function weekBlockStyle(r: any, _hour: number) {
     top: `${top}%`,
     height: `${height}%`,
     position: 'absolute' as const,
-    zIndex: 1
+    zIndex: crossHours > 1 ? 2 : 1
   }
 }
 
@@ -425,6 +457,11 @@ async function handleQuickBook() {
 }
 
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(11, 16) : '' }
+
+function getTooltipContent(r: any) {
+  const roomName = rooms.value.find(room => room.id === r.roomId)?.name || ''
+  return `${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${roomName}`
+}
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] || 'info' }
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
 function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
@@ -462,7 +499,9 @@ onMounted(loadData)
 .status-0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
 .status-1 { background: #d1fae5; border-left: 3px solid #10b981; }
 .status-2 { background: #f3f4f6; border-left: 3px solid #9ca3af; }
-.block-content { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.block-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.block-subject { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.block-time { font-size: 10px; color: #6b7280; margin-top: 2px; white-space: nowrap; }
 
 /* 周视图 */
 .week-view { padding: 0; overflow: hidden; }
