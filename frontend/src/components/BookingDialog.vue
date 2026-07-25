@@ -77,7 +77,7 @@
             <!-- 当前时间指示线 -->
             <div v-if="nowLinePct >= 0" class="tp-now-line" :style="{ top: nowLinePct + '%' }"><span class="tp-now-label">现在</span></div>
           </div>
-          <div v-else class="tp-empty">请先选择预约日期</div>
+          <div v-else class="tp-empty">{{ emptyHint }}</div>
 
           <div class="tp-legend">
             <span class="lg"><i class="dot free"></i>空闲</span>
@@ -219,6 +219,13 @@ const timeSlots = computed<Slot[]>(() => {
     })
   }
   return list
+})
+
+// 时间轴为空时的引导提示：优先提醒选择会议室，其次提醒选择日期
+const emptyHint = computed(() => {
+  if (!currentRoom.value) return '请先选择会议室'
+  if (!form.selectedDate) return '请先选择预约日期'
+  return ''
 })
 
 // 判断是否过期
@@ -507,8 +514,8 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .booking-form :deep(.el-form-item__label) { font-size: 13px; color: #606266; font-weight: 500; padding: 0 0 6px 0; line-height: 1.4; }
 .booking-form :deep(.el-form-item__content) { margin-left: 0 !important; line-height: normal; }
 
-/* 时间选择器 */
-.time-picker { border: 1px solid #dcdfe6; border-radius: 10px; overflow: hidden; background: #fff; }
+/* 时间选择器：el-form-item__content 为 flex 行布局，子项需显式 100% 才能与上方输入框右边对齐 */
+.time-picker { width: 100%; border: 1px solid #dcdfe6; border-radius: 10px; overflow: hidden; background: #fff; box-sizing: border-box; }
 
 .tp-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: linear-gradient(180deg, #fafbfc, #f5f7fa); border-bottom: 1px solid #ebeef5; }
 .tp-summary { display: flex; align-items: center; gap: 10px; min-height: 26px; }
