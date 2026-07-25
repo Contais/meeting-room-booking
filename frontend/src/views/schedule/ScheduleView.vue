@@ -18,13 +18,21 @@
     </div>
 
     <div class="schedule-container page-card">
-      <div class="schedule-grid" :style="{ gridTemplateColumns: '100px repeat(' + rooms.length + ', 1fr)' }">
-        <div class="grid-header">时间</div>
-        <div class="grid-header" v-for="room in rooms" :key="room.id">{{ room.name }}</div>
-        <template v-for="hour in timeSlots" :key="hour">
-          <div class="time-label">{{ String(hour).padStart(2, '0') }}:00</div>
-          <div class="time-cell" v-for="room in rooms" :key="hour + '-' + room.id"></div>
+      <div class="schedule-grid" :style="{ gridTemplateRows: '60px repeat(' + rooms.length + ', 1fr)' }">
+        <!-- 左上角空白 -->
+        <div class="grid-corner"></div>
+        <!-- 横轴：时间列 -->
+        <div class="time-header" v-for="hour in timeSlots" :key="hour">{{ String(hour).padStart(2, '0') }}:00</div>
+        
+        <template v-for="room in rooms" :key="room.id">
+          <!-- 纵轴：会议室名称 -->
+          <div class="room-label">{{ room.name }}</div>
+          <!-- 每个会议室的时间单元格 -->
+          <div class="time-cell" v-for="hour in timeSlots" :key="room.id + '-' + hour"
+            @click="onCellClick(room, hour)"></div>
         </template>
+        
+        <!-- 预约色块 -->
         <div v-for="r in reservations" :key="r.id"
           class="reservation-block"
           :class="statusClass(r.status)"
@@ -143,7 +151,6 @@ const quickBookRules: FormRules = {
 
 const START_HOUR = 8
 const END_HOUR = 20
-const HOUR_HEIGHT = 60
 
 const timeSlots = computed(() => {
   const slots = []
@@ -212,14 +219,27 @@ function goToday() { currentDate.value = new Date() }
 function blockStyle(r: any) {
   const roomIndex = rooms.value.findIndex(room => room.id === r.roomId)
   if (roomIndex < 0) return { display: 'none' }
+  
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
-  const top = (start.getHours() - START_HOUR + start.getMinutes() / 60) * HOUR_HEIGHT
-  const height = Math.max(((end.getTime() - start.getTime()) / 3600000) * HOUR_HEIGHT, 24)
+  const startHour = start.getHours() + start.getMinutes() / 60
+  const endHour = end.getHours() + end.getMinutes() / 60
+  const duration = endHour - startHour
+  
+  // 横轴位置（时间）
+  const left = ((startHour - START_HOUR) / (END_HOUR - START_HOUR)) * 100
+  const width = (duration / (END_HOUR - START_HOUR)) * 100
+  
+  // 纵轴位置（会议室）
+  const roomHeight = 100 / rooms.value.length
+  const top = roomIndex * roomHeight
+  
   return {
-    top: top + 'px',
-    height: height + 'px',
-    gridColumn: (roomIndex + 2),
+    left: `calc(80px + ${left}%)`,
+    width: `calc(${width}% - 8px)`,
+    top: `calc(60px + ${top}% + 2px)`,
+    height: `calc(${roomHeight}% - 4px)`,
+    position: 'absolute' as const
   }
 }
 
@@ -237,6 +257,21 @@ function statusText(status: number) {
 
 function formatTime(t: string) { return t ? t.replace('T', ' ').substring(11, 16) : '' }
 function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
+
+function onCellClick(room: any, hour: number) {
+  quickBookForm.roomId = room.id
+  quickBookForm.date = formatDate(currentDate.value)
+  quickBookForm.startTime = String(hour).padStart(2, '0') + ':00'
+  quickBookForm.endTime = String(hour + 1).padStart(2, '0') + ':00'
+  quickBookForm.subject = ''
+  quickBookForm.attendeeCount = 1
+  quickBookForm.contactPhone = ''
+  quickBookVisible.value = true
+}
+
+function formatDate(date: Date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+}
 
 function buildMonthDays() {
   const d = currentDate.value
@@ -314,28 +349,38 @@ onMounted(loadData)
 .date-display { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
 
 .schedule-container { overflow-x: auto; padding: 0; }
-.schedule-grid { display: grid; position: relative; min-height: 720px; }
+.schedule-grid { 
+  display: grid; 
+  position: relative; 
+  min-height: 500px;
+  grid-template-columns: 80px repeat(12, 1fr);
+}
 
-.grid-header {
-  padding: 10px 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);
+.grid-corner {
   background: #fafbfc; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light);
+}
+
+.time-header {
+  padding: 8px 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  background: #fafbfc; border-bottom: 1px solid var(--border-light); border-right: 1px solid #f0f0f0;
   text-align: center; position: sticky; top: 0; z-index: 2;
 }
 
-.time-label {
-  padding: 0 8px; font-size: 11px; color: var(--text-muted);
-  border-right: 1px solid var(--border-light); border-bottom: 1px solid #f0f0f0;
-  display: flex; align-items: flex-start; justify-content: flex-end; height: 60px;
+.room-label {
+  padding: 8px; font-size: 12px; font-weight: 500; color: var(--text-primary);
+  border-bottom: 1px solid #f0f0f0; border-right: 1px solid var(--border-light);
+  display: flex; align-items: center; background: #fff;
 }
 
 .time-cell {
-  border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; height: 60px;
+  border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;
+  min-height: 60px; cursor: pointer; transition: background 0.15s;
 }
+.time-cell:hover { background: #f9fafb; }
 
 .reservation-block {
-  position: absolute; left: 0; right: 0; margin: 1px 4px; border-radius: 6px;
-  padding: 4px 8px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1;
-  transition: box-shadow 0.15s;
+  margin: 2px; border-radius: 6px; padding: 4px 8px; font-size: 11px;
+  overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s;
 }
 .reservation-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
