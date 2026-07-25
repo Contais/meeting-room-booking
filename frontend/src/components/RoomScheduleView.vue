@@ -78,7 +78,7 @@
               <div v-for="h in allHours" :key="h" class="grid-cell" @click="onDayCellClick(h)"></div>
             </div>
             <el-tooltip v-for="r in dayReservations" :key="r.id"
-              :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
+              :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
               placement="top" raw-content>
               <div class="day-event" :class="'s' + r.status"
                 :style="dayEventStyle(r)"
@@ -86,7 +86,7 @@
                 <div class="evt-inner">
                   <div class="evt-title">{{ r.subject || '未命名' }}</div>
                   <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                  <div class="evt-user">{{ r.username || '' }}</div>
+                  <div class="evt-user">{{ r.userName || '' }}</div>
                 </div>
               </div>
             </el-tooltip>
@@ -137,7 +137,7 @@
                 <span class="wk-now-label">{{ currentTimeLabel }}</span>
               </div>
               <el-tooltip v-for="r in weekReservations" :key="r.id"
-                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.username || ''}`"
+                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                 placement="top" raw-content>
                 <div class="week-event" :class="'s' + r.status"
                   :style="weekEventStyle(r)"
@@ -145,7 +145,7 @@
                   <div class="evt-inner">
                     <div class="evt-title">{{ r.subject || '未命名' }}</div>
                     <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-                    <div class="evt-user">{{ r.username || '' }}</div>
+                    <div class="evt-user">{{ r.userName || '' }}</div>
                   </div>
                 </div>
               </el-tooltip>
@@ -188,7 +188,7 @@
       <el-descriptions :column="1" border v-if="currentReservation">
         <el-descriptions-item label="主题">{{ currentReservation.subject || '-' }}</el-descriptions-item>
         <el-descriptions-item label="时间段">{{ formatTime(currentReservation.startTime) }} - {{ formatTime(currentReservation.endTime) }}</el-descriptions-item>
-        <el-descriptions-item label="预约人">{{ currentReservation.username || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="预约人">{{ currentReservation.userName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="参会人数">{{ currentReservation.attendeeCount || '-' }}</el-descriptions-item>
         <el-descriptions-item label="状态"><el-tag :type="statusType(currentReservation.status)" size="small">{{ statusText(currentReservation.status) }}</el-tag></el-descriptions-item>
       </el-descriptions>

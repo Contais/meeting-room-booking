@@ -331,6 +331,19 @@ public class ReservationServiceImpl implements ReservationService {
         Map<Long, String> roomNameMap = rooms.stream()
                 .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
 
+        // 查询预约人姓名
+        List<Long> userIds = reservations.stream()
+                .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
+        Map<Long, String> userNameMap = new java.util.HashMap<>();
+        for (Long uid : userIds) {
+            try {
+                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
+                if (userResult != null && userResult.getData() != null) {
+                    userNameMap.put(uid, userResult.getData().getUsername());
+                }
+            } catch (Exception ignored) {}
+        }
+
         ScheduleVO vo = new ScheduleVO();
         List<ScheduleRoomVO> roomVOs = new ArrayList<>();
         for (MeetingRoom r : rooms) {
@@ -349,6 +362,7 @@ public class ReservationServiceImpl implements ReservationService {
             rvo.setRoomId(r.getRoomId());
             rvo.setRoomName(roomNameMap.getOrDefault(r.getRoomId(), ""));
             rvo.setSubject(r.getSubject());
+            rvo.setUserName(userNameMap.getOrDefault(r.getUserId(), ""));
             rvo.setAttendeeCount(r.getAttendeeCount());
             rvo.setStartTime(r.getStartTime());
             rvo.setEndTime(r.getEndTime());
