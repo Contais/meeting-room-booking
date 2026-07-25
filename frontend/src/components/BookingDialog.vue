@@ -17,7 +17,7 @@
         <label>预约日期</label>
         <el-date-picker v-model="form.selectedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" :disabled-date="disableFutureDate" @change="onDateChange" />
       </div>
-      <el-form-item label="预约时间" :error="hasAttemptedSubmit && (!form.startMinute || !form.endMinute) ? '请选择完整的预约时间段' : ''">
+      <el-form-item label="预约时间" prop="startMinute">
         <div class="time-selector">
           <div class="time-selector-header">
             <span v-if="form.startMinute && form.endMinute" class="time-range-text">{{ form.startMinute }} ~ {{ form.endMinute }}</span>
@@ -216,6 +216,9 @@ async function handleSubmit() {
   }
   // 手动校验时间段
   if (!form.startMinute || !form.endMinute) {
+    // 触发时间段字段的手动验证
+    await formRef.value?.validateField('startMinute').catch(() => false)
+    await formRef.value?.validateField('endMinute').catch(() => false)
     ElMessage.error('请选择预约时间段')
     return
   }
