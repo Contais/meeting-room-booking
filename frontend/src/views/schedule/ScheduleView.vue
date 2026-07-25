@@ -28,7 +28,7 @@
       <div class="day-header">
         <div class="room-col-header">会议室</div>
         <div class="day-ticks-wrap" ref="dayHeaderRef">
-          <div class="day-ticks" :style="{ width: hoursWidth + 'px' }">
+          <div class="day-ticks" :style="{ width: hoursWidth + 'px', transform: `translateX(${-headerScrollX}px)` }">
             <div class="now-line-header" :style="{ left: currentTimePx + 'px' }"></div>
             <div v-for="h in allHours" :key="h" class="tick" :class="{ 'tick-now': isCurrentHour(h) }">
               <span class="tick-label" :class="{ 'tick-now-label': isCurrentHour(h) }">{{ String(h).padStart(2, '0') }}:00</span>
@@ -199,11 +199,12 @@ const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END
 const dayHeaderRef = ref<HTMLElement>()
 const dayBodyRef = ref<HTMLElement>()
 const weekBodyRef = ref<HTMLElement>()
+const headerScrollX = ref(0)
 
 // ====== 同步滚动 ======
 function onDayScroll() {
-  if (dayBodyRef.value && dayHeaderRef.value) {
-    dayHeaderRef.value.scrollLeft = dayBodyRef.value.scrollLeft
+  if (dayBodyRef.value) {
+    headerScrollX.value = dayBodyRef.value.scrollLeft
   }
 }
 
@@ -368,7 +369,7 @@ onMounted(loadData)
 
 .day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; left: 100px; width: calc(100% - 100px); }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.now-line-header { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
+.now-line-header { position: absolute; top: 0; height: 30px; width: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
 .now-line-header::before { content: ''; position: absolute; bottom: -4px; left: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
 
 /* ========== 周视图 ========== */
