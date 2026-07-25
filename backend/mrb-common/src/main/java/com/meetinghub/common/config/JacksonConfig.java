@@ -23,13 +23,17 @@ public class JacksonConfig {
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
 
-        /** Long -> String（防前端精度丢失） */
+        /**
+         * Long -> String（防前端精度丢失）
+         */
         SimpleModule module = new SimpleModule();
         module.addSerializer(Long.class, ToStringSerializer.instance);
         module.addSerializer(Long.TYPE, ToStringSerializer.instance);
         mapper.registerModule(module);
 
-        /** LocalDateTime 序列化/反序列化，ISO 格式 */
+        /**
+         * LocalDateTime 序列化/反序列化，ISO 格式
+         */
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));

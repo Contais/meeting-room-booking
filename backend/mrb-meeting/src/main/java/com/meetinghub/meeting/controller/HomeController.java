@@ -22,19 +22,25 @@ public class HomeController {
 
     private final HomeService homeService;
 
-    /** 获取首页统计数据 */
+    /**
+     * 获取首页统计数据
+     */
     @GetMapping("/stats")
     public Result<Map<String, Object>> getStats() {
         return Result.ok(homeService.getStats());
     }
 
-    /** 会议室使用率 */
+    /**
+     * 会议室使用率
+     */
     @GetMapping("/room-usage")
     public Result<List<RoomUsageVO>> getRoomUsage() {
         return Result.ok(homeService.getRoomUsage());
     }
 
-    /** 高峰时段分布 */
+    /**
+     * 高峰时段分布
+     */
     @GetMapping("/peak-hours")
     public Result<List<PeakHourVO>> getPeakHours() {
         return Result.ok(homeService.getPeakHours());

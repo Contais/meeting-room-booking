@@ -13,27 +13,43 @@ import java.util.List;
  */
 public interface ReservationService {
 
-    /** 创建预约（含规则校验 + 冲突检测） */
+    /**
+     * 创建预约（含规则校验 + 冲突检测）
+     */
     void createReservation(Long userId, ReservationCreateDTO dto);
 
-    /** 取消预约（仅限本人） */
+    /**
+     * 取消预约（仅限本人）
+     */
     void cancelReservation(Long userId, Long reservationId);
 
-    /** 查询我的预约列表 */
+    /**
+     * 查询我的预约列表
+     */
     IPage<ReservationVO> listMyReservations(Long userId, ReservationPageQuery query);
 
-    /** 按会议室+日期查询预约（详情页今日预约） */
+    /**
+     * 按会议室+日期查询预约（详情页今日预约）
+     */
     List<ReservationVO> listByRoomAndDate(Long roomId, String date);
 
-    /** 查询全部预约（管理端） */
+    /**
+     * 查询全部预约（管理端）
+     */
     IPage<ReservationVO> listAllReservations(ReservationPageQuery query);
 
-    /** 审批通过 */
+    /**
+     * 审批通过
+     */
     void approveReservation(Long reservationId);
 
-    /** 审批拒绝 */
+    /**
+     * 审批拒绝
+     */
     void rejectReservation(Long reservationId);
 
-    /** 日程视图数据 */
+    /**
+     * 日程视图数据
+     */
     ScheduleVO getSchedule(String date, String startDate, String endDate);
 }

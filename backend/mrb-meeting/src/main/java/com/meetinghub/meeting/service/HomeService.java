@@ -10,12 +10,18 @@ import java.util.Map;
  */
 public interface HomeService {
 
-    /** 获取首页统计数据（会议室总数、今日预约数、待审批数） */
+    /**
+     * 获取首页统计数据（会议室总数、今日预约数、待审批数）
+     */
     Map<String, Object> getStats();
 
-    /** 会议室使用率 */
+    /**
+     * 会议室使用率
+     */
     List<RoomUsageVO> getRoomUsage();
 
-    /** 高峰时段分布 */
+    /**
+     * 高峰时段分布
+     */
     List<PeakHourVO> getPeakHours();
 }

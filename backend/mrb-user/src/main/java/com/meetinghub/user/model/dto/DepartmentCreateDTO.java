@@ -14,9 +14,13 @@ public class DepartmentCreateDTO {
     @Size(max = 64, message = "部门名称不能超过64个字符")
     private String name;
 
-    /** 父部门ID, 0为顶级 */
+    /**
+     * 父部门ID, 0为顶级
+     */
     private Long parentId;
 
-    /** 排序号 */
+    /**
+     * 排序号
+     */
     private Integer sortOrder;
 }

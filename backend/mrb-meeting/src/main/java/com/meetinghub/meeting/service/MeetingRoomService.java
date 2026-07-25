@@ -13,24 +13,38 @@ import java.util.List;
  */
 public interface MeetingRoomService {
 
-    /** 查询所有启用的会议室（用户端列表） */
+    /**
+     * 查询所有启用的会议室（用户端列表）
+     */
     List<MeetingRoomVO> listActiveRooms();
 
-    /** 查询会议室详情 */
+    /**
+     * 查询会议室详情
+     */
     MeetingRoomVO getRoomDetail(Long id);
 
-    /** 分页查询会议室列表（管理端，支持搜索/筛选） */
+    /**
+     * 分页查询会议室列表（管理端，支持搜索/筛选）
+     */
     IPage<MeetingRoomVO> listRooms(RoomPageQuery query);
 
-    /** 新增会议室 */
+    /**
+     * 新增会议室
+     */
     void createRoom(RoomCreateDTO dto);
 
-    /** 编辑会议室 */
+    /**
+     * 编辑会议室
+     */
     void updateRoom(RoomUpdateDTO dto);
 
-    /** 启用/禁用会议室 */
+    /**
+     * 启用/禁用会议室
+     */
     void toggleStatus(Long id);
 
-    /** 删除会议室（逻辑删除） */
+    /**
+     * 删除会议室（逻辑删除）
+     */
     void deleteRoom(Long id);
 }

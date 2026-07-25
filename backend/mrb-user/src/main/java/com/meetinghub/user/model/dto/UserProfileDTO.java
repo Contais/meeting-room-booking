@@ -10,9 +10,13 @@ import java.io.Serializable;
 @Data
 public class UserProfileDTO implements Serializable {
 
-    /** 手机号 */
+    /**
+     * 手机号
+     */
     private String phone;
 
-    /** 真实姓名 */
+    /**
+     * 真实姓名
+     */
     private String realName;
 }
