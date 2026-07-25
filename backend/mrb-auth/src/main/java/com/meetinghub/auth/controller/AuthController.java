@@ -13,10 +13,10 @@ import java.util.Map;
 /**
  * 鉴权控制器
  */
+/** 鉴权控制器 */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-/** 鉴权控制器 */
 public class AuthController {
 
     private final AuthService authService;

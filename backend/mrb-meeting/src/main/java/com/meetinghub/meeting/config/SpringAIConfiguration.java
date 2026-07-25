@@ -7,7 +7,13 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * AI 聊天配置
@@ -21,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SpringAIConfiguration {
 
-      /**
+/**
      * 内存聊天记忆（按 sessionId 隔离会话）
      */
     @Bean
@@ -41,12 +47,12 @@ public class SpringAIConfiguration {
      */
     @Bean
     public ChatClient chatClient(ChatModel chatModel, MeetingRoomTools meetingRoomTools, ChatMemory chatMemory,
-                                  @org.springframework.beans.factory.annotation.Value("classpath:prompt/chatbot-system-prompt.md") org.springframework.core.io.Resource systemPrompt) throws java.io.IOException {
+                                  @Value("classpath:prompt/chatbot-system-prompt.md") Resource systemPrompt) throws IOException {
         return ChatClient.builder(chatModel)
-                .defaultSystem(systemPrompt.getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
+                .defaultSystem(systemPrompt.getContentAsString(StandardCharsets.UTF_8))
                 .defaultTools(meetingRoomTools)
                 .defaultAdvisors(
-                        org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
                 )
                 .build();
     }

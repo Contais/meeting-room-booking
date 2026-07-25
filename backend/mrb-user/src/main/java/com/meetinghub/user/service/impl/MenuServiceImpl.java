@@ -1,6 +1,8 @@
 package com.meetinghub.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.EnableStatusEnum;
+import com.meetinghub.common.enums.VisibleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.user.model.dto.MenuCreateDTO;
@@ -18,9 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 菜单服务实现
+ */
 @Service
 @RequiredArgsConstructor
 public class MenuServiceImpl implements MenuService {
+
+    /**
+     * 顶级菜单的父节点 ID
+     */
+    private static final Long ROOT_PARENT_ID = 0L;
 
     private final MenuRepository menuRepository;
     private final RoleMenuRepository roleMenuRepository;
@@ -31,7 +41,7 @@ public class MenuServiceImpl implements MenuService {
                 new LambdaQueryWrapper<Menu>().orderByAsc(Menu::getSortOrder)
         );
         List<MenuVO> voList = all.stream().map(this::toVO).collect(Collectors.toList());
-        return buildTree(voList, 0L);
+        return buildTree(voList, ROOT_PARENT_ID);
     }
 
     @Override
@@ -46,19 +56,19 @@ public class MenuServiceImpl implements MenuService {
         List<Menu> menus = menuRepository.selectList(
                 new LambdaQueryWrapper<Menu>()
                         .in(Menu::getId, menuIds)
-                        .eq(Menu::getStatus, 1)
-                        .eq(Menu::getVisible, 1)
+                        .eq(Menu::getStatus, EnableStatusEnum.ENABLED.getCode())
+                        .eq(Menu::getVisible, VisibleEnum.VISIBLE.getCode())
                         .orderByAsc(Menu::getSortOrder)
         );
         List<MenuVO> voList = menus.stream().map(this::toVO).collect(Collectors.toList());
-        return buildTree(voList, 0L);
+        return buildTree(voList, ROOT_PARENT_ID);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void create(MenuCreateDTO dto) {
-        if (dto.getParentId() == null) dto.setParentId(0L);
-        if (dto.getParentId() != 0L) {
+        if (dto.getParentId() == null) dto.setParentId(ROOT_PARENT_ID);
+        if (!ROOT_PARENT_ID.equals(dto.getParentId())) {
             Menu parent = menuRepository.selectById(dto.getParentId());
             if (parent == null) throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         }
@@ -68,8 +78,8 @@ public class MenuServiceImpl implements MenuService {
         menu.setIcon(dto.getIcon() != null ? dto.getIcon() : "Document");
         menu.setParentId(dto.getParentId());
         menu.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
-        menu.setVisible(dto.getVisible() != null ? dto.getVisible() : 1);
-        menu.setStatus(1);
+        menu.setVisible(dto.getVisible() != null ? dto.getVisible() : VisibleEnum.VISIBLE.getCode());
+        menu.setStatus(EnableStatusEnum.ENABLED.getCode());
         menuRepository.insert(menu);
     }
 
@@ -81,7 +91,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setName(dto.getName());
         menu.setPath(dto.getPath());
         if (dto.getIcon() != null) menu.setIcon(dto.getIcon());
-        menu.setParentId(dto.getParentId() != null ? dto.getParentId() : 0L);
+        menu.setParentId(dto.getParentId() != null ? dto.getParentId() : ROOT_PARENT_ID);
         if (dto.getSortOrder() != null) menu.setSortOrder(dto.getSortOrder());
         if (dto.getVisible() != null) menu.setVisible(dto.getVisible());
         menuRepository.updateById(menu);

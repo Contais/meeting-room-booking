@@ -7,7 +7,6 @@ import lombok.Data;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Data
 /** 创建预约请求 DTO */
 public class ReservationCreateDTO implements Serializable {
 

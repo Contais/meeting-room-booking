@@ -12,10 +12,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/** 用户控制器 */
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-/** 用户控制器 */
 public class UserController {
 
     private final UserService userService;

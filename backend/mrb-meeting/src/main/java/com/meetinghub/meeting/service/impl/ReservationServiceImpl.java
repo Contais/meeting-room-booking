@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.meetinghub.common.exception.BusinessException;
+import com.meetinghub.common.enums.ApprovalModeEnum;
+import com.meetinghub.common.enums.EnableStatusEnum;
+import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
@@ -30,9 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 预约服务实现
+ */
 @Service
 @RequiredArgsConstructor
-/** 预约服务实现 */
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -47,7 +52,7 @@ public class ReservationServiceImpl implements ReservationService {
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        if (room.getStatus() == 0) {
+        if (room.getStatus().equals(EnableStatusEnum.DISABLED.getCode())) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_DISABLED);
         }
 
@@ -75,7 +80,10 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setRemark(dto.getRemark());
         reservation.setStartTime(dto.getStartTime());
         reservation.setEndTime(dto.getEndTime());
-        reservation.setStatus(room.getNeedApproval() == 1 ? 0 : 1);
+        Integer initialStatus = room.getNeedApproval().equals(ApprovalModeEnum.NEED_APPROVAL.getCode())
+                ? ReservationStatusEnum.PENDING.getCode()
+                : ReservationStatusEnum.CONFIRMED.getCode();
+        reservation.setStatus(initialStatus);
         reservationRepository.insert(reservation);
     }
 
@@ -127,10 +135,10 @@ public class ReservationServiceImpl implements ReservationService {
         if (!reservation.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权取消他人的预约");
         }
-        if (reservation.getStatus() == 2) {
+        if (reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消");
         }
-        reservation.setStatus(2);
+        reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
         reservationRepository.updateById(reservation);
     }
 
@@ -188,7 +196,7 @@ public class ReservationServiceImpl implements ReservationService {
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, roomId)
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -256,7 +264,7 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        reservation.setStatus(1);
+        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
         reservationRepository.updateById(reservation);
     }
 
@@ -267,14 +275,14 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        reservation.setStatus(2);
+        reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
         reservationRepository.updateById(reservation);
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
                 .eq(MeetingRoomReservation::getRoomId, roomId)
-                .ne(MeetingRoomReservation::getStatus, 2)
+                .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                 .and(w -> w
                         .between(MeetingRoomReservation::getStartTime, startTime, endTime.minusNanos(1))
                         .or().between(MeetingRoomReservation::getEndTime, startTime.plusNanos(1), endTime)
@@ -306,12 +314,12 @@ public class ReservationServiceImpl implements ReservationService {
         LocalDateTime rangeEnd = end.atTime(LocalTime.MAX);
 
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1).orderByAsc(MeetingRoom::getName)
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode()).orderByAsc(MeetingRoom::getName)
         );
 
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .lt(MeetingRoomReservation::getStartTime, rangeEnd)
                         .gt(MeetingRoomReservation::getEndTime, rangeStart)
         );

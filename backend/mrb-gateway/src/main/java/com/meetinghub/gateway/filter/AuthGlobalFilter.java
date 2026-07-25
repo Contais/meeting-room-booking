@@ -1,5 +1,6 @@
 package com.meetinghub.gateway.filter;
 
+import com.meetinghub.common.constant.CommonConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -13,13 +14,12 @@ import reactor.core.publisher.Mono;
 import java.util.Base64;
 import java.util.List;
 
+/**
+ * 全局认证过滤器：校验Token、传递用户信息
+ */
 @Slf4j
 @Component
-/** 全局认证过滤器：校验Token、传递用户信息 */
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
-
-    private static final String TOKEN_HEADER = "Authorization";
-    private static final String TOKEN_PREFIX = "Bearer ";
 
     private static final List<String> WHITE_LIST = List.of(
             "/api/auth/login",
@@ -37,20 +37,20 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             }
         }
 
-        String token = exchange.getRequest().getHeaders().getFirst(TOKEN_HEADER);
-        if (!StringUtils.hasText(token) || !token.startsWith(TOKEN_PREFIX)) {
+        String token = exchange.getRequest().getHeaders().getFirst(CommonConstant.TOKEN_HEADER);
+        if (!StringUtils.hasText(token) || !token.startsWith(CommonConstant.TOKEN_PREFIX)) {
             log.warn("请求缺少有效Token: path={}", path);
             exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        String payload = extractPayload(token.replace(TOKEN_PREFIX, ""));
+        String payload = extractPayload(token.replace(CommonConstant.TOKEN_PREFIX, ""));
         String role = extractJsonField(payload, "role");
         String userId = extractJsonField(payload, "sub");
         String username = extractJsonField(payload, "username");
 
         ServerHttpRequest request = exchange.getRequest().mutate()
-                .header(TOKEN_HEADER, token)
+                .header(CommonConstant.TOKEN_HEADER, token)
                 .header("X-User-Role", role != null ? role : "")
                 .header("X-User-Id", userId != null ? userId : "")
                 .header("X-User-Username", username != null ? username : "")

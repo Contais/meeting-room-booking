@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import java.io.Serializable;
 
-@Data
 /** 编辑会议室请求 DTO */
 public class RoomUpdateDTO implements Serializable {
     @NotNull(message = "会议室ID不能为空")

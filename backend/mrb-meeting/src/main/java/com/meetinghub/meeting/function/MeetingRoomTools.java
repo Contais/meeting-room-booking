@@ -1,6 +1,8 @@
 package com.meetinghub.meeting.function;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.EnableStatusEnum;
+import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
@@ -17,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * AI 聊天助手工具类 - 提供会议室查询功能
+ */
 @Component
 @RequiredArgsConstructor
 public class MeetingRoomTools {
@@ -27,7 +32,7 @@ public class MeetingRoomTools {
     @Tool(description = "查询所有可用的会议室列表，返回名称、位置、容量、设备信息")
     public String listAvailableRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         if (rooms.isEmpty()) return "当前没有可用的会议室";
         StringBuilder sb = new StringBuilder("可用会议室列表：\n");
@@ -46,7 +51,7 @@ public class MeetingRoomTools {
 
         // 查找会议室
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoom>().like(MeetingRoom::getName, roomName).eq(MeetingRoom::getStatus, 1)
+                new LambdaQueryWrapper<MeetingRoom>().like(MeetingRoom::getName, roomName).eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         if (rooms.isEmpty()) return "未找到名为" + roomName + "的会议室";
 
@@ -55,7 +60,7 @@ public class MeetingRoomTools {
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, room.getId())
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -64,7 +69,7 @@ public class MeetingRoomTools {
 
         StringBuilder sb = new StringBuilder(room.getName() + " 在 " + date + " 的预约情况：\n");
         for (MeetingRoomReservation r : reservations) {
-            String status = r.getStatus() == 0 ? "待确认" : "已确认";
+            String status = r.getStatus().equals(ReservationStatusEnum.PENDING.getCode()) ? "待确认" : "已确认";
             sb.append(String.format("- %s ~ %s  %s（%s）\n",
                     r.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                     r.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm")),
@@ -78,14 +83,14 @@ public class MeetingRoomTools {
     public String todayReservationStats() {
         LocalDate today = LocalDate.now();
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         StringBuilder sb = new StringBuilder("今日会议室预约统计：\n");
         for (MeetingRoom r : rooms) {
             long count = reservationRepository.selectCount(
                     new LambdaQueryWrapper<MeetingRoomReservation>()
                             .eq(MeetingRoomReservation::getRoomId, r.getId())
-                            .ne(MeetingRoomReservation::getStatus, 2)
+                            .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                             .between(MeetingRoomReservation::getStartTime, today.atStartOfDay(), today.atTime(LocalTime.MAX))
             );
             sb.append(String.format("- %s：%d个预约\n", r.getName(), count));

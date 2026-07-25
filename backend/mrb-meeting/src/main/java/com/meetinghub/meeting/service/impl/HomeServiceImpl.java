@@ -1,6 +1,8 @@
 package com.meetinghub.meeting.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.EnableStatusEnum;
+import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.PeakHourVO;
@@ -35,7 +37,7 @@ public class HomeServiceImpl implements HomeService {
         Map<String, Object> stats = new HashMap<>();
 
         long roomCount = meetingRoomRepository.selectCount(
-                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         stats.put("roomCount", roomCount);
 
@@ -44,21 +46,21 @@ public class HomeServiceImpl implements HomeService {
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
         long todayReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
         );
         stats.put("todayReservations", todayReservations);
 
         long pendingApproval = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .eq(MeetingRoomReservation::getStatus, 0)
+                        .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode())
         );
         stats.put("pendingApproval", pendingApproval);
 
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         long weekReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .ge(MeetingRoomReservation::getStartTime, weekStart.atStartOfDay())
                         .le(MeetingRoomReservation::getStartTime, today.atTime(LocalTime.MAX))
         );
@@ -66,7 +68,7 @@ public class HomeServiceImpl implements HomeService {
 
         long totalReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
         );
         stats.put("totalReservations", totalReservations);
 
@@ -81,14 +83,14 @@ public class HomeServiceImpl implements HomeService {
         int bookableMinutes = 12 * 60;
 
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, 1)
+                new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         List<RoomUsageVO> result = new ArrayList<>();
         for (MeetingRoom room : rooms) {
             List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                     new LambdaQueryWrapper<MeetingRoomReservation>()
                             .eq(MeetingRoomReservation::getRoomId, room.getId())
-                            .ne(MeetingRoomReservation::getStatus, 2)
+                            .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                             .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
             );
             int usedMinutes = 0;
@@ -114,7 +116,7 @@ public class HomeServiceImpl implements HomeService {
 
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, 2)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
         );
 

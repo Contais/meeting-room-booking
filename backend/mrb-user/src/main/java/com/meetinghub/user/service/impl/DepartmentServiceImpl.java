@@ -1,6 +1,7 @@
 package com.meetinghub.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.user.model.dto.DepartmentCreateDTO;
@@ -27,6 +28,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
 
+    /**
+     * 顶级部门的父节点 ID
+     */
+    private static final Long ROOT_PARENT_ID = 0L;
+
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
 
@@ -36,14 +42,14 @@ public class DepartmentServiceImpl implements DepartmentService {
                 new LambdaQueryWrapper<Department>().orderByAsc(Department::getSortOrder)
         );
         List<DepartmentVO> voList = all.stream().map(this::toVO).collect(Collectors.toList());
-        return buildTree(voList, 0L);
+        return buildTree(voList, ROOT_PARENT_ID);
     }
 
     @Override
     public List<DepartmentVO> listFlat() {
         List<Department> all = departmentRepository.selectList(
                 new LambdaQueryWrapper<Department>()
-                        .eq(Department::getStatus, 1)
+                        .eq(Department::getStatus, EnableStatusEnum.ENABLED.getCode())
                         .orderByAsc(Department::getSortOrder)
         );
         return all.stream().map(this::toVO).collect(Collectors.toList());
@@ -53,10 +59,10 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Transactional(rollbackFor = Exception.class)
     public void create(DepartmentCreateDTO dto) {
         if (dto.getParentId() == null) {
-            dto.setParentId(0L);
+            dto.setParentId(ROOT_PARENT_ID);
         }
         // 校验父部门存在
-        if (dto.getParentId() != 0L) {
+        if (!ROOT_PARENT_ID.equals(dto.getParentId())) {
             Department parent = departmentRepository.selectById(dto.getParentId());
             if (parent == null) {
                 throw new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
@@ -68,7 +74,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         dept.setName(dto.getName());
         dept.setParentId(dto.getParentId());
         dept.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
-        dept.setStatus(1);
+        dept.setStatus(EnableStatusEnum.ENABLED.getCode());
         departmentRepository.insert(dept);
     }
 
@@ -79,13 +85,13 @@ public class DepartmentServiceImpl implements DepartmentService {
         if (dept == null) {
             throw new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
-        Long newParentId = dto.getParentId() != null ? dto.getParentId() : 0L;
+        Long newParentId = dto.getParentId() != null ? dto.getParentId() : ROOT_PARENT_ID;
         // 不能移动到自身
         if (dto.getId().equals(newParentId)) {
             throw new BusinessException(ErrorCode.DEPARTMENT_CIRCULAR);
         }
         // 校验循环引用
-        if (newParentId != 0L && isDescendant(dto.getId(), newParentId)) {
+        if (!ROOT_PARENT_ID.equals(newParentId) && isDescendant(dto.getId(), newParentId)) {
             throw new BusinessException(ErrorCode.DEPARTMENT_CIRCULAR);
         }
         // 校验同级名称唯一
@@ -138,7 +144,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     private boolean isDescendant(Long ancestorId, Long targetId) {
         if (targetId.equals(ancestorId)) return true;
         Department target = departmentRepository.selectById(targetId);
-        if (target == null || target.getParentId() == 0) return false;
+        if (target == null || ROOT_PARENT_ID.equals(target.getParentId())) return false;
         if (target.getParentId().equals(ancestorId)) return true;
         return isDescendant(ancestorId, target.getParentId());
     }

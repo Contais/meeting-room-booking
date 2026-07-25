@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.meetinghub.common.exception.BusinessException;
+import com.meetinghub.common.enums.ApprovalModeEnum;
+import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.model.dto.RoomCreateDTO;
 import com.meetinghub.meeting.model.dto.RoomPageQuery;
@@ -20,9 +22,11 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 会议室服务实现
+ */
 @Service
 @RequiredArgsConstructor
-/** 会议室服务实现 */
 public class MeetingRoomServiceImpl implements MeetingRoomService {
 
     private final MeetingRoomRepository meetingRoomRepository;
@@ -31,7 +35,7 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
     public List<MeetingRoomVO> listActiveRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>()
-                        .eq(MeetingRoom::getStatus, 1)
+                        .eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
                         .orderByDesc(MeetingRoom::getCreateTime)
         );
         return rooms.stream().map(this::toVO).collect(Collectors.toList());
@@ -98,8 +102,8 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         room.setBookableEnd(dto.getBookableEnd() != null ? dto.getBookableEnd() : "20:00");
         room.setMaxDuration(dto.getMaxDuration() != null ? dto.getMaxDuration() : 480);
         room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : 7);
-        room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : 0);
-        room.setStatus(1);
+        room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : ApprovalModeEnum.FREE_APPROVAL.getCode());
+        room.setStatus(EnableStatusEnum.ENABLED.getCode());
         meetingRoomRepository.insert(room);
     }
 
@@ -131,7 +135,10 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        room.setStatus(room.getStatus() == 1 ? 0 : 1);
+        Integer newStatus = room.getStatus().equals(EnableStatusEnum.ENABLED.getCode())
+                ? EnableStatusEnum.DISABLED.getCode()
+                : EnableStatusEnum.ENABLED.getCode();
+        room.setStatus(newStatus);
         meetingRoomRepository.updateById(room);
     }
 

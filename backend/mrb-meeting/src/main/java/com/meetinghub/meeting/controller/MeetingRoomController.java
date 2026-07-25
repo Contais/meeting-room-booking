@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** 会议室控制器 */
 @RestController
 @RequestMapping("/meeting/room")
 @RequiredArgsConstructor
-/** 会议室控制器 */
 public class MeetingRoomController {
 
     private final MeetingRoomService meetingRoomService;

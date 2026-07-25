@@ -4,6 +4,8 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.meetinghub.common.enums.DeletedEnum;
+import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.RoleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
@@ -21,9 +23,11 @@ import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
+/**
+ * 用户服务实现
+ */
 @Service
 @RequiredArgsConstructor
-/** 用户服务实现 */
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -53,7 +57,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.selectOne(
                 new LambdaQueryWrapper<User>()
                         .eq(User::getUsername, username)
-                        .eq(User::getDeleted, 0)
+                        .eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
         );
     }
 
@@ -71,7 +75,7 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(phone)) {
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, 0)
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -82,7 +86,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(BCrypt.hashpw(password));
         user.setPhone(phone);
         user.setRole(RoleEnum.USER.getCode());
-        user.setStatus(1);
+        user.setStatus(EnableStatusEnum.ENABLED.getCode());
         userRepository.insert(user);
     }
 
@@ -126,7 +130,7 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(dto.getPhone())) {
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0)
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -139,7 +143,7 @@ public class UserServiceImpl implements UserService {
         user.setRealName(dto.getRealName());
         user.setRole(StringUtils.hasText(dto.getRole()) ? dto.getRole() : RoleEnum.USER.getCode());
         user.setDepartmentId(dto.getDepartmentId());
-        user.setStatus(1);
+        user.setStatus(EnableStatusEnum.ENABLED.getCode());
         userRepository.insert(user);
     }
 
@@ -152,7 +156,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0).ne(User::getId, dto.getId())
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, dto.getId())
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
@@ -171,7 +175,10 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void toggleStatus(Long id) {
         User user = getUserById(id);
-        user.setStatus(user.getStatus() == 1 ? 0 : 1);
+        Integer newStatus = user.getStatus().equals(EnableStatusEnum.ENABLED.getCode())
+                ? EnableStatusEnum.DISABLED.getCode()
+                : EnableStatusEnum.ENABLED.getCode();
+        user.setStatus(newStatus);
         userRepository.updateById(user);
     }
 
@@ -194,7 +201,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
             Long count = userRepository.selectCount(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, 0).ne(User::getId, userId)
+                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, userId)
             );
             if (count > 0) {
                 throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);

@@ -5,6 +5,7 @@ import com.meetinghub.auth.feign.UserFeignClient;
 import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.auth.util.JwtUtils;
+import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.common.model.dto.AuthUserDTO;
@@ -17,11 +18,12 @@ import java.util.concurrent.TimeUnit;
 
 import static com.meetinghub.common.constant.RedisKeyConstant.USER_TOKEN;
 
+/**
+ * 鉴权服务实现
+ */
 @Slf4j
-/** 鉴权服务实现 */
 @Service
 @RequiredArgsConstructor
-/** 鉴权服务实现 */
 public class AuthServiceImpl implements AuthService {
 
     private final UserFeignClient userFeignClient;
@@ -37,7 +39,7 @@ public class AuthServiceImpl implements AuthService {
 
         AuthUserDTO user = result.getData();
 
-        if (user.getStatus() == null || user.getStatus() == 0) {
+        if (user.getStatus() == null || EnableStatusEnum.DISABLED.getCode().equals(user.getStatus())) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号已被禁用");
         }
 

@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.*;
 import com.meetinghub.meeting.model.vo.ScheduleVO;
 import java.util.List;
 
+/** 预约控制器 */
 @RestController
 @RequestMapping("/meeting/reservation")
 @RequiredArgsConstructor
-/** 预约控制器 */
 public class ReservationController {
 
     private final ReservationService reservationService;
