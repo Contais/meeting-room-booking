@@ -168,6 +168,10 @@ function handleTimeOptionClick(t: string) {
     form.startMinute = t
     form.endMinute = ''
   }
+  // 选择时间段后，如果已尝试提交，清除错误提示
+  if (hasAttemptedSubmit.value && form.startMinute && form.endMinute) {
+    hasAttemptedSubmit.value = false
+  }
 }
 
 function disableFutureDate(date: Date) {
