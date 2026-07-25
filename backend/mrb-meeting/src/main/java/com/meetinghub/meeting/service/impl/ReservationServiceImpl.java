@@ -284,15 +284,14 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
+        // 区间重叠判定标准公式：existing.start < new.end AND existing.end > new.start
+        // 严格区分"相邻"与"重叠"：existing.end == new.start 视为相邻不冲突，
+        // 且不依赖 DATETIME 小数秒精度（原 minusNanos/plusNanos 会被 MySQL 截断导致边界误判）
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
                 .eq(MeetingRoomReservation::getRoomId, roomId)
                 .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
-                .and(w -> w
-                        .between(MeetingRoomReservation::getStartTime, startTime, endTime.minusNanos(1))
-                        .or().between(MeetingRoomReservation::getEndTime, startTime.plusNanos(1), endTime)
-                        .or().le(MeetingRoomReservation::getStartTime, startTime)
-                        .and(inner -> inner.ge(MeetingRoomReservation::getEndTime, endTime))
-                );
+                .lt(MeetingRoomReservation::getStartTime, endTime)
+                .gt(MeetingRoomReservation::getEndTime, startTime);
         if (excludeId != null) {
             wrapper.ne(MeetingRoomReservation::getId, excludeId);
         }
