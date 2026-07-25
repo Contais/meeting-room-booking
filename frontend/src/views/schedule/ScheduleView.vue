@@ -64,16 +64,19 @@
           <div class="time-label">{{ h }}:00</div>
           <div class="day-cell" v-for="d in weekDays" :key="d.dateStr + '-' + h"
             @click="onWeekCellClick(d.dateStr, h)"></div>
-          <div v-for="r in getHourReservations(h)" :key="r.id"
-            class="reservation-block week-block" :class="'status-' + r.status"
-            :style="weekBlockStyle(r, h)" @click="showDetail(r)">
-            <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
-              <div class="block-inner">
-                <div class="block-subject">{{ r.subject || '未命名' }}</div>
-                <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
-              </div>
-            </el-tooltip>
-          </div>
+          <!-- 按日期分组显示预约 -->
+          <template v-for="(dayReservations, dayIdx) in getWeekReservationsByDay(h)" :key="'day-' + dayIdx">
+            <div v-for="(r, roomIdx) in dayReservations" :key="r.id"
+              class="reservation-block week-block" :class="'status-' + r.status"
+              :style="weekBlockStyle(r, h, dayIdx, roomIdx, dayReservations.length)" @click="showDetail(r)">
+              <el-tooltip :content="getTooltipContent(r)" placement="top" :show-after="300">
+                <div class="block-inner">
+                  <div class="block-subject">{{ r.subject || '未命名' }}</div>
+                  <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                </div>
+              </el-tooltip>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -285,30 +288,24 @@ function getRoomReservations(roomId: number) {
   })
 }
 
-// 存储已合并的预约ID，避免重复显示
-const mergedReservationIds = ref<Set<number>>(new Set())
-
-function getHourReservations(hour: number) {
-  mergedReservationIds.value.clear()
+// 按日期分组获取预约（用于周视图）
+function getWeekReservationsByDay(hour: number) {
+  const result: any[][] = []
   
-  return reservations.value.filter(r => {
-    const start = new Date(r.startTime)
-    const end = new Date(r.endTime)
-    const startHour = start.getHours()
-    const endHour = end.getHours() || 24
+  weekDays.value.forEach((day) => {
+    // 获取该日期、该小时开始的预约
+    const dayReservations = reservations.value.filter(r => {
+      const rDate = r.startTime.split('T')[0]
+      const start = new Date(r.startTime)
+      const startHour = start.getHours()
+      return rDate === day.dateStr && startHour === hour
+    })
     
-    // 只在预约开始的小时显示
-    if (startHour !== hour) return false
-    
-    // 标记这个预约在哪些小时显示
-    for (let h = startHour; h < endHour; h++) {
-      if (h !== startHour) {
-        mergedReservationIds.value.add(r.id)
-      }
-    }
-    
-    return true
+    // 按会议室分组（同一会议室的预约垂直排列）
+    result.push(dayReservations)
   })
+  
+  return result
 }
 
 // 日视图预约块样式
@@ -335,10 +332,7 @@ function dayBlockStyle(r: any) {
 }
 
 // 周视图预约块样式
-function weekBlockStyle(r: any, _hour: number) {
-  const dayIndex = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
-  if (dayIndex < 0) return { display: 'none' }
-  
+function weekBlockStyle(r: any, _hour: number, dayIdx: number, roomIdx: number, totalRooms: number) {
   const start = new Date(r.startTime)
   const end = new Date(r.endTime)
   const startMinutes = start.getMinutes()
@@ -353,15 +347,19 @@ function weekBlockStyle(r: any, _hour: number) {
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
-  // 每列宽度百分比（7列）
+  // 每列宽度百分比（7列），减去时间标签列宽度
   const colWidth = 100 / 7
-  const leftPercent = dayIndex * colWidth
+  const leftPercent = dayIdx * colWidth
+  
+  // 每个会议室的高度占比（同一时间行内垂直排列）
+  const roomHeight = 100 / Math.max(totalRooms, 1)
+  const roomTop = roomIdx * roomHeight
   
   return {
     left: `calc(60px + ${leftPercent}% + 2px)`,
     width: `calc(${colWidth}% - 4px)`,
-    top: `${top}%`,
-    height: `${height}%`,
+    top: `calc(${top}% + ${roomTop}%)`,
+    height: `calc(${height}% * ${roomHeight / 100})`,
     position: 'absolute' as const,
     zIndex: crossHours > 1 ? 2 : 1
   }
