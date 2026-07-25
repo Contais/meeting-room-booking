@@ -190,7 +190,6 @@ const TOTAL_HOURS = END_HOUR - START_HOUR
 const HOUR_WIDTH = 60 // 每小时宽度 px
 const hoursWidth = TOTAL_HOURS * HOUR_WIDTH // 总宽度
 const VIEW_START = 9 // 视口默认从 09:00 开始
-const ROW_H = 64
 
 const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
 
@@ -295,7 +294,7 @@ function dayEventStyle(r: any) {
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const leftPx = (startMinutes / (TOTAL_HOURS * 60)) * hoursWidth
   const widthPx = (durationMinutes / (TOTAL_HOURS * 60)) * hoursWidth
-  return { left: (100 + leftPx) + 'px', width: widthPx + 'px', top: '4px', height: (ROW_H - 8) + 'px' }
+  return { left: (100 + leftPx) + 'px', width: widthPx + 'px' }
 }
 function onDayCellClick(room: any, h: number) {
   quickBookForm.roomId = room.id; quickBookForm.date = formatDate(currentDate.value)
@@ -364,9 +363,9 @@ onMounted(loadData)
 .tick-label { font-size: 11px; color: #6b7280; font-weight: 500; }
 .tick-mark { width: 1px; height: 6px; background: #d1d5db; margin-top: 4px; }
 
-.day-body-wrap { flex: 1; overflow: auto; }
+.day-body-wrap { flex: 1; overflow: auto; max-height: 600px; }
 .day-body { position: relative; }
-.day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; }
+.day-row { display: flex; height: 64px; border-bottom: 1px solid #f0f0f0; position: relative; overflow: hidden; }
 .room-label { width: 100px; padding: 6px 12px; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; background: #fff; z-index: 2; position: sticky; left: 0; }
 .room-name { font-size: 12px; font-weight: 600; color: #303133; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .room-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
@@ -374,7 +373,7 @@ onMounted(loadData)
 .grid-cell { width: 60px; border-right: 1px solid #f3f4f6; cursor: pointer; flex-shrink: 0; }
 .grid-cell:hover { background: #f9fafb; }
 
-.day-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
+.day-event { position: absolute; top: 4px; bottom: 4px; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 1; transition: box-shadow 0.15s; }
 .day-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 
