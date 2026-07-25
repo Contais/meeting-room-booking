@@ -20,19 +20,19 @@
 
 ## 文件索引
 
-| 文件                                 | 用途                     |
-| :----------------------------------- | :----------------------- |
-| `.harness/agents/owner.md`           | 应用 Owner Agent 定义    |
-| `.harness/rules/工程结构.md`         | 项目目录结构规范         |
-| `.harness/rules/编码规范.md`         | 编码标准与约定           |
-| `.harness/rules/开发流程规范.md`     | 开发流水线与流程         |
+| 文件                                          | 用途                     |
+|:--------------------------------------------| :----------------------- |
+| `.harness/agents/owner.md`                  | 应用 Owner Agent 定义    |
+| `.harness/rules/工程结构.md`                    | 项目目录结构规范         |
+| `.harness/rules/代码规范.md`                    | 编码标准与约定           |
+| `.harness/rules/开发流程规范.md`                  | 开发流水线与流程         |
 | `.harness/skills/request-analysis/SKILL.md` | 需求分析技能             |
 | `.harness/skills/coding-skill/SKILL.md`     | 编码实现技能             |
 | `.harness/skills/expert-reviewer/SKILL.md`  | 专家评审技能             |
 | `.harness/skills/unit-test-write/SKILL.md`  | 单元测试编写技能         |
 | `.harness/skills/unit-test-ci/SKILL.md`     | CI 与质量门禁技能        |
 | `.harness/skills/deploy-verify/SKILL.md`    | 部署验证技能             |
-| `.harness/wiki/业务模型.md`          | 业务模型与实体关系       |
-| `.harness/wiki/接口协议.md`          | API 接口协议定义         |
-| `.harness/wiki/数据模型.md`          | 数据库 Schema 与表定义   |
-| `.harness/changes/`                  | 变更追踪目录             |
+| `.harness/wiki/业务模型.md`                     | 业务模型与实体关系       |
+| `.harness/wiki/接口协议.md`                     | API 接口协议定义         |
+| `.harness/wiki/数据模型.md`                     | 数据库 Schema 与表定义   |
+| `.harness/changes/`                         | 变更追踪目录             |
