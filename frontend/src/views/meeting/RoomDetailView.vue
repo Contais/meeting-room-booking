@@ -44,7 +44,7 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <RoomCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
+        <RoomScheduleView ref="calendarRef" :room-id="room.id" @book="handleTimeSelect" />
       </div>
     </template>
 
@@ -102,14 +102,14 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { getRoomById } from '@/api/meeting'
 import { createReservation } from '@/api/reservation'
-import RoomCalendar from '@/components/RoomCalendar.vue'
+import RoomScheduleView from '@/components/RoomScheduleView.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const route = useRoute()
 const router = useRouter()
 const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
-const calendarRef = ref<InstanceType<typeof RoomCalendar>>()
+const calendarRef = ref<InstanceType<typeof RoomScheduleView>>()
 
 // 时间段选择
 const timeStep = ref(30)
