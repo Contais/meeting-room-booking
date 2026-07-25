@@ -31,7 +31,15 @@
         <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '在线' : '异常' }}</el-tag></template></el-table-column>
         <el-table-column prop="createTime" label="创建日期" width="170" />
-        <el-table-column label="操作" width="100" fixed="right" align="center"><template #default="{ row }"><div class="action-buttons"><el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip><el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip></div></template></el-table-column>
+        <el-table-column label="操作" width="150" fixed="right" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
+              <el-tooltip content="重置密码"><el-button type="warning" link circle size="small" @click="handleResetPassword(row)"><el-icon><Key /></el-icon></el-button></el-tooltip>
+              <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+            </div>
+          </template>
+        </el-table-column>
       </el-table>
       <div class="pagination-wrap"><span class="total-text">共 {{ total }} 条</span><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" layout="prev, pager, next, sizes" @size-change="loadData" @current-change="loadData" /></div>
     </div>
@@ -53,8 +61,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
-import { listUsers, createUser, updateUser, deleteUser } from '@/api/user'
+import { Plus, Edit, Delete, Refresh, ArrowDown, ArrowUp, Key } from '@element-plus/icons-vue'
+import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import type { Department } from '@/types/department'
 
@@ -75,6 +83,19 @@ function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: un
 function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateUser(form); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' }); await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
+async function handleResetPassword(row: any) {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新密码', '重置密码', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputType: 'password',
+      inputValidator: (val) => val && val.length >= 6 ? true : '密码长度至少6位',
+      inputPlaceholder: '请输入新密码'
+    })
+    await resetPassword(row.id, value)
+    ElMessage.success('密码重置成功')
+  } catch { /* */ }
+}
 async function loadDeptTree() { try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ } }
 onMounted(() => { loadData(); loadDeptTree() })
 </script>

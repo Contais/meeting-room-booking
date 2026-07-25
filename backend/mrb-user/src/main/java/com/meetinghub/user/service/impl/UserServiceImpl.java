@@ -223,6 +223,14 @@ public class UserServiceImpl implements UserService {
         userRepository.updateById(user);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(Long userId, String newPassword) {
+        User user = getUserById(userId);
+        user.setPassword(BCrypt.hashpw(newPassword));
+        userRepository.updateById(user);
+    }
+
     private UserVO toVO(User user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());

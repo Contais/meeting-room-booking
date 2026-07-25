@@ -42,3 +42,7 @@ export function toggleUserStatus(id: number): Promise<Result<void>> {
 export function deleteUser(id: number): Promise<Result<void>> {
   return request.delete(`/api/uc/user/admin/delete/${id}`)
 }
+
+export function resetPassword(id: number, newPassword: string): Promise<Result<void>> {
+  return request.put(`/api/uc/user/admin/reset-password/${id}`, { newPassword })
+}

@@ -64,4 +64,9 @@ public interface UserService {
      * 修改密码
      */
     void changePassword(Long userId, ChangePasswordDTO dto);
+
+    /**
+     * 重置用户密码（管理端）
+     */
+    void resetPassword(Long userId, String newPassword);
 }

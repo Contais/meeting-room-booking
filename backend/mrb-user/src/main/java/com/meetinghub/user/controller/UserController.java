@@ -5,6 +5,7 @@ import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
+import com.meetinghub.user.model.dto.ResetPasswordDTO;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.service.UserService;
@@ -106,6 +107,14 @@ public class UserController {
     @PutMapping("/admin/toggle-status/{id}")
     public Result<Void> toggleStatus(@PathVariable Long id) {
         userService.toggleStatus(id);
+        return Result.ok();
+    }
+
+    @RequiresRole("admin")
+    @PutMapping("/admin/reset-password/{id}")
+    public Result<Void> resetPassword(@PathVariable Long id,
+                                       @Valid @RequestBody ResetPasswordDTO dto) {
+        userService.resetPassword(id, dto.getNewPassword());
         return Result.ok();
     }
 
