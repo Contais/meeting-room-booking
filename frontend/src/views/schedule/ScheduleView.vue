@@ -43,6 +43,7 @@
               <div class="block-inner">
                 <div class="block-subject">{{ r.subject || '未命名' }}</div>
                 <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                <div class="block-user">{{ r.username || '' }}</div>
               </div>
             </el-tooltip>
           </div>
@@ -71,6 +72,7 @@
               <div class="block-inner">
                 <div class="block-subject">{{ r.subject || '未命名' }}</div>
                 <div class="block-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                <div class="block-user">{{ r.username || '' }}</div>
               </div>
             </el-tooltip>
           </div>
@@ -92,7 +94,9 @@
             <div v-for="r in getDayReservations(day)" :key="r.id"
               class="cell-event" :class="'status-' + r.status"
               @click.stop="showDetail(r)">
-              {{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}
+              <el-tooltip :content="r.subject || '未命名'" placement="top" :show-after="300">
+                <span class="event-text">{{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}</span>
+              </el-tooltip>
             </div>
             <div v-if="day.reservations.length > 3 && !expandedDays.has(day.dateStr)" 
               class="cell-more" @click.stop="toggleDayExpand(day.dateStr)">
@@ -331,7 +335,7 @@ function weekBlockStyle(r: any, _hour: number) {
   const top = (startMinutes / 60) * 100
   const height = Math.max((duration / 60) * 100, 20)
   
-  // 每列宽度百分比（7列）
+  // 每列宽度百分比（7列），加上时间标签列宽度
   const colWidth = 100 / 7
   const leftPercent = dayIndex * colWidth
   
@@ -340,7 +344,6 @@ function weekBlockStyle(r: any, _hour: number) {
     width: `calc(${colWidth}% - 4px)`,
     top: `${top}%`,
     height: `${height}%`,
-    position: 'absolute' as const,
     zIndex: 1
   }
 }
@@ -504,22 +507,25 @@ onMounted(loadData)
 .block-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .block-subject { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .block-time { font-size: 10px; color: #6b7280; margin-top: 2px; white-space: nowrap; }
+.block-user { font-size: 10px; color: #9ca3af; margin-top: 1px; white-space: nowrap; }
 
 /* 周视图 */
 .week-view { padding: 0; overflow: hidden; }
+.grid-header-row { display: flex; background: #fafbfc; border-bottom: 1px solid #e5e7eb; }
 .time-col-header { width: 60px; flex-shrink: 0; }
+.grid-body { position: relative; }
 .day-col { flex: 1; padding: 8px 4px; text-align: center; border-right: 1px solid #f3f4f6; }
 .day-col:last-child { border-right: none; }
 .day-col.today { background: #ecf5ff; }
 .day-col.today .day-date { background: #409eff; color: #fff; border-radius: 50%; }
 .day-name { font-size: 11px; color: #9ca3af; }
 .day-date { font-size: 14px; font-weight: 600; color: #303133; margin-top: 4px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
-.time-row { position: relative; border-bottom: 1px solid #f3f4f6; height: 80px; }
+.time-row { display: flex; border-bottom: 1px solid #f3f4f6; height: 80px; position: relative; }
 .time-label { width: 60px; padding: 8px; font-size: 11px; color: #9ca3af; border-right: 1px solid #e5e7eb; flex-shrink: 0; }
-.day-cell { position: absolute; top: 0; bottom: 0; border-right: 1px solid #f3f4f6; cursor: pointer; }
+.day-cell { flex: 1; border-right: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+.day-cell:last-child { border-right: none; }
 .day-cell:hover { background: #f9fafb; }
-.day-cell:hover { background: #f9fafb; }
-.week-block { height: calc(100% - 4px); }
+.week-block { position: absolute; z-index: 1; }
 
 /* 月视图 */
 .month-view { padding: 16px; }
@@ -534,8 +540,9 @@ onMounted(loadData)
 .month-cell.today .cell-date { color: #409eff; font-weight: 600; }
 .cell-date { font-size: 12px; padding: 4px; }
 .cell-events { display: flex; flex-direction: column; gap: 2px; width: 100%; overflow: hidden; }
-.cell-events:not(.expanded) { max-height: 60px; }
-.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; width: 100%; box-sizing: border-box; }
+.cell-events:not(.expanded) { max-height: 64px; }
+.cell-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; height: 18px; line-height: 14px; width: 100%; box-sizing: border-box; overflow: hidden; }
+.event-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cell-event.status-0 { background: #fef3cd; color: #92400e; }
 .cell-event.status-1 { background: #d1fae5; color: #065f46; }
 .cell-event.status-2 { background: #f3f4f6; color: #6b7280; }
