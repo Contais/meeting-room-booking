@@ -44,7 +44,7 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <TimeSlotCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" :selected-date="reserveForm.selectedDate" @select="handleTimeSelect" />
+        <RoomCalendar ref="calendarRef" :room-id="room.id" :bookable-start="room.bookableStart" :bookable-end="room.bookableEnd" @select="handleTimeSelect" />
       </div>
     </template>
 
@@ -102,14 +102,14 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { getRoomById } from '@/api/meeting'
 import { createReservation } from '@/api/reservation'
-import TimeSlotCalendar from '@/components/TimeSlotCalendar.vue'
+import RoomCalendar from '@/components/RoomCalendar.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const route = useRoute()
 const router = useRouter()
 const room = ref<MeetingRoom | null>(null)
 const loading = ref(false)
-const calendarRef = ref<InstanceType<typeof TimeSlotCalendar>>()
+const calendarRef = ref<InstanceType<typeof RoomCalendar>>()
 
 // 时间段选择
 const timeStep = ref(30)
@@ -193,8 +193,8 @@ function handleTimeSelect(startTime: string, endTime: string) {
 }
 
 function onDialogClose() {
-  // 关闭弹窗时清空日历选中状态
-  calendarRef.value?.clearSelection()
+  // 关闭弹窗时刷新日历数据
+  calendarRef.value?.loadReservations()
 }
 
 function showReserveDialog() {
