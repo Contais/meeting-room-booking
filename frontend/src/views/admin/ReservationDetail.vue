@@ -1,11 +1,19 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <h2>预约详情</h2>
       <el-button @click="router.back()">
         <el-icon><ArrowLeft /></el-icon>
         返回
       </el-button>
+      <div v-if="reservation" class="header-actions">
+        <template v-if="reservation.status === 0">
+          <el-button type="success" @click="handleApprove"><el-icon><Check /></el-icon>通过</el-button>
+          <el-button type="danger" @click="handleReject"><el-icon><Close /></el-icon>拒绝</el-button>
+        </template>
+        <template v-else-if="reservation.status === 1">
+          <el-button type="danger" @click="handleCancel"><el-icon><Close /></el-icon>取消预约</el-button>
+        </template>
+      </div>
     </div>
 
     <div v-loading="loading" class="detail-card">
@@ -46,25 +54,6 @@
       </el-descriptions>
 
       <el-empty v-else description="暂无数据" />
-    </div>
-
-    <div v-if="reservation" class="action-bar">
-      <template v-if="reservation.status === 0">
-        <el-button type="success" @click="handleApprove">
-          <el-icon><Check /></el-icon>
-          通过
-        </el-button>
-        <el-button type="danger" @click="handleReject">
-          <el-icon><Close /></el-icon>
-          拒绝
-        </el-button>
-      </template>
-      <template v-else-if="reservation.status === 1">
-        <el-button type="danger" @click="handleCancel">
-          <el-icon><Close /></el-icon>
-          取消预约
-        </el-button>
-      </template>
     </div>
   </div>
 </template>
@@ -150,11 +139,9 @@ onMounted(loadDetail)
   margin-bottom: 16px;
 }
 
-.page-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .detail-card {
@@ -162,11 +149,5 @@ onMounted(loadDetail)
   border-radius: 12px;
   border: 1px solid #f0f0f0;
   padding: 24px;
-}
-
-.action-bar {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
 }
 </style>

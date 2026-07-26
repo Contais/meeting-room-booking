@@ -1,6 +1,5 @@
 <template>
   <div class="page-view">
-    <div class="page-header"><h2>用户管理</h2></div>
     <SearchBar @search="onFilterChange" @reset="resetQuery">
       <template #collapsed>
         <el-input v-model="query.keyword" placeholder="搜索用户名 / 姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
@@ -17,7 +16,7 @@
         <div class="toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></div>
         <div class="toolbar-right"><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></div>
       </div>
-      <el-table :data="tableData" v-loading="loading" stripe :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+      <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="用户名" min-width="200">
           <template #default="{ row }"><div class="user-cell"><div class="user-avatar">{{ (row.username || 'U').charAt(0).toUpperCase() }}</div><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.phone || '-' }}</span></div></div></template>
@@ -120,8 +119,6 @@ onMounted(() => { loadData(); loadDeptTree() })
 </script>
 
 <style scoped>
-.page-header { margin-bottom: 0; }
-.page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

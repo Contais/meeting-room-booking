@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="预约会议室" width="600px" destroy-on-close @close="handleClose">
+  <el-drawer v-model="visible" title="预约会议室" size="600px" direction="rtl" destroy-on-close @close="handleClose">
     <div v-if="room" class="dialog-rules-tip">
       <el-icon><InfoFilled /></el-icon>
       可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
@@ -92,10 +92,12 @@
       <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+      <div style="display: flex; justify-content: flex-end; gap: 12px; width: 100%;">
+        <el-button @click="visible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+      </div>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -511,7 +513,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; }
 
-.dialog-rules-tip { background: #ecf5ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #409eff; display: flex; align-items: center; gap: 6px; }
+.dialog-rules-tip { background: var(--el-color-primary-light-9, #ecf5ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
 
 /* 表单标签统一上置，与其它输入项对齐 */
 .booking-form :deep(.el-form-item) { margin-bottom: 16px; }
@@ -519,9 +521,9 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .booking-form :deep(.el-form-item__content) { margin-left: 0 !important; line-height: normal; }
 
 /* 时间选择器：el-form-item__content 为 flex 行布局，子项需显式 100% 才能与上方输入框右边对齐 */
-.time-picker { width: 100%; border: 1px solid #dcdfe6; border-radius: 10px; overflow: hidden; background: #fff; box-sizing: border-box; }
+.time-picker { width: 100%; border: 1px solid #dcdfe6; border-radius: 10px; overflow: hidden; background: var(--bg-card); box-sizing: border-box; }
 
-.tp-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: linear-gradient(180deg, #fafbfc, #f5f7fa); border-bottom: 1px solid #ebeef5; }
+.tp-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-page); border-bottom: 1px solid var(--border-light); }
 .tp-summary { display: flex; align-items: center; gap: 10px; min-height: 26px; }
 .tp-range { font-size: 15px; font-weight: 600; color: #303133; display: flex; align-items: center; gap: 6px; }
 .tp-range .tp-arrow { color: #409eff; }

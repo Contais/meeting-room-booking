@@ -1,9 +1,5 @@
 <template>
   <div class="profile-container">
-    <div class="page-header">
-      <h2>个人中心</h2>
-    </div>
-
     <div class="profile-grid">
       <div class="profile-card page-card">
         <div class="card-header">

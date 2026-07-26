@@ -1,6 +1,5 @@
 <template>
   <div class="page-view">
-    <div class="page-header"><h2>预约管理</h2></div>
     <SearchBar @search="onFilterChange" @reset="resetQuery">
       <template #collapsed>
         <el-input v-model="query.keyword" placeholder="搜索预约编号 / 会议主题 / 联系电话" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
@@ -187,8 +186,6 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.page-header { margin-bottom: 0; }
-.page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

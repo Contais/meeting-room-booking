@@ -148,9 +148,14 @@ onMounted(loadMenus)
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 20px;
+  padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+}
+
+.layout-aside .el-menu--collapse .logo {
   justify-content: center;
+  padding: 0;
 }
 
 .logo-icon {

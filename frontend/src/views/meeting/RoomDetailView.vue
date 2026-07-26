@@ -109,9 +109,6 @@ onMounted(async () => {
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.page-header { margin-bottom: 0; }
-.page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
-
 .detail-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; padding: 24px; }
 .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .room-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; }

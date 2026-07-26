@@ -1,6 +1,5 @@
 <template>
   <div class="page-view">
-    <div class="page-header"><h2>菜单管理</h2></div>
     <!-- 搜索栏 -->
     <SearchBar @search="applyFilter" @reset="resetFilter">
       <template #collapsed>
@@ -195,8 +194,6 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.page-header { margin-bottom: 0; }
-.page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 
 /* 表格卡片 */

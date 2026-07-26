@@ -18,13 +18,14 @@
 
 /* 暗色模式 */
 html.dark {
-  --bg-page: #1a1a2e;
-  --bg-card: #252542;
+  --bg-page: #0f0f1a;
+  --bg-card: #1c1c2e;
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
-  --border: #374151;
-  --border-light: #2d2d4a;
+  --border: #2d2d44;
+  --border-light: #252540;
+  --primary-light: #1e2a4a;
 }
 
 html.dark {
@@ -36,17 +37,27 @@ html.dark body {
   color: var(--text-primary);
 }
 
+/* Element Plus 暗色覆盖 */
 html.dark .el-table {
   --el-table-bg-color: var(--bg-card);
   --el-table-tr-bg-color: var(--bg-card);
-  --el-table-header-bg-color: #1f1f3a;
+  --el-table-header-bg-color: #161628;
   --el-table-border-color: var(--border);
   --el-table-text-color: var(--text-primary);
   --el-table-header-text-color: var(--text-secondary);
+  --el-table-row-hover-bg-color: #252542;
+}
+
+html.dark .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: #191930;
+}
+
+html.dark .el-table .el-table__row:hover > td.el-table__cell {
+  background: #252542 !important;
 }
 
 html.dark .el-input__wrapper {
-  background: #1f1f3a;
+  background: #161628;
   box-shadow: 0 0 0 1px var(--border) inset;
 }
 
@@ -54,18 +65,47 @@ html.dark .el-input__inner {
   color: var(--text-primary);
 }
 
+html.dark .el-textarea__inner {
+  background: #161628;
+  color: var(--text-primary);
+  box-shadow: 0 0 0 1px var(--border) inset;
+}
+
+html.dark .el-select .el-input__wrapper {
+  background: #161628;
+}
+
 html.dark .el-select-dropdown {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .el-select-dropdown__item {
+  color: var(--text-primary);
+}
+
+html.dark .el-select-dropdown__item.hover,
+html.dark .el-select-dropdown__item:hover {
+  background: #252542;
+}
+
+html.dark .el-popper.is-light {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .el-popper.is-light .el-popper__arrow::before {
   background: var(--bg-card);
   border-color: var(--border);
 }
 
 html.dark .el-dialog {
   --el-dialog-bg-color: var(--bg-card);
-  --el-dialog-title-font-size: 16px;
 }
 
 html.dark .el-descriptions {
   --el-descriptions-table-bg: var(--bg-card);
+  --el-descriptions-item-bordered-label-background: #191930;
 }
 
 html.dark .el-menu {
@@ -73,6 +113,147 @@ html.dark .el-menu {
   --el-menu-text-color: rgba(255, 255, 255, 0.7);
   --el-menu-active-color: #ffffff;
   --el-menu-hover-bg-color: rgba(102, 126, 234, 0.15);
+}
+
+html.dark .el-tag--light {
+  border-color: var(--border);
+}
+
+html.dark .el-button--default {
+  --el-button-bg-color: var(--bg-card);
+  --el-button-border-color: var(--border);
+  --el-button-text-color: var(--text-primary);
+  --el-button-hover-bg-color: #252542;
+  --el-button-hover-border-color: var(--primary);
+  --el-button-hover-text-color: var(--primary);
+}
+
+html.dark .el-pagination {
+  --el-pagination-bg-color: var(--bg-card);
+  --el-pagination-text-color: var(--text-primary);
+  --el-pagination-button-bg-color: var(--bg-card);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-hover-color: var(--primary);
+}
+
+html.dark .el-date-editor {
+  --el-date-editor-datetimerange-width: 380px;
+}
+
+html.dark .el-tree-select .el-input__wrapper {
+  background: #161628;
+}
+
+html.dark .el-radio-group {
+  --el-radio-text-color: var(--text-primary);
+}
+
+html.dark .el-divider {
+  border-color: var(--border);
+}
+
+html.dark .el-input-number {
+  --el-input-number-text-color: var(--text-primary);
+}
+
+html.dark .el-form-item__label {
+  color: var(--text-secondary);
+}
+
+html.dark .el-tabs {
+  --el-tabs-header-color: var(--text-primary);
+}
+
+html.dark .el-empty__description p {
+  color: var(--text-muted);
+}
+
+/* 卡片与页面背景 */
+html.dark .table-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .detail-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 会议室卡片 */
+html.dark .room-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .room-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 日历视图暗色 */
+html.dark .day-view,
+html.dark .week-view,
+html.dark .month-view {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+html.dark .day-header,
+html.dark .week-header {
+  background: #161628;
+  border-color: var(--border);
+}
+
+html.dark .tick-label,
+html.dark .room-col-name,
+html.dark .date-display {
+  color: var(--text-secondary);
+}
+
+html.dark .control-bar {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .day-work-hours-band {
+  background: rgba(79, 110, 247, 0.05);
+}
+
+/* 个人中心 */
+html.dark .profile-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 搜索栏暗色 */
+html.dark .search-bar {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 首页 */
+html.dark .home-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 自定义滚动条暗色 */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3a3a5c;
+}
+
+/* 表格工具栏暗色 */
+html.dark .table-toolbar {
+  border-color: var(--border);
+}
+
+html.dark .pagination-wrap {
+  border-color: var(--border);
+}
+
+html.dark .total-text {
+  color: var(--text-muted);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -131,12 +312,12 @@ a { text-decoration: none; color: var(--primary); }
 
 /* 表格 - 加大行高 */
 .table-card { padding: 0; overflow: hidden; }
-.table-card .el-table { --el-table-border-color: var(--border-light); --el-table-header-bg-color: #fafbfc; }
+.table-card .el-table { --el-table-border-color: var(--border-light); }
 .table-card .el-table th.el-table__cell { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .table-card .el-table td.el-table__cell { font-size: 13px; padding: 18px 0; }
 .table-card .el-table .cell { padding: 0 14px; }
-.table-card .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell { background: #fafbfc; }
-.table-card .el-table .el-table__row:hover > td.el-table__cell { background: #f8fafc !important; }
+.table-card .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell { background: var(--bg-page); }
+.table-card .el-table .el-table__row:hover > td.el-table__cell { background: var(--primary-light) !important; }
 
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
 .table-toolbar-left { display: flex; align-items: center; gap: 8px; }

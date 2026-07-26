@@ -1,11 +1,15 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <h2>会议室详情</h2>
       <el-button @click="router.back()">
         <el-icon><ArrowLeft /></el-icon>
         返回
       </el-button>
+      <div v-if="room" class="header-actions">
+        <el-button type="primary" @click="handleEdit"><el-icon><Edit /></el-icon>编辑</el-button>
+        <el-button :type="room.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus">{{ room.status === 1 ? '禁用' : '启用' }}</el-button>
+        <el-button type="danger" @click="handleDelete"><el-icon><Delete /></el-icon>删除</el-button>
+      </div>
     </div>
 
     <div v-loading="loading" class="detail-card">
@@ -55,20 +59,6 @@
       </el-descriptions>
 
       <el-empty v-else description="暂无数据" />
-    </div>
-
-    <div v-if="room" class="action-bar">
-      <el-button type="primary" @click="handleEdit">
-        <el-icon><Edit /></el-icon>
-        编辑
-      </el-button>
-      <el-button :type="room.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus">
-        {{ room.status === 1 ? '禁用' : '启用' }}
-      </el-button>
-      <el-button type="danger" @click="handleDelete">
-        <el-icon><Delete /></el-icon>
-        删除
-      </el-button>
     </div>
   </div>
 </template>
@@ -140,11 +130,9 @@ onMounted(loadDetail)
   margin-bottom: 16px;
 }
 
-.page-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .detail-card {
@@ -189,11 +177,5 @@ onMounted(loadDetail)
 
 .mt-20 {
   margin-top: 20px;
-}
-
-.action-bar {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
 }
 </style>

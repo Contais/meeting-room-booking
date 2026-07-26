@@ -1,9 +1,5 @@
 <template>
   <div class="chat-float">
-    <div class="chat-trigger" @click="togglePanel">
-      <el-icon :size="22"><ChatDotRound /></el-icon>
-    </div>
-
     <transition name="chat-slide">
       <div v-if="visible" class="chat-panel">
         <div class="chat-header">
@@ -150,17 +146,8 @@ defineExpose({
 <style scoped>
 .chat-float { position: fixed; bottom: 24px; right: 24px; z-index: 9999; }
 
-.chat-trigger {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
-  transition: transform 0.2s;
-}
-.chat-trigger:hover { transform: scale(1.1); }
-
 .chat-panel {
-  position: absolute; bottom: 64px; right: 0;
+  position: fixed; bottom: 24px; right: 24px;
   width: 500px; height: 640px;
   background: #fff; border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
