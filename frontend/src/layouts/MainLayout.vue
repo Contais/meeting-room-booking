@@ -192,6 +192,15 @@ onMounted(loadMenus)
   transition: all 0.2s;
 }
 
+/* 折叠模式：取消边距，图标居中 */
+.side-menu.el-menu--collapse > .el-menu-item,
+.side-menu.el-menu--collapse > .el-sub-menu :deep(.el-sub-menu__title) {
+  margin: 4px auto;
+  padding: 0 !important;
+  width: 44px;
+  min-width: 44px;
+}
+
 .side-menu .el-menu-item:hover {
   background: rgba(102, 126, 234, 0.15) !important;
 }
@@ -323,8 +332,26 @@ onMounted(loadMenus)
   overflow-y: auto;
 }
 
-/* 一级菜单对齐：确保 sub-menu 标题和 menu-item 左侧对齐 */
+/* 菜单折叠模式：确保折叠时图标居中 */
+.side-menu:not(.el-menu--collapse) {
+  width: 100%;
+}
+.side-menu.el-menu--collapse {
+  width: 64px;
+}
+
+/* 一级菜单项：统一左侧对齐 + 边距 */
+.side-menu > .el-menu-item {
+  padding-left: 20px !important;
+}
+
+/* 一级 sub-menu 标题：与一级 menu-item 对齐 */
 .side-menu > .el-sub-menu :deep(.el-sub-menu__title) {
   padding-left: 20px !important;
+}
+
+/* 二级菜单项：比一级多缩进 */
+.side-menu :deep(.el-sub-menu .el-menu-item) {
+  padding-left: 48px !important;
 }
 </style>

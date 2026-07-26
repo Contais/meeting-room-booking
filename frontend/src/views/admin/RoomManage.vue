@@ -38,7 +38,7 @@
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/rooms/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
+              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/meeting/rooms/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
               <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
               <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
             </div>
@@ -72,18 +72,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, View } from '@element-plus/icons-vue'
-import { listRoomsAdmin, createRoom, updateRoom, deleteRoom, getRoomDetailAdmin } from '@/api/meeting'
+import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
-const route = useRoute()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
@@ -126,17 +125,7 @@ function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: un
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该会议室?', '提示', { type: 'warning' }); await deleteRoom(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
-async function openEditFromQuery() {
-  const editId = route.query.edit
-  if (editId) {
-    try {
-      const res = await getRoomDetailAdmin(Number(editId))
-      if (res.data) { showEditDialog(res.data) }
-    } catch { /* */ }
-    router.replace({ path: route.path })
-  }
-}
-onMounted(() => { loadData(); openEditFromQuery() })
+onMounted(loadData)
 </script>
 
 <style scoped>

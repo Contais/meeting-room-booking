@@ -44,7 +44,7 @@
       <!-- 预约日历 -->
       <div class="detail-card">
         <h4 class="section-title">预约日历</h4>
-        <RoomScheduleView ref="calendarRef" :room-id="room.id" @book="handleTimeSelect" />
+        <RoomScheduleView ref="calendarRef" :room-id="room.id" />
       </div>
     </template>
 
@@ -87,13 +87,6 @@ function showReserveDialog() {
   bookingDate.value = dateStr
   bookingStartTime.value = `${dateStr}T09:00:00`
   bookingEndTime.value = `${dateStr}T10:00:00`
-  reserveDialogVisible.value = true
-}
-
-function handleTimeSelect(startTime: string, endTime: string) {
-  bookingDate.value = startTime.substring(0, 10)
-  bookingStartTime.value = startTime
-  bookingEndTime.value = endTime
   reserveDialogVisible.value = true
 }
 

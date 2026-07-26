@@ -6,7 +6,7 @@
         返回
       </el-button>
       <div v-if="room" class="header-actions">
-        <el-button type="primary" @click="handleEdit"><el-icon><Edit /></el-icon>编辑</el-button>
+        <el-button type="primary" @click="openEditDialog"><el-icon><Edit /></el-icon>编辑</el-button>
         <el-button :type="room.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus">{{ room.status === 1 ? '禁用' : '启用' }}</el-button>
         <el-button type="danger" @click="handleDelete"><el-icon><Delete /></el-icon>删除</el-button>
       </div>
@@ -60,15 +60,33 @@
 
       <el-empty v-else description="暂无数据" />
     </div>
+
+    <FormDrawer v-model:visible="editDialogVisible" title="编辑会议室" :loading="submitting" @submit="handleSubmit">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-divider content-position="left">基础信息</el-divider>
+        <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="请输入会议室名称" /></el-form-item>
+        <el-form-item label="位置"><el-input v-model="form.location" placeholder="如：3楼A301" /></el-form-item>
+        <el-form-item label="容纳人数" prop="capacity"><el-input-number v-model="form.capacity" :min="1" :max="1000" style="width:100%" /></el-form-item>
+        <el-form-item label="设备"><el-input v-model="form.equipment" placeholder="投影仪,白板,视频会议系统" /></el-form-item>
+        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="2" placeholder="详细描述" /></el-form-item>
+        <el-divider content-position="left">使用规则</el-divider>
+        <el-form-item label="预约时段"><div style="display:flex;align-items:center;gap:8px"><el-time-picker v-model="form.bookableStart" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:130px" /><span>~</span><el-time-picker v-model="form.bookableEnd" format="HH:mm" value-format="HH:mm" placeholder="结束" style="width:130px" /></div></el-form-item>
+        <el-form-item label="最大时长"><el-input-number v-model="form.maxDuration" :min="30" :max="1440" :step="30" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">分钟</span></el-form-item>
+        <el-form-item label="提前天数"><el-input-number v-model="form.advanceDays" :min="1" :max="90" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">天</span></el-form-item>
+        <el-form-item label="审批"><el-radio-group v-model="form.needApproval"><el-radio :value="0">免审批</el-radio><el-radio :value="1">需审批</el-radio></el-radio-group></el-form-item>
+      </el-form>
+    </FormDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Edit, Delete, OfficeBuilding } from '@element-plus/icons-vue'
-import { getRoomDetailAdmin, toggleRoomStatus, deleteRoom } from '@/api/meeting'
+import { getRoomDetailAdmin, updateRoom, toggleRoomStatus, deleteRoom } from '@/api/meeting'
+import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 
@@ -77,8 +95,14 @@ const router = useRouter()
 
 const loading = ref(false)
 const room = ref<MeetingRoom | null>(null)
-
 const id = Number(route.params.id)
+
+// 编辑弹窗
+const editDialogVisible = ref(false)
+const submitting = ref(false)
+const formRef = ref<FormInstance>()
+const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
+const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 async function loadDetail() {
   loading.value = true
@@ -92,8 +116,37 @@ async function loadDetail() {
   }
 }
 
-function handleEdit() {
-  router.push({ path: '/admin/rooms', query: { edit: String(id) } })
+function openEditDialog() {
+  if (!room.value) return
+  Object.assign(form, {
+    id: room.value.id,
+    name: room.value.name,
+    location: room.value.location || '',
+    capacity: room.value.capacity || 10,
+    equipment: room.value.equipment || '',
+    imageUrl: room.value.imageUrl || '',
+    description: room.value.description || '',
+    bookableStart: room.value.bookableStart || '08:00',
+    bookableEnd: room.value.bookableEnd || '20:00',
+    maxDuration: room.value.maxDuration || 480,
+    advanceDays: room.value.advanceDays || 7,
+    needApproval: room.value.needApproval || 0
+  })
+  editDialogVisible.value = true
+}
+
+async function handleSubmit() {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  submitting.value = true
+  try {
+    await updateRoom(form)
+    ElMessage.success('更新成功')
+    editDialogVisible.value = false
+    loadDetail()
+  } catch { /* */ } finally {
+    submitting.value = false
+  }
 }
 
 async function handleToggleStatus() {
@@ -136,9 +189,9 @@ onMounted(loadDetail)
 }
 
 .detail-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-light);
   padding: 24px;
 }
 
@@ -147,7 +200,7 @@ onMounted(loadDetail)
   align-items: center;
   gap: 16px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .room-avatar {
@@ -165,13 +218,13 @@ onMounted(loadDetail)
 .room-info h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
 .room-info p {
   font-size: 14px;
-  color: #909399;
+  color: var(--text-muted);
   margin: 0 0 8px 0;
 }
 

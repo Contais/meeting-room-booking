@@ -52,11 +52,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Key, View } from '@element-plus/icons-vue'
-import { listUsers, createUser, updateUser, deleteUser, resetPassword, getUserDetail } from '@/api/user'
+import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
@@ -64,7 +64,6 @@ import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
 
 const router = useRouter()
-const route = useRoute()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
@@ -116,17 +115,7 @@ async function handleResetPassword(row: any) {
   } catch { /* */ }
 }
 async function loadDeptTree() { try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ } }
-async function openEditFromQuery() {
-  const editId = route.query.edit
-  if (editId) {
-    try {
-      const res = await getUserDetail(Number(editId))
-      if (res.data) { showEditDialog(res.data) }
-    } catch { /* */ }
-    router.replace({ path: route.path })
-  }
-}
-onMounted(() => { loadData(); loadDeptTree(); openEditFromQuery() })
+onMounted(() => { loadData(); loadDeptTree() })
 </script>
 
 <style scoped>
