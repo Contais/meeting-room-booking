@@ -48,7 +48,7 @@
         </div>
       </div>
 
-      <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+      <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="预约编号" width="170">
           <template #default="{ row }">
@@ -70,7 +70,7 @@
         </el-table-column>
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/reservations/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
@@ -187,13 +187,13 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
+.table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
 .toolbar-right { display: flex; gap: 4px; }
 .action-buttons { display: flex; justify-content: center; gap: 4px; }
-.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid #f5f5f5; }
-.total-text { font-size: 13px; color: #909399; }
+.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+.total-text { font-size: 13px; color: var(--text-muted); }
 .time-slot-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.4; }
-.ts-date { font-size: 13px; color: #303133; }
-.ts-range { font-size: 12px; color: #909399; }
+.ts-date { font-size: 13px; color: var(--text-primary); }
+.ts-range { font-size: 12px; color: var(--text-muted); }
 </style>

@@ -16,7 +16,7 @@
         <div class="toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></div>
         <div class="toolbar-right"><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></div>
       </div>
-      <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+      <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="用户名" min-width="200">
           <template #default="{ row }"><div class="user-cell"><div class="user-avatar">{{ (row.username || 'U').charAt(0).toUpperCase() }}</div><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.phone || '-' }}</span></div></div></template>
@@ -24,7 +24,7 @@
         <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '在线' : '异常' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/users/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
@@ -120,15 +120,15 @@ onMounted(() => { loadData(); loadDeptTree() })
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
+.table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
+.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
 .toolbar-right { display: flex; gap: 4px; }
 .user-cell { display: flex; align-items: center; gap: 10px; }
 .user-avatar { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
 .user-info { display: flex; flex-direction: column; }
-.user-name { font-size: 13px; font-weight: 500; color: #303133; }
-.user-email { font-size: 11px; color: #909399; }
+.user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.user-email { font-size: 11px; color: var(--text-muted); }
 .action-buttons { display: flex; justify-content: center; gap: 4px; }
-.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid #f5f5f5; }
-.total-text { font-size: 13px; color: #909399; }
+.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+.total-text { font-size: 13px; color: var(--text-muted); }
 </style>

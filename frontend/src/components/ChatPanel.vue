@@ -218,4 +218,16 @@ defineExpose({
 
 .chat-slide-enter-active, .chat-slide-leave-active { transition: all 0.3s ease; }
 .chat-slide-enter-from, .chat-slide-leave-to { opacity: 0; transform: translateY(20px); }
+
+/* 暗色模式适配 */
+html.dark .chat-panel { background: var(--bg-card); border-color: var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+html.dark .chat-header { background: #161628; border-color: var(--border); }
+html.dark .chat-title { color: var(--text-primary); }
+html.dark .chat-empty { color: var(--text-muted); }
+html.dark .chat-msg.assistant .msg-bubble { background: #252542; color: var(--text-primary); }
+html.dark .chat-input { border-color: var(--border); }
+html.dark .markdown-content :deep(code) { background: rgba(255,255,255,0.1); }
+html.dark .markdown-content :deep(th), html.dark .markdown-content :deep(td) { border-color: var(--border); }
+html.dark .markdown-content :deep(th) { background: rgba(255,255,255,0.05); }
+html.dark .markdown-content :deep(blockquote) { border-left-color: var(--border); color: var(--text-muted); }
 </style>

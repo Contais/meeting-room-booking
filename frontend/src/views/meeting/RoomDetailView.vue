@@ -147,4 +147,13 @@ onMounted(async () => {
 .time-range-text.placeholder { color: #c0c4cc; font-weight: 400; }
 
 @media (max-width: 768px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
+
+html.dark .detail-card { background: var(--bg-card); border-color: var(--border); }
+html.dark .room-info h2 { color: var(--text-primary); }
+html.dark .room-location { color: var(--text-secondary); }
+html.dark .info-label { color: var(--text-secondary); }
+html.dark .info-value { color: var(--text-primary); }
+html.dark .description h4 { color: var(--text-primary); }
+html.dark .description p { color: var(--text-secondary); }
+html.dark .section-title { color: var(--text-primary); }
 </style>

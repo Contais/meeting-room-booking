@@ -115,6 +115,27 @@ html.dark .el-menu {
   --el-menu-hover-bg-color: rgba(102, 126, 234, 0.15);
 }
 
+html.dark .el-sub-menu__title {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+html.dark .el-sub-menu__title:hover {
+  background: rgba(102, 126, 234, 0.15) !important;
+}
+
+html.dark .el-menu--popup {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .el-menu--popup .el-menu-item {
+  color: var(--text-primary);
+}
+
+html.dark .el-menu--popup .el-menu-item:hover {
+  background: #252542;
+}
+
 html.dark .el-tag--light {
   border-color: var(--border);
 }
@@ -344,3 +365,7 @@ a { text-decoration: none; color: var(--primary); }
 .el-tag--dark.el-tag--warning { background: #fffbeb; border-color: #fde68a; color: #d97706; }
 .el-tag--dark.el-tag--danger { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 .el-tag--dark.el-tag--info { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+
+/* 操作按钮紧凑模式 */
+.action-buttons .el-button.is-circle { --el-button-size: 24px; width: 24px; height: 24px; }
+.action-buttons .el-button.is-circle .el-icon { font-size: 12px; }

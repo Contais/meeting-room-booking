@@ -147,7 +147,7 @@ onMounted(async () => {
 
 .stat-card {
   flex: 1;
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 18px 16px;
@@ -191,7 +191,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.15s;
   border: 1px solid var(--border-light);
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .action-item:hover {

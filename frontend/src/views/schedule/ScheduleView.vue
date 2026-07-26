@@ -1091,4 +1091,59 @@ onBeforeUnmount(() => {
 .mc-event.s2 { background: #f3f4f6; color: #6b7280; }
 .mc-more { font-size: 11px; color: #9ca3af; padding: 2px 4px; cursor: pointer; }
 .mc-more:hover { color: #409eff; }
+
+/* 暗色模式适配 */
+html.dark .control-bar { background: var(--bg-card); border-color: var(--border); }
+html.dark .date-display { color: var(--text-primary); }
+html.dark .day-header { background: #161628; border-color: var(--border); }
+html.dark .room-col-header { background: #161628; color: var(--text-secondary); border-color: var(--border); }
+html.dark .tick-label { color: var(--text-secondary); }
+html.dark .tick-mark { background: var(--border); }
+html.dark .day-body-wrap { scrollbar-color: #3a3a5c #1c1c2e; }
+html.dark .day-body-wrap::-webkit-scrollbar-track { background: #1c1c2e; }
+html.dark .day-body-wrap::-webkit-scrollbar-thumb { background: #3a3a5c; border-color: #1c1c2e; }
+html.dark .day-row { border-color: var(--border); }
+html.dark .room-label { border-color: var(--border); background: var(--bg-card); }
+html.dark .room-name { color: var(--text-primary); }
+html.dark .room-meta { color: var(--text-muted); }
+html.dark .grid-cell { border-color: var(--border-light); }
+html.dark .grid-cell:hover { background: #252542; }
+html.dark .day-event { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+html.dark .week-header { background: #161628; border-color: var(--border); }
+html.dark .wk-corner { background: #161628; border-color: var(--border); }
+html.dark .wk-day { border-color: var(--border-light); }
+html.dark .wk-day.today { background: rgba(64,158,255,0.1); }
+html.dark .wk-day-name { color: var(--text-muted); }
+html.dark .wk-day-num { color: var(--text-primary); }
+html.dark .week-body-wrap { scrollbar-color: #3a3a5c #1c1c2e; }
+html.dark .week-body-wrap::-webkit-scrollbar-track { background: #1c1c2e; }
+html.dark .week-body-wrap::-webkit-scrollbar-thumb { background: #3a3a5c; border-color: #1c1c2e; }
+html.dark .wk-times { background: var(--bg-card); }
+html.dark .wk-time { border-color: var(--border); }
+html.dark .wk-time-label { color: var(--text-muted); background: var(--bg-card); }
+html.dark .wk-cell { border-color: var(--border-light); }
+html.dark .wk-cell:hover { background: #252542; }
+html.dark .week-event { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+html.dark .s0 { background: rgba(245,158,11,0.2); border-left-color: #f59e0b; }
+html.dark .s1 { background: rgba(16,185,129,0.2); border-left-color: #10b981; }
+html.dark .s2 { background: rgba(156,163,175,0.15); border-left-color: #6b7280; }
+html.dark .evt-title { color: var(--text-primary); }
+html.dark .evt-time { color: var(--text-secondary); }
+html.dark .evt-user { color: var(--text-muted); }
+
+html.dark .month-header { border-color: var(--border); }
+html.dark .mh-cell { color: var(--text-secondary); }
+html.dark .month-cell { border-color: var(--border); }
+html.dark .month-cell:hover { background: #252542; }
+html.dark .month-cell.other-month { background: #161628; }
+html.dark .month-cell.other-month .mc-date { color: var(--text-muted); }
+html.dark .month-cell.today { background: rgba(64,158,255,0.1); }
+html.dark .month-cell.today .mc-date { color: #409eff; }
+html.dark .mc-event.s0 { background: rgba(245,158,11,0.2); color: #fbbf24; }
+html.dark .mc-event.s1 { background: rgba(16,185,129,0.2); color: #34d399; }
+html.dark .mc-event.s2 { background: rgba(156,163,175,0.15); color: #9ca3af; }
+html.dark .mc-more { color: var(--text-muted); }
+html.dark .mc-more:hover { color: #409eff; }
 </style>

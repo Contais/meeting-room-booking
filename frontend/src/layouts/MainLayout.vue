@@ -183,7 +183,8 @@ onMounted(loadMenus)
   padding: 8px 0;
 }
 
-.side-menu .el-menu-item {
+.side-menu > .el-menu-item,
+.side-menu > .el-sub-menu :deep(.el-sub-menu__title) {
   border-radius: 8px;
   margin: 4px 12px;
   height: 44px;
@@ -320,5 +321,14 @@ onMounted(loadMenus)
   background: var(--bg-page);
   padding: 20px;
   overflow-y: auto;
+}
+
+/* 一级菜单对齐：确保 sub-menu 和 menu-item 左侧对齐 */
+.side-menu :deep(.el-sub-menu .el-sub-menu__title) {
+  padding-left: 20px !important;
+}
+
+.side-menu :deep(.el-menu-item) {
+  padding-left: 20px !important;
 }
 </style>
