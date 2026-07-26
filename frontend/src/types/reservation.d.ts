@@ -1,5 +1,6 @@
 export interface Reservation {
   id: number
+  reservationCode: string
   roomId: number
   roomName: string
   userId: number
@@ -27,9 +28,17 @@ export interface ReservationCreateParams {
 export interface ReservationPageQuery {
   page?: number
   size?: number
+  keyword?: string
+  subject?: string
   roomId?: number
   userId?: number
   status?: number
+  contactPhone?: string
+  startTime?: string
+  endTime?: string
+  reservationCode?: string
+  createTimeStart?: string
+  createTimeEnd?: string
 }
 
 export interface ReservationPageResult {

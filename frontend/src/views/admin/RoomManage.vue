@@ -5,22 +5,24 @@
       <div class="search-fields">
         <!-- 收起：关键字搜索 -->
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="loadData" /></div>
+          <div class="search-item search-item-wide"><el-input v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
         </template>
         <!-- 展开：所有具体字段 -->
         <template v-else>
-          <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="query.page = 1; loadData()" /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="query.page = 1; loadData()"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-          <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="query.page = 1; loadData()"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
+          <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="onFilterChange" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
+          <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
         </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetQuery">重置</el-button>
-        <el-button type="primary" @click="query.page = 1; loadData()">查询</el-button>
-        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
+        <el-button type="primary" @click="onFilterChange">查询</el-button>
+        <el-button link type="primary" @click="toggleExpand">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -42,6 +44,7 @@
         <el-table-column prop="equipment" label="设备" min-width="150" show-overflow-tooltip />
         <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
         <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
@@ -89,19 +92,42 @@ import type { MeetingRoom } from '@/types/meeting'
 const loading = ref(false); const submitting = ref(false); const expanded = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
+const createTimeRange = ref<string[]>([])
 const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 function onSizeChange() { query.page = 1; loadData() }
-async function loadData() { loading.value = true; try { const res = await listRoomsAdmin(query); tableData.value = res.data.records; total.value = Number(res.data.total) || 0 } catch { /* */ } finally { loading.value = false } }
+function onFilterChange() { query.page = 1; loadData() }
+function onCreateTimeRangeChange(val: string[] | null) {
+  query.createTimeStart = val && val.length === 2 ? val[0] : ''
+  query.createTimeEnd = val && val.length === 2 ? val[1] : ''
+  onFilterChange()
+}
+function toggleExpand() { expanded.value = !expanded.value }
+async function loadData() {
+  loading.value = true
+  try {
+    const params: Record<string, any> = { page: query.page, size: query.size }
+    if (query.keyword) params.keyword = query.keyword
+    if (query.name) params.name = query.name
+    if (query.location) params.location = query.location
+    if (query.equipment) params.equipment = query.equipment
+    if (query.minCapacity != null) params.minCapacity = query.minCapacity
+    if (query.needApproval != null) params.needApproval = query.needApproval
+    if (query.status != null) params.status = query.status
+    if (query.createTimeStart) params.createTimeStart = query.createTimeStart
+    if (query.createTimeEnd) params.createTimeEnd = query.createTimeEnd
+    const res = await listRoomsAdmin(params); tableData.value = res.data.records; total.value = Number(res.data.total) || 0
+  } catch { /* */ } finally { loading.value = false }
+}
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300)
 }
 
-function resetQuery() { query.keyword = ''; query.name = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.name = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.page = 1; createTimeRange.value = []; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 }); dialogVisible.value = true }
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
@@ -116,10 +142,13 @@ onMounted(loadData)
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
 .search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
     .search-item { display: flex; flex-direction: column; gap: 6px; }
+    .search-item-wide { width: 100%; }
+    .search-item-wide :deep(.el-input) { width: 100%; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 260px; }
-    .search-keyword-input { width: 640px !important; }
+    .search-item :deep(.el-select),
+    .search-item :deep(.el-date-editor),
+    .search-item :deep(.el-input-number) { width: 100%; }
 .search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

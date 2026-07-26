@@ -5,6 +5,7 @@
     <!-- 预约视图对象映射 -->
     <resultMap id="ReservationVOMap" type="com.meetinghub.meeting.model.vo.ReservationVO">
         <id property="id" column="id"/>
+        <result property="reservationCode" column="reservation_code"/>
         <result property="roomId" column="room_id"/>
         <result property="roomName" column="room_name"/>
         <result property="userId" column="user_id"/>
@@ -18,33 +19,51 @@
         <result property="createTime" column="create_time"/>
     </resultMap>
 
+    <!-- 公共筛选片段：时间范围 + 创建时间范围 + 预约编号 + 关键字 -->
+    <sql id="commonFilters">
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (r.subject LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR r.contact_phone LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.subject != null and query.subject != ''">
+            AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
+        </if>
+        <if test="query.status != null">
+            AND r.status = #{query.status}
+        </if>
+        <if test="query.contactPhone != null and query.contactPhone != ''">
+            AND r.contact_phone LIKE CONCAT('%', #{query.contactPhone}, '%')
+        </if>
+        <if test="query.reservationCode != null and query.reservationCode != ''">
+            AND r.reservation_code LIKE CONCAT('%', #{query.reservationCode}, '%')
+        </if>
+        <if test="query.startTime != null and query.startTime != ''">
+            AND r.start_time &gt;= #{query.startTime}
+        </if>
+        <if test="query.endTime != null and query.endTime != ''">
+            AND r.end_time &lt;= #{query.endTime}
+        </if>
+        <if test="query.createTimeStart != null and query.createTimeStart != ''">
+            AND r.create_time &gt;= #{query.createTimeStart}
+        </if>
+        <if test="query.createTimeEnd != null and query.createTimeEnd != ''">
+            AND r.create_time &lt;= #{query.createTimeEnd}
+        </if>
+    </sql>
+
     <!--
         我的预约分页查询：LEFT JOIN 会议室表获取会议室名称
         说明：username 为跨服务数据，由 Service 层批量拉取后填充
     -->
     <select id="selectMyPage" resultMap="ReservationVOMap">
-        SELECT r.id, r.room_id, r.user_id, r.subject, r.attendee_count,
+        SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.contact_phone, r.remark, r.start_time, r.end_time,
                r.status, r.create_time, mr.name AS room_name
         FROM meeting_room_reservation r
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           AND r.user_id = #{userId}
-          <if test="query.keyword != null and query.keyword != ''">
-              AND r.subject LIKE CONCAT('%', #{query.keyword}, '%')
-          </if>
-          <if test="query.subject != null and query.subject != ''">
-              AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
-          </if>
-          <if test="query.status != null">
-              AND r.status = #{query.status}
-          </if>
-          <if test="query.startTime != null and query.startTime != ''">
-              AND r.start_time &lt;= #{query.startTime} AND r.end_time &gt;= #{query.startTime}
-          </if>
-          <if test="query.endTime != null and query.endTime != ''">
-              AND r.start_time &lt;= #{query.endTime} AND r.end_time &gt;= #{query.endTime}
-          </if>
+          <include refid="commonFilters"/>
         ORDER BY r.start_time DESC
     </select>
 
@@ -53,35 +72,18 @@
         说明：username 为跨服务数据，由 Service 层批量拉取后填充
     -->
     <select id="selectAllPage" resultMap="ReservationVOMap">
-        SELECT r.id, r.room_id, r.user_id, r.subject, r.attendee_count,
+        SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.contact_phone, r.remark, r.start_time, r.end_time,
                r.status, r.create_time, mr.name AS room_name
         FROM meeting_room_reservation r
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
-          <if test="query.keyword != null and query.keyword != ''">
-              AND r.subject LIKE CONCAT('%', #{query.keyword}, '%')
-          </if>
-          <if test="query.subject != null and query.subject != ''">
-              AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
-          </if>
+          <include refid="commonFilters"/>
           <if test="query.roomId != null">
               AND r.room_id = #{query.roomId}
           </if>
           <if test="query.userId != null">
               AND r.user_id = #{query.userId}
-          </if>
-          <if test="query.status != null">
-              AND r.status = #{query.status}
-          </if>
-          <if test="query.contactPhone != null and query.contactPhone != ''">
-              AND r.contact_phone LIKE CONCAT('%', #{query.contactPhone}, '%')
-          </if>
-          <if test="query.startTime != null and query.startTime != ''">
-              AND r.start_time &gt;= #{query.startTime}
-          </if>
-          <if test="query.endTime != null and query.endTime != ''">
-              AND r.end_time &lt;= #{query.endTime}
           </if>
         ORDER BY r.start_time DESC
     </select>

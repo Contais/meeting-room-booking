@@ -19,6 +19,7 @@ export interface MeetingRoomPageQuery {
   page?: number
   size?: number
   keyword?: string
+  name?: string
   location?: string
   equipment?: string
   minCapacity?: number
@@ -26,6 +27,8 @@ export interface MeetingRoomPageQuery {
   bookableEnd?: string
   needApproval?: number
   status?: number
+  createTimeStart?: string
+  createTimeEnd?: string
 }
 
 export interface MeetingRoomPageResult {
@@ -33,32 +36,4 @@ export interface MeetingRoomPageResult {
   total: number
   page: number
   size: number
-}
-
-export interface Reservation {
-  id: number
-  roomId: number
-  roomName: string
-  userId: number
-  username: string
-  subject: string
-  attendeeCount: number
-  contactPhone: string
-  remark: string
-  startTime: string
-  endTime: string
-  status: number
-  createTime: string
-}
-
-export interface ReservationPageQuery {
-  page?: number
-  size?: number
-  keyword?: string
-  roomId?: number
-  userId?: number
-  status?: number
-  contactPhone?: string
-  startTime?: string
-  endTime?: string
 }

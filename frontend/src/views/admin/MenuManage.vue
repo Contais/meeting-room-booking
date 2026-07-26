@@ -5,18 +5,19 @@
     <div class="search-bar">
       <div class="search-fields">
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" /></div>
+          <div class="search-item search-item-wide"><el-input v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
         </template>
         <template v-else>
-          <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" /></div>
+          <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+          <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
           <div class="search-item"><label>状态</label><el-select v-model="filterStatus" placeholder="请选择" clearable @change="applyFilter"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="applyFilter" /></div>
         </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetFilter">重置</el-button>
         <el-button type="primary" @click="applyFilter">查询</el-button>
-        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
+        <el-button link type="primary" @click="toggleExpand">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
 
@@ -112,6 +113,7 @@ const formRef = ref<FormInstance>()
 const expandAll = ref(true)
 const filterName = ref('')
 const filterPath = ref(''); const filterStatus = ref(undefined as number | undefined)
+const createTimeRange = ref<string[]>([])
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 
@@ -130,25 +132,32 @@ async function loadData() {
 }
 
 function applyFilter() {
-  const result = JSON.parse(JSON.stringify(treeData.value))
-  if (filterName.value || filterPath.value || filterStatus.value !== undefined) {
-    const filterTree = (items: MenuItem[]): MenuItem[] => {
-      return items.filter(item => {
-        const nameMatch = !filterName.value || item.name.includes(filterName.value)
-        const pathMatch = !filterPath.value || (item.path && item.path.includes(filterPath.value))
-        const statusMatch = filterStatus.value === undefined || item.status === filterStatus.value
-        if (item.children) item.children = filterTree(item.children)
-        const hasChildren = item.children && item.children.length > 0
-        return (nameMatch && pathMatch && statusMatch) || (hasChildren && item.children && item.children.length > 0)
-      })
-    }
-    filteredData.value = filterTree(result)
-  } else {
-    filteredData.value = result
+  const start = createTimeRange.value[0] || ''
+  const end = createTimeRange.value[1] || ''
+  const hasFilter = filterName.value || filterPath.value || filterStatus.value !== undefined || start || end
+  if (!hasFilter) {
+    filteredData.value = treeData.value
+    return
   }
+  // 深拷贝避免污染源数据
+  const result = JSON.parse(JSON.stringify(treeData.value))
+  const filterTree = (items: MenuItem[]): MenuItem[] => {
+    return items.filter(item => {
+      const nameMatch = !filterName.value || item.name.includes(filterName.value)
+      const pathMatch = !filterPath.value || (item.path && item.path.includes(filterPath.value))
+      const statusMatch = filterStatus.value === undefined || item.status === filterStatus.value
+      const timeMatch = (!start || !item.createTime || item.createTime >= start)
+        && (!end || !item.createTime || item.createTime <= end)
+      if (item.children) item.children = filterTree(item.children)
+      const hasChildren = item.children && item.children.length > 0
+      return (nameMatch && pathMatch && statusMatch && timeMatch) || (hasChildren && item.children && item.children.length > 0)
+    })
+  }
+  filteredData.value = filterTree(result)
 }
 
-function resetFilter() { filterName.value = ''; filterPath.value = ''; filterStatus.value = undefined; applyFilter() }
+function resetFilter() { filterName.value = ''; filterPath.value = ''; filterStatus.value = undefined; createTimeRange.value = []; applyFilter() }
+function toggleExpand() { expanded.value = !expanded.value }
 function toggleExpandAll() {
   expandAll.value = !expandAll.value
   loadData()
@@ -204,10 +213,12 @@ onMounted(loadData)
 }
 .search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
     .search-item { display: flex; flex-direction: column; gap: 6px; }
+    .search-item-wide { width: 100%; }
+    .search-item-wide :deep(.el-input) { width: 100%; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 260px; }
-    .search-keyword-input { width: 640px !important; }
+    .search-item :deep(.el-select),
+    .search-item :deep(.el-date-editor) { width: 100%; }
 .search-actions { display: flex; gap: 8px; }
 
 /* 表格卡片 */

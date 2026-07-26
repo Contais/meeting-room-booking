@@ -122,6 +122,12 @@ public class UserServiceImpl implements UserService {
         if (query.getStatus() != null) {
             wrapper.eq(User::getStatus, query.getStatus());
         }
+        if (StringUtils.hasText(query.getCreateTimeStart())) {
+            wrapper.ge(User::getCreateTime, query.getCreateTimeStart());
+        }
+        if (StringUtils.hasText(query.getCreateTimeEnd())) {
+            wrapper.le(User::getCreateTime, query.getCreateTimeEnd());
+        }
         wrapper.orderByDesc(User::getCreateTime);
         return userRepository.selectPage(page, wrapper).convert(this::toVO);
     }

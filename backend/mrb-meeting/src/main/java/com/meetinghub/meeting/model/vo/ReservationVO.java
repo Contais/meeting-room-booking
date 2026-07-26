@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
  */
 public class ReservationVO implements Serializable {
     private Long id;
+    private String reservationCode;
     private Long roomId;
     private String roomName;
     private Long userId;

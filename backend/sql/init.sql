@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room` (
 
 CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '预约ID',
+    `reservation_code` VARCHAR(20) DEFAULT NULL COMMENT '预约编号: B + yyyyMMdd + 6位序列',
     `room_id` BIGINT NOT NULL COMMENT '会议室ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
@@ -93,6 +94,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_reservation_code` (`reservation_code`),
     KEY `idx_room_id` (`room_id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_time_range` (`start_time`, `end_time`)

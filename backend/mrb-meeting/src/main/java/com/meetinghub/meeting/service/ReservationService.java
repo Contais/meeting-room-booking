@@ -15,8 +15,10 @@ public interface ReservationService {
 
     /**
      * 创建预约（含规则校验 + 冲突检测）
+     *
+     * @return 预约编号
      */
-    void createReservation(Long userId, ReservationCreateDTO dto);
+    String createReservation(Long userId, ReservationCreateDTO dto);
 
     /**
      * 取消预约（仅限本人）

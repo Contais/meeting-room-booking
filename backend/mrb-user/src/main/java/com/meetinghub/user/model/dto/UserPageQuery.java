@@ -17,4 +17,6 @@ public class UserPageQuery implements Serializable {
     private String phone;
     private Integer status;
     private Integer gender;
+    private String createTimeStart;
+    private String createTimeEnd;
 }

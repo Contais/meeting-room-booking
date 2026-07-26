@@ -18,4 +18,7 @@ public class ReservationPageQuery implements Serializable {
     private String contactPhone;
     private String startTime;
     private String endTime;
+    private String reservationCode;
+    private String createTimeStart;
+    private String createTimeEnd;
 }

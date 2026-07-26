@@ -28,9 +28,9 @@ public class ReservationController {
     // === 用户接口 ===
 
     @PostMapping("/create")
-    public Result<Void> createReservation(@Valid @RequestBody ReservationCreateDTO dto) {
-        reservationService.createReservation(UserContext.getCurrentUserId(), dto);
-        return Result.ok();
+    public Result<String> createReservation(@Valid @RequestBody ReservationCreateDTO dto) {
+        String reservationCode = reservationService.createReservation(UserContext.getCurrentUserId(), dto);
+        return Result.ok(reservationCode);
     }
 
     @PutMapping("/cancel/{id}")

@@ -4,18 +4,20 @@
     <div class="search-bar">
       <div class="search-fields">
         <template v-if="!expanded">
-          <div class="search-item"><el-input class="search-keyword-input" v-model="query.keyword" placeholder="搜索用户名或姓名" clearable @input="onSearchInput" /></div>
+          <div class="search-item search-item-wide"><el-input v-model="query.keyword" placeholder="搜索用户名或姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
         </template>
         <template v-else>
-          <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="搜索用户名或姓名" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="query.page = 1; loadData()"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="用户名/姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="请输入用户名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+          <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
         </template>
       </div>
       <div class="search-actions">
         <el-button @click="resetQuery">重置</el-button>
-        <el-button type="primary" @click="query.page = 1; loadData()">查询</el-button>
-        <el-button link type="primary" @click="expanded = !expanded">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
+        <el-button type="primary" @click="onFilterChange">查询</el-button>
+        <el-button link type="primary" @click="toggleExpand">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
       </div>
     </div>
     <div class="table-card">
@@ -70,16 +72,36 @@ const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const expanded = ref(false); const deptTree = ref<Department[]>([])
-const query = reactive({ page: 1, size: 10, keyword: '', username: '', phone: '', status: undefined as number | undefined })
+const query = reactive({ page: 1, size: 10, keyword: '', username: '', phone: '', status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
+const createTimeRange = ref<string[]>([])
 const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined as number | undefined })
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 function onSizeChange() { query.page = 1; loadData() }
-async function loadData() { loading.value = true; try { const res = await listUsers(query); tableData.value = res.data.records; total.value = Number(res.data.total) || 0 } catch { /* */ } finally { loading.value = false } }
+function onFilterChange() { query.page = 1; loadData() }
+function onCreateTimeRangeChange(val: string[] | null) {
+  query.createTimeStart = val && val.length === 2 ? val[0] : ''
+  query.createTimeEnd = val && val.length === 2 ? val[1] : ''
+  onFilterChange()
+}
+function toggleExpand() { expanded.value = !expanded.value }
+async function loadData() {
+  loading.value = true
+  try {
+    const params: Record<string, any> = { page: query.page, size: query.size }
+    if (query.keyword) params.keyword = query.keyword
+    if (query.username) params.username = query.username
+    if (query.phone) params.phone = query.phone
+    if (query.status != null) params.status = query.status
+    if (query.createTimeStart) params.createTimeStart = query.createTimeStart
+    if (query.createTimeEnd) params.createTimeEnd = query.createTimeEnd
+    const res = await listUsers(params); tableData.value = res.data.records; total.value = Number(res.data.total) || 0
+  } catch { /* */ } finally { loading.value = false }
+}
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
-function resetQuery() { query.keyword = ''; query.username = ''; query.phone = ''; query.status = undefined; query.page = 1; loadData() }
+function resetQuery() { query.keyword = ''; query.username = ''; query.phone = ''; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.page = 1; createTimeRange.value = []; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
 function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateUser(form); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
@@ -108,10 +130,12 @@ onMounted(() => { loadData(); loadDeptTree() })
 .search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
 .search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
     .search-item { display: flex; flex-direction: column; gap: 6px; }
+    .search-item-wide { width: 100%; }
+    .search-item-wide :deep(.el-input) { width: 100%; }
     .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
     .search-item :deep(.el-input),
-    .search-item :deep(.el-select) { width: 260px; }
-    .search-keyword-input { width: 640px !important; }
+    .search-item :deep(.el-select),
+    .search-item :deep(.el-date-editor) { width: 100%; }
 .search-actions { display: flex; gap: 8px; align-items: center; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }

@@ -19,4 +19,6 @@ public class RoomPageQuery implements Serializable {
     private String bookableEnd;
     private Integer needApproval;
     private Integer status;
+    private String createTimeStart;
+    private String createTimeEnd;
 }

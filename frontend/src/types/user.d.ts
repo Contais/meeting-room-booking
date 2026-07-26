@@ -14,8 +14,11 @@ export interface UserPageQuery {
   page?: number
   size?: number
   keyword?: string
+  username?: string
   phone?: string
   status?: number
+  createTimeStart?: string
+  createTimeEnd?: string
 }
 
 export interface UserPageResult {

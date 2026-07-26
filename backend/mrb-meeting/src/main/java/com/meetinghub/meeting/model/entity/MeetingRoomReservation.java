@@ -18,6 +18,11 @@ public class MeetingRoomReservation {
     private Long id;
 
     /**
+     * 预约编号: B + yyyyMMdd + 6位序列
+     */
+    private String reservationCode;
+
+    /**
      * 会议室ID
      */
     private Long roomId;

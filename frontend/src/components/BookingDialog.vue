@@ -451,7 +451,7 @@ async function handleSubmit() {
   submitting.value = true
   try {
     const dateStr = form.selectedDate
-    await createReservation({
+    const res = await createReservation({
       roomId,
       subject: form.subject,
       startTime: `${dateStr}T${form.startMinute}:00`,
@@ -460,7 +460,11 @@ async function handleSubmit() {
       contactPhone: form.contactPhone,
       remark: form.remark,
     })
-    ElMessage.success(currentRoom.value?.needApproval === 1 ? '预约已提交，等待管理员审批' : '预约成功')
+    const code = res?.data
+    const msg = currentRoom.value?.needApproval === 1
+      ? (code ? `预约已提交，等待管理员审批，编号：${code}` : '预约已提交，等待管理员审批')
+      : (code ? `预约成功，编号：${code}` : '预约成功')
+    ElMessage.success(msg)
     visible.value = false
     emit('success')
   } catch { /* */ } finally {

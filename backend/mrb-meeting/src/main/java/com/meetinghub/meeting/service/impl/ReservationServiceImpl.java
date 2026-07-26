@@ -45,7 +45,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createReservation(Long userId, ReservationCreateDTO dto) {
+    public String createReservation(Long userId, ReservationCreateDTO dto) {
         // 1. 校验会议室存在
         MeetingRoom room = meetingRoomRepository.selectById(dto.getRoomId());
         if (room == null) {
@@ -84,6 +84,21 @@ public class ReservationServiceImpl implements ReservationService {
                 : ReservationStatusEnum.CONFIRMED.getCode();
         reservation.setStatus(initialStatus);
         reservationRepository.insert(reservation);
+
+        // 6. 生成预约编号：B + yyyyMMdd + 6位自增序列（基于主键 id，保证唯一）
+        String reservationCode = generateReservationCode(reservation.getId());
+        reservation.setReservationCode(reservationCode);
+        reservationRepository.updateById(reservation);
+        return reservationCode;
+    }
+
+    /**
+     * 生成预约编号: B + yyyyMMdd + 6位序列
+     * 序列使用自增主键，避免并发冲突与外部依赖（如 Redis）
+     */
+    private String generateReservationCode(Long id) {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return "B" + datePart + String.format("%06d", id);
     }
 
     private void validateRoomRules(MeetingRoom room, ReservationCreateDTO dto) {
@@ -319,6 +334,7 @@ public class ReservationServiceImpl implements ReservationService {
     private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> roomNameMap, Map<Long, String> userNameMap) {
         ReservationVO vo = new ReservationVO();
         vo.setId(r.getId());
+        vo.setReservationCode(r.getReservationCode());
         vo.setRoomId(r.getRoomId());
         vo.setRoomName(roomNameMap != null ? roomNameMap.getOrDefault(r.getRoomId(), "") : "");
         vo.setUserId(r.getUserId());

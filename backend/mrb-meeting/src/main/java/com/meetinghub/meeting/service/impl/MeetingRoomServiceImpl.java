@@ -83,6 +83,12 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (query.getNeedApproval() != null) {
             wrapper.eq(MeetingRoom::getNeedApproval, query.getNeedApproval());
         }
+        if (StringUtils.hasText(query.getCreateTimeStart())) {
+            wrapper.ge(MeetingRoom::getCreateTime, query.getCreateTimeStart());
+        }
+        if (StringUtils.hasText(query.getCreateTimeEnd())) {
+            wrapper.le(MeetingRoom::getCreateTime, query.getCreateTimeEnd());
+        }
         wrapper.orderByDesc(MeetingRoom::getCreateTime);
 
         return meetingRoomRepository.selectPage(page, wrapper).convert(this::toVO);

@@ -2,7 +2,7 @@ import request from '@/utils/request'
 import type { Result } from '@/types/api'
 import type { Reservation, ReservationCreateParams, ReservationPageQuery, ReservationPageResult } from '@/types/reservation'
 
-export function createReservation(data: ReservationCreateParams): Promise<Result<void>> {
+export function createReservation(data: ReservationCreateParams): Promise<Result<string>> {
   return request.post('/api/meeting/reservation/create', data)
 }
 
