@@ -16,6 +16,7 @@ public class ReservationPageQuery implements Serializable {
     private Long userId;
     private Integer status;
     private String contactPhone;
+    private String username;
     private String startTime;
     private String endTime;
     private String reservationCode;

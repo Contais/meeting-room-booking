@@ -18,6 +18,10 @@
           <el-input v-model="query.contactPhone" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
         </div>
         <div class="search-item">
+          <label>预约人</label>
+          <el-input v-model="query.username" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
+        </div>
+        <div class="search-item">
           <label>状态</label>
           <el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange">
             <el-option label="待确认" :value="0" />
@@ -114,6 +118,7 @@ const query = reactive({
   keyword: '',
   subject: '',
   contactPhone: '',
+  username: '',
   startTime: '',
   endTime: '',
   reservationCode: '',
@@ -149,6 +154,7 @@ function resetQuery() {
   query.keyword = ''
   query.subject = ''
   query.contactPhone = ''
+  query.username = ''
   query.startTime = ''
   query.endTime = ''
   query.reservationCode = ''
@@ -168,6 +174,7 @@ async function loadData() {
     if (query.keyword) params.keyword = query.keyword
     if (query.subject) params.subject = query.subject
     if (query.contactPhone) params.contactPhone = query.contactPhone
+    if (query.username) params.username = query.username
     if (query.reservationCode) params.reservationCode = query.reservationCode
     if (query.status != null) params.status = query.status
     if (query.startTime) params.startTime = query.startTime
@@ -190,7 +197,7 @@ onMounted(loadData)
 .table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
 .toolbar-right { display: flex; gap: 4px; }
-.action-buttons { display: flex; justify-content: center; gap: 4px; }
+.action-buttons { display: flex; justify-content: center; gap: 0; }
 .pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
 .total-text { font-size: 13px; color: var(--text-muted); }
 .time-slot-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.4; }

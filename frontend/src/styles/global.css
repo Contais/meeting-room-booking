@@ -366,6 +366,7 @@ a { text-decoration: none; color: var(--primary); }
 .el-tag--dark.el-tag--danger { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
 .el-tag--dark.el-tag--info { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
 
-/* 操作按钮紧凑模式 */
-.action-buttons .el-button.is-circle { --el-button-size: 24px; width: 24px; height: 24px; }
-.action-buttons .el-button.is-circle .el-icon { font-size: 12px; }
+/* 操作按钮紧凑模式 - 强制缩小所有操作按钮 */
+.action-buttons .el-button { padding: 0 !important; width: 26px; height: 26px; min-height: 26px; }
+.action-buttons .el-button .el-icon { font-size: 13px; }
+.action-buttons .el-button + .el-button { margin-left: 2px; }

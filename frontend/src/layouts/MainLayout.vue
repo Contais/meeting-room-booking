@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout-container">
     <el-aside :width="isCollapsed ? '64px' : '220px'" class="layout-aside">
-      <div class="logo">
+      <div class="logo" :class="{ 'logo-collapsed': isCollapsed }">
         <div class="logo-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
             <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -153,7 +153,7 @@ onMounted(loadMenus)
   transition: all 0.3s ease;
 }
 
-.layout-aside .el-menu--collapse .logo {
+.logo-collapsed {
   justify-content: center;
   padding: 0;
 }
@@ -323,12 +323,8 @@ onMounted(loadMenus)
   overflow-y: auto;
 }
 
-/* 一级菜单对齐：确保 sub-menu 和 menu-item 左侧对齐 */
-.side-menu :deep(.el-sub-menu .el-sub-menu__title) {
-  padding-left: 20px !important;
-}
-
-.side-menu :deep(.el-menu-item) {
+/* 一级菜单对齐：确保 sub-menu 标题和 menu-item 左侧对齐 */
+.side-menu > .el-sub-menu :deep(.el-sub-menu__title) {
   padding-left: 20px !important;
 }
 </style>

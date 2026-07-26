@@ -52,11 +52,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Key, View } from '@element-plus/icons-vue'
-import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
+import { listUsers, createUser, updateUser, deleteUser, resetPassword, getUserDetail } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
@@ -64,6 +64,7 @@ import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
@@ -115,7 +116,17 @@ async function handleResetPassword(row: any) {
   } catch { /* */ }
 }
 async function loadDeptTree() { try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ } }
-onMounted(() => { loadData(); loadDeptTree() })
+async function openEditFromQuery() {
+  const editId = route.query.edit
+  if (editId) {
+    try {
+      const res = await getUserDetail(Number(editId))
+      if (res.data) { showEditDialog(res.data) }
+    } catch { /* */ }
+    router.replace({ path: route.path })
+  }
+}
+onMounted(() => { loadData(); loadDeptTree(); openEditFromQuery() })
 </script>
 
 <style scoped>
@@ -128,7 +139,7 @@ onMounted(() => { loadData(); loadDeptTree() })
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-email { font-size: 11px; color: var(--text-muted); }
-.action-buttons { display: flex; justify-content: center; gap: 4px; }
+.action-buttons { display: flex; justify-content: center; gap: 0; }
 .pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
 .total-text { font-size: 13px; color: var(--text-muted); }
 </style>

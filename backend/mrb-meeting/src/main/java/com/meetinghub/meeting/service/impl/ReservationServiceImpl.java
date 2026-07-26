@@ -186,6 +186,21 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public IPage<ReservationVO> listAllReservations(ReservationPageQuery query) {
+        // 预约人 username 为跨服务数据，先通过 Feign 查 userId 再过滤
+        if (query.getUsername() != null && !query.getUsername().isEmpty() && query.getUserId() == null) {
+            try {
+                var userResult = userFeignClient.getUserForAuth(query.getUsername());
+                if (userResult != null && userResult.getData() != null) {
+                    query.setUserId(userResult.getData().getId());
+                } else {
+                    // 用户不存在，返回空结果
+                    Page<ReservationVO> emptyPage = new Page<>(query.getPage(), query.getSize());
+                    emptyPage.setRecords(new ArrayList<>());
+                    emptyPage.setTotal(0);
+                    return emptyPage;
+                }
+            } catch (Exception e) { /* 降级：不按 username 过滤 */ }
+        }
         // 复杂多条件 + JOIN 会议室名称，下沉到 ReservationRepository.xml
         Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
         IPage<ReservationVO> result = reservationRepository.selectAllPage(page, query);

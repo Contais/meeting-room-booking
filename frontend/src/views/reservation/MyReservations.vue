@@ -63,7 +63,7 @@
         <el-table-column label="操作" width="80" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button v-if="row.status !== 2" type="danger" link size="small" @click="handleCancel(row.id)">取消</el-button>
+              <el-tooltip v-if="row.status !== 2" content="取消预约"><el-button type="danger" link circle size="small" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
               <span v-else style="color: var(--text-muted)">-</span>
             </div>
           </template>
@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, Close } from '@element-plus/icons-vue'
 import { listMyReservations, cancelReservation } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'

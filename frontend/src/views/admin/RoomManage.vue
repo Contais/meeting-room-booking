@@ -72,17 +72,18 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, View } from '@element-plus/icons-vue'
-import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
+import { listRoomsAdmin, createRoom, updateRoom, deleteRoom, getRoomDetailAdmin } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
@@ -125,7 +126,17 @@ function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: un
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该会议室?', '提示', { type: 'warning' }); await deleteRoom(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
-onMounted(loadData)
+async function openEditFromQuery() {
+  const editId = route.query.edit
+  if (editId) {
+    try {
+      const res = await getRoomDetailAdmin(Number(editId))
+      if (res.data) { showEditDialog(res.data) }
+    } catch { /* */ }
+    router.replace({ path: route.path })
+  }
+}
+onMounted(() => { loadData(); openEditFromQuery() })
 </script>
 
 <style scoped>
@@ -134,7 +145,7 @@ onMounted(loadData)
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
 .toolbar-left { display: flex; gap: 8px; }
 .toolbar-right { display: flex; gap: 4px; }
-.action-buttons { display: flex; justify-content: center; gap: 4px; }
+.action-buttons { display: flex; justify-content: center; gap: 0; }
 .pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
 .total-text { font-size: 13px; color: var(--text-muted); }
 </style>
