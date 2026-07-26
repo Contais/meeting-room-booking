@@ -25,9 +25,10 @@
         <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '在线' : '异常' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
+              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/users/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
               <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
               <el-tooltip content="重置密码"><el-button type="warning" link circle size="small" @click="handleResetPassword(row)"><el-icon><Key /></el-icon></el-button></el-tooltip>
               <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
@@ -53,15 +54,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, Key } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, Key, View } from '@element-plus/icons-vue'
 import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import SearchBar from '@/components/SearchBar.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
 
+const router = useRouter()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()

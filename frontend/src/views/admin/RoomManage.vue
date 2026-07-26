@@ -36,9 +36,10 @@
         <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
+              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/rooms/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
               <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
               <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
             </div>
@@ -73,14 +74,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, View } from '@element-plus/icons-vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 
+const router = useRouter()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()

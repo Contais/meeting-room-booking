@@ -81,4 +81,10 @@ public class ReservationController {
         reservationService.rejectReservation(id);
         return Result.ok();
     }
+
+    @RequiresRole("admin")
+    @GetMapping("/admin/detail/{id}")
+    public Result<ReservationVO> getReservationDetail(@PathVariable Long id) {
+        return Result.ok(reservationService.getReservationDetail(id));
+    }
 }

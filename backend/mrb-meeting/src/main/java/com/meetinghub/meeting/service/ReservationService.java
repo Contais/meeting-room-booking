@@ -54,4 +54,9 @@ public interface ReservationService {
      * 日程视图数据
      */
     ScheduleVO getSchedule(String date, String startDate, String endDate);
+
+    /**
+     * 查询预约详情（管理端）
+     */
+    ReservationVO getReservationDetail(Long reservationId);
 }

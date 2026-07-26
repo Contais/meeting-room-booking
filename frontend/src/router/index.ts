@@ -25,8 +25,11 @@ const routes: RouteRecordRaw[] = [
       { path: 'admin/menus', name: 'AdminMenus', component: () => import('@/views/admin/MenuManage.vue'), meta: { title: '菜单管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/departments', name: 'AdminDepartments', component: () => import('@/views/admin/DeptManage.vue'), meta: { title: '部门管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/users', name: 'AdminUsers', component: () => import('@/views/admin/UserManage.vue'), meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true } },
+      { path: 'admin/users/:id', name: 'AdminUserDetail', component: () => import('@/views/admin/UserDetail.vue'), meta: { title: '用户详情', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/reservations', name: 'AdminReservations', component: () => import('@/views/admin/ReservationManage.vue'), meta: { title: '预约管理', requiresAuth: true, requiresAdmin: true } },
+      { path: 'admin/reservations/:id', name: 'AdminReservationDetail', component: () => import('@/views/admin/ReservationDetail.vue'), meta: { title: '预约详情', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/rooms', name: 'AdminRooms', component: () => import('@/views/admin/RoomManage.vue'), meta: { title: '会议室管理', requiresAuth: true, requiresAdmin: true } },
+      { path: 'admin/rooms/:id', name: 'AdminRoomDetail', component: () => import('@/views/admin/RoomDetail.vue'), meta: { title: '会议室详情', requiresAuth: true, requiresAdmin: true } },
     ],
   },
 ]

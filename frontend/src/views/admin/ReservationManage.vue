@@ -51,7 +51,11 @@
 
       <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="reservationCode" label="预约编号" width="170" />
+        <el-table-column label="预约编号" width="170">
+          <template #default="{ row }">
+            <el-link type="primary" :underline="false" @click="router.push(`/admin/reservations/${row.id}`)">{{ row.reservationCode }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
         <el-table-column prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
         <el-table-column prop="username" label="预约人" min-width="90" />
@@ -67,9 +71,10 @@
         </el-table-column>
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
+              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/reservations/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
               <template v-if="row.status === 0">
                 <el-tooltip content="通过"><el-button type="success" link circle size="small" @click="handleApprove(row.id)"><el-icon><Check /></el-icon></el-button></el-tooltip>
                 <el-tooltip content="拒绝"><el-button type="danger" link circle size="small" @click="handleReject(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
@@ -77,7 +82,6 @@
               <template v-else-if="row.status === 1">
                 <el-tooltip content="取消预约"><el-button type="danger" link circle size="small" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
               </template>
-              <span v-else style="color: #c0c4cc">-</span>
             </div>
           </template>
         </el-table-column>
@@ -93,13 +97,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Check, Close, Refresh } from '@element-plus/icons-vue'
+import { Check, Close, Refresh, View } from '@element-plus/icons-vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
+const router = useRouter()
 const loading = ref(false)
 const tableData = ref<Reservation[]>([])
 const total = ref(0)

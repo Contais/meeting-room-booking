@@ -23,6 +23,10 @@ export function listAllReservations(params: ReservationPageQuery): Promise<Resul
   return request.get('/api/meeting/reservation/admin/list', { params })
 }
 
+export function getReservationDetail(id: number): Promise<Result<Reservation>> {
+  return request.get(`/api/meeting/reservation/admin/detail/${id}`)
+}
+
 export function approveReservation(id: number): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/approve/${id}`)
 }

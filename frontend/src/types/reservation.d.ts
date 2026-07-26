@@ -13,6 +13,7 @@ export interface Reservation {
   endTime: string
   status: number
   createTime: string
+  updateTime?: string
 }
 
 export interface ReservationCreateParams {

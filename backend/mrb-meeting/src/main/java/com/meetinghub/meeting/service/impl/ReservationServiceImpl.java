@@ -349,4 +349,32 @@ public class ReservationServiceImpl implements ReservationService {
         vo.setCreateTime(r.getCreateTime());
         return vo;
     }
+
+    @Override
+    public ReservationVO getReservationDetail(Long reservationId) {
+        MeetingRoomReservation r = reservationRepository.selectById(reservationId);
+        if (r == null) {
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+
+        // 查询会议室名称
+        String roomName = "";
+        try {
+            MeetingRoom room = meetingRoomRepository.selectById(r.getRoomId());
+            if (room != null) {
+                roomName = room.getName();
+            }
+        } catch (Exception ignored) {}
+
+        // 查询用户名（使用内部接口）
+        String userName = "";
+        try {
+            var userResult = userFeignClient.getUserForAuth(String.valueOf(r.getUserId()));
+            if (userResult != null && userResult.getData() != null) {
+                userName = userResult.getData().getUsername();
+            }
+        } catch (Exception ignored) {}
+
+        return toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
+    }
 }
