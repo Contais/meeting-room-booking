@@ -3,17 +3,16 @@
     <div class="page-header"><h2>会议室管理</h2></div>
     <SearchBar @search="onFilterChange" @reset="resetQuery">
       <template #collapsed>
-        <el-input v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
+        <el-input v-model="query.keyword" placeholder="搜索会议室名称 / 位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
       </template>
       <template #expanded>
-        <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
         <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="onFilterChange" /></div>
-        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-        <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
-        <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
+        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="全部" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
+        <div class="search-item is-wide"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
       </template>
     </SearchBar>
 
@@ -35,7 +34,7 @@
         <el-table-column prop="equipment" label="设备" min-width="150" show-overflow-tooltip />
         <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
         <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170" />
+        <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
@@ -79,6 +78,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
+import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 
 const loading = ref(false); const submitting = ref(false)

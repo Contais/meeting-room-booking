@@ -6,7 +6,7 @@
         <el-icon class="search-icon"><Search /></el-icon>
         <slot name="collapsed" />
       </div>
-      <!-- 展开态：多字段网格 -->
+      <!-- 展开态：自适应字段网格 -->
       <div v-else class="search-expanded">
         <slot name="expanded" />
       </div>
@@ -78,17 +78,12 @@ function handleReset() { emit('reset') }
 .search-collapsed > :deep(.el-select),
 .search-collapsed > :deep(.el-date-editor) { flex: 1; width: auto; }
 
+/* 自适应网格：每个字段最小 260px，长字段（如时间范围）自动获得更多空间 */
 .search-expanded {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px 20px;
   align-items: end;
-}
-@media (max-width: 1100px) {
-  .search-expanded { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 720px) {
-  .search-expanded { grid-template-columns: 1fr; }
 }
 
 .search-actions {

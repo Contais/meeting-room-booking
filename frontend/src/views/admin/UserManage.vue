@@ -3,14 +3,13 @@
     <div class="page-header"><h2>用户管理</h2></div>
     <SearchBar @search="onFilterChange" @reset="resetQuery">
       <template #collapsed>
-        <el-input v-model="query.keyword" placeholder="搜索用户名或姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
+        <el-input v-model="query.keyword" placeholder="搜索用户名 / 姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
       </template>
       <template #expanded>
-        <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="用户名/姓名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="请输入用户名" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入手机号" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-        <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
+        <div class="search-item"><label>用户名</label><el-input v-model="query.username" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>手机号</label><el-input v-model="query.phone" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item is-wide"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
       </template>
     </SearchBar>
     <div class="table-card">
@@ -25,7 +24,7 @@
         </el-table-column>
         <el-table-column prop="phone" label="手机号" min-width="130" />
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '在线' : '异常' }}</el-tag></template></el-table-column>
-        <el-table-column prop="createTime" label="创建日期" width="170" />
+        <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
@@ -60,6 +59,7 @@ import { Plus, Edit, Delete, Refresh, Key } from '@element-plus/icons-vue'
 import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import SearchBar from '@/components/SearchBar.vue'
+import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
 
 const loading = ref(false); const submitting = ref(false)

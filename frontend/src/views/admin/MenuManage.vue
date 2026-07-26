@@ -7,10 +7,10 @@
         <el-input v-model="filterName" placeholder="搜索菜单名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
       </template>
       <template #expanded>
-        <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入菜单名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-        <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入路由地址" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-        <div class="search-item"><label>状态</label><el-select v-model="filterStatus" placeholder="请选择" clearable @change="applyFilter"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-        <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="applyFilter" /></div>
+        <div class="search-item"><label>菜单名称</label><el-input v-model="filterName" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>路由地址</label><el-input v-model="filterPath" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>状态</label><el-select v-model="filterStatus" placeholder="全部" clearable @change="applyFilter"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item is-wide"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="applyFilter" /></div>
       </template>
     </SearchBar>
 
@@ -53,7 +53,7 @@
             <span style="color: #c0c4cc">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="编辑时间" min-width="170" />
+        <el-table-column label="创建时间" min-width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">
@@ -95,6 +95,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting } from '@element-plus/icons-vue'
 import { getMenuTree, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import SearchBar from '@/components/SearchBar.vue'
+import { formatDateTime } from '@/utils/datetime'
 import type { MenuItem } from '@/types/menu'
 
 const loading = ref(false)

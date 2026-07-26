@@ -4,11 +4,11 @@
     <!-- 搜索栏 -->
     <SearchBar @search="applyFilter" @reset="resetFilter">
       <template #collapsed>
-        <el-input v-model="filter.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
+        <el-input v-model="filter.keyword" placeholder="搜索会议室名称 / 位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
       </template>
       <template #expanded>
-        <div class="search-item"><label>关键字</label><el-input v-model="filter.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-        <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>会议室名称</label><el-input v-model="filter.keyword" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
         <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
       </template>
     </SearchBar>
