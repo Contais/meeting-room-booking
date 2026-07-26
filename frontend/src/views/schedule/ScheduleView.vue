@@ -147,7 +147,7 @@
                 <span class="wk-now-label">{{ currentTimeLabel }}</span>
               </div>
               <el-tooltip v-for="r in weekReservations" :key="r.id"
-                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
+                :content="`${r.roomName || ''} | ${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                 placement="top" raw-content>
                 <div class="week-event" :class="'s' + r.status"
                   :style="weekEventStyle(r)"
@@ -155,6 +155,7 @@
                   <div class="evt-inner">
                     <div class="evt-title">{{ r.subject || '未命名' }}</div>
                     <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
+                    <div class="evt-room" v-if="(weekEventLayoutMap.get(r.id)?.totalColumns ?? 1) > 1">{{ r.roomName || '' }}</div>
                     <div class="evt-user">{{ r.userName || '' }}</div>
                   </div>
                 </div>
@@ -551,6 +552,72 @@ const weekDays = computed(() => {
 
 const weekReservations = computed(() => reservations.value.filter(r => weekDays.value.some(d => d.dateStr === r.startTime.split('T')[0])))
 
+// 周视图重叠布局：按天分组，将同时段重叠事件分配到不同列（列宽固定，事件宽度在列内等分缩窄）
+const weekEventLayoutMap = computed(() => {
+  const layout = new Map<number, { columnIndex: number; totalColumns: number }>()
+  const eventsByDay = new Map<string, any[]>()
+  for (const r of weekReservations.value) {
+    const dayStr = r.startTime.split('T')[0]
+    if (!eventsByDay.has(dayStr)) eventsByDay.set(dayStr, [])
+    eventsByDay.get(dayStr)!.push(r)
+  }
+  for (const [, dayEvents] of eventsByDay) {
+    if (dayEvents.length === 0) continue
+    // 按开始时间升序、时长降序排序，便于贪心列分配
+    dayEvents.sort((a, b) => {
+      const aStart = new Date(a.startTime).getTime()
+      const bStart = new Date(b.startTime).getTime()
+      if (aStart !== bStart) return aStart - bStart
+      const aDur = new Date(a.endTime).getTime() - aStart
+      const bDur = new Date(b.endTime).getTime() - bStart
+      return bDur - aDur
+    })
+    // 贪心分配列：找第一个不冲突的列，没有则新建一列
+    const eventColumns: number[] = []
+    const columnEnds: number[] = []
+    for (const event of dayEvents) {
+      const eStart = new Date(event.startTime).getTime()
+      let placed = false
+      for (let ci = 0; ci < columnEnds.length; ci++) {
+        if (eStart >= columnEnds[ci]) {
+          columnEnds[ci] = new Date(event.endTime).getTime()
+          eventColumns.push(ci)
+          placed = true
+          break
+        }
+      }
+      if (!placed) {
+        eventColumns.push(columnEnds.length)
+        columnEnds.push(new Date(event.endTime).getTime())
+      }
+    }
+    // 并查集找连通分量：直接或间接重叠的事件共享同一组最大列数
+    const n = dayEvents.length
+    const parent = Array.from({ length: n }, (_, i) => i)
+    function find(i: number): number {
+      while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i] }
+      return i
+    }
+    function union(i: number, j: number) { parent[find(i)] = find(j) }
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const iEnd = new Date(dayEvents[i].endTime).getTime()
+        const jStart = new Date(dayEvents[j].startTime).getTime()
+        if (jStart < iEnd) { union(i, j) } else { break }
+      }
+    }
+    const groupMaxCol = new Map<number, number>()
+    for (let i = 0; i < n; i++) {
+      const root = find(i)
+      groupMaxCol.set(root, Math.max(groupMaxCol.get(root) ?? 0, eventColumns[i] + 1))
+    }
+    for (let i = 0; i < n; i++) {
+      layout.set(dayEvents[i].id, { columnIndex: eventColumns[i], totalColumns: groupMaxCol.get(find(i))! })
+    }
+  }
+  return layout
+})
+
 const monthDays = ref<any[]>([])
 const expandedDays = ref<Set<string>>(new Set())
 
@@ -618,9 +685,17 @@ function weekEventStyle(r: any) {
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const topPx = weekEdgeGap + (startMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight
   const heightPx = Math.max((durationMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight, 16)
+  // 列宽固定为 100/7，重叠事件在列内等分缩窄宽度
+  const dayWidth = 100 / 7
+  const info = weekEventLayoutMap.value.get(r.id)
+  const col = info?.columnIndex ?? 0
+  const total = info?.totalColumns ?? 1
+  const gapPct = total > 1 ? 0.3 : 0
+  const eventWidth = (dayWidth - (total - 1) * gapPct) / total
+  const eventLeft = di * dayWidth + col * (eventWidth + gapPct)
   return {
-    left: (di / 7 * 100) + '%',
-    width: (100 / 7) + '%',
+    left: eventLeft + '%',
+    width: eventWidth + '%',
     top: topPx + 'px',
     height: heightPx + 'px'
   }
@@ -994,6 +1069,7 @@ onBeforeUnmount(() => {
 .evt-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .evt-title { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .evt-time { font-size: 10px; color: #6b7280; margin-top: 1px; white-space: nowrap; }
+.evt-room { font-size: 10px; color: #6b7280; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .evt-user { font-size: 10px; color: #9ca3af; margin-top: 1px; white-space: nowrap; }
 
 /* ========== 月视图 ========== */
