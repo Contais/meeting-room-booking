@@ -2,6 +2,7 @@ package com.meetinghub.meeting.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.common.annotation.RequiresRole;
+import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
@@ -27,24 +28,20 @@ public class ReservationController {
     // === 用户接口 ===
 
     @PostMapping("/create")
-    public Result<Void> createReservation(@RequestHeader("X-User-Id") String userId,
-                                          @Valid @RequestBody ReservationCreateDTO dto) {
-        reservationService.createReservation(Long.parseLong(userId), dto);
+    public Result<Void> createReservation(@Valid @RequestBody ReservationCreateDTO dto) {
+        reservationService.createReservation(UserContext.getCurrentUserId(), dto);
         return Result.ok();
     }
 
     @PutMapping("/cancel/{id}")
-    public Result<Void> cancelReservation(@RequestHeader("X-User-Id") String userId,
-                                          @PathVariable Long id) {
-        reservationService.cancelReservation(Long.parseLong(userId), id);
+    public Result<Void> cancelReservation(@PathVariable Long id) {
+        reservationService.cancelReservation(UserContext.getCurrentUserId(), id);
         return Result.ok();
     }
 
     @GetMapping("/my")
-    public Result<IPage<ReservationVO>> listMyReservations(
-            @RequestHeader("X-User-Id") String userId,
-            ReservationPageQuery query) {
-        return Result.ok(reservationService.listMyReservations(Long.parseLong(userId), query));
+    public Result<IPage<ReservationVO>> listMyReservations(ReservationPageQuery query) {
+        return Result.ok(reservationService.listMyReservations(UserContext.getCurrentUserId(), query));
     }
 
     @GetMapping("/room/{roomId}/date/{date}")

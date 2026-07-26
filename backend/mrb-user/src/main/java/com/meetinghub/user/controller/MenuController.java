@@ -1,6 +1,7 @@
 package com.meetinghub.user.controller;
 
 import com.meetinghub.common.annotation.RequiresRole;
+import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.MenuCreateDTO;
 import com.meetinghub.user.model.dto.MenuUpdateDTO;
@@ -26,8 +27,8 @@ public class MenuController {
     }
 
     @GetMapping("/my")
-    public Result<List<MenuVO>> listByRole(@RequestHeader("X-User-Role") String role) {
-        return Result.ok(menuService.listByRole(role));
+    public Result<List<MenuVO>> listByRole() {
+        return Result.ok(menuService.listByRole(UserContext.getCurrentRole()));
     }
 
     @RequiresRole("admin")

@@ -2,6 +2,7 @@ package com.meetinghub.user.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.common.annotation.RequiresRole;
+import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
@@ -67,21 +68,19 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public Result<UserVO> getCurrentUser(@RequestHeader("X-User-Id") String userId) {
-        return Result.ok(userService.getUserDetail(Long.parseLong(userId)));
+    public Result<UserVO> getCurrentUser() {
+        return Result.ok(userService.getUserDetail(UserContext.getCurrentUserId()));
     }
 
     @PutMapping("/me/profile")
-    public Result<Void> updateProfile(@RequestHeader("X-User-Id") String userId,
-                                      @RequestBody UserProfileDTO dto) {
-        userService.updateProfile(Long.parseLong(userId), dto);
+    public Result<Void> updateProfile(@RequestBody UserProfileDTO dto) {
+        userService.updateProfile(UserContext.getCurrentUserId(), dto);
         return Result.ok();
     }
 
     @PutMapping("/me/password")
-    public Result<Void> changePassword(@RequestHeader("X-User-Id") String userId,
-                                       @Valid @RequestBody ChangePasswordDTO dto) {
-        userService.changePassword(Long.parseLong(userId), dto);
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(UserContext.getCurrentUserId(), dto);
         return Result.ok();
     }
 

@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.controller;
 
+import com.meetinghub.common.context.UserContext;
 import com.meetinghub.meeting.model.dto.ChatRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -29,22 +30,24 @@ public class ChatController {
      * 前端发送用户消息，服务端以 SSE 流式逐块返回 AI 回答。
      * 通过 conversationId 隔离不同会话的上下文。
      * </p>
-     *
-     * @param request        包含用户消息的请求体
-     * @param conversationId 会话 ID（可选，为空则使用 session id）
-     * @return Flux<String> 流式响应，Spring MVC 自动转为 SSE 格式
+     * <p>
+     * 注意：返回 Flux 后实际订阅/执行发生在另一线程，ThreadLocal 不可用，
+     * 故在方法体顶部从 {@link UserContext} 显式捕获 userId 再传入闭包。
+     * </p>
      */
     @PostMapping(value = "/stream", produces = "text/plain;charset=UTF-8")
     public Flux<String> chatStream(@RequestBody ChatRequest request,
                                    @RequestHeader(value = "X-Session-Id", required = false) String conversationId) {
+        // 在切换线程前从 ThreadLocal 捕获 userId
+        final String userId = String.valueOf(UserContext.getCurrentUserId());
         if (conversationId == null || conversationId.isEmpty()) {
             conversationId = java.util.UUID.randomUUID().toString();
         }
         final String cid = conversationId;
-
         return chatClient.prompt()
                 .user(request.getMessage())
-                .advisors(advice -> advice.param(ChatMemory.CONVERSATION_ID, cid))
+                .advisors(advice -> advice.param(ChatMemory.CONVERSATION_ID, cid)
+                        .param("userId", userId))
                 .stream()
                 .content();
     }
