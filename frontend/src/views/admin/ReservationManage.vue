@@ -31,8 +31,8 @@
       <el-table :data="tableData" v-loading="loading" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="roomName" label="会议室" min-width="110" />
+        <el-table-column prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
         <el-table-column prop="username" label="预约人" min-width="90" />
-        <el-table-column prop="subject" label="主题" min-width="130" show-overflow-tooltip />
         <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
         <el-table-column prop="contactPhone" label="电话" min-width="120" />
         <el-table-column label="时段" min-width="180"><template #default="{ row }">{{ formatTime(row.startTime) }} ~ {{ formatTime(row.endTime) }}</template></el-table-column>
