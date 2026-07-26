@@ -32,9 +32,10 @@
 
 ### 变更追踪
 
-每次功能变更必须在 `.harness/changes/{feature-name}/` 下产出：
+每次功能变更必须在 `.harness/changes/{seq}-{feature-name}/` 下产出：
 - `summary.md` — 需求摘要 + 技术变更清单（必须）
 - `design.md` — 技术方案（复杂功能必须）
+- 序号 `{seq}`：3 位递增数字（如 `001`、`012`），新建时取已有最大序号 +1，确保文件夹排序即时间顺序
 
 ## 决策原则
 
@@ -53,7 +54,7 @@
 [request-analysis] → 输出 .harness/changes/{feat}/summary.md
   │
   ▼
-[coding-skill] → 编码实现 → 每个子任务提交一次
+[coding-skill] → 编码实现 → 每个子任务提交 + 任务完成必须提交
   │
   ▼
 [coded-review] → 代码评审 → 发现问题则修复并重新评审

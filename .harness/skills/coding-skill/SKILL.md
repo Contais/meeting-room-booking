@@ -47,3 +47,7 @@
 ### Step 5: 单元测试 (Unit Test)
 - **Controller 层**：使用 `@WebMvcTest` 测试接口连通性和参数校验。
 - **Service 层**：使用 `@SpringBootTest` 模拟数据库环境，测试核心业务逻辑分支。
+
+### Step 6: 提交代码 (Commit)
+- **每个子任务完成后**及时 `git commit`，提交信息遵循 Conventional Commits。
+- **任务整体完成后必须提交代码**，不得遗漏提交。
