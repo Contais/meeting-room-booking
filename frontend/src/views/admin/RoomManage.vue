@@ -1,30 +1,21 @@
 <template>
   <div class="page-view">
     <div class="page-header"><h2>会议室管理</h2></div>
-    <div class="search-bar">
-      <div class="search-fields">
-        <!-- 收起：关键字搜索 -->
-        <template v-if="!expanded">
-          <div class="search-item search-item-wide"><el-input v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-        </template>
-        <!-- 展开：所有具体字段 -->
-        <template v-else>
-          <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-          <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-          <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-          <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
-          <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="onFilterChange" /></div>
-          <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
-          <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
-          <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
-        </template>
-      </div>
-      <div class="search-actions">
-        <el-button @click="resetQuery">重置</el-button>
-        <el-button type="primary" @click="onFilterChange">查询</el-button>
-        <el-button link type="primary" @click="toggleExpand">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
-      </div>
-    </div>
+    <SearchBar @search="onFilterChange" @reset="resetQuery">
+      <template #collapsed>
+        <el-input v-model="query.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
+      </template>
+      <template #expanded>
+        <div class="search-item"><label>关键字</label><el-input v-model="query.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>会议室名称</label><el-input v-model="query.name" placeholder="请输入名称" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>位置</label><el-input v-model="query.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入设备" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="onFilterChange" /></div>
+        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="请选择" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="请选择" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
+        <div class="search-item"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
+      </template>
+    </SearchBar>
 
     <div class="table-card">
       <div class="table-toolbar">
@@ -85,11 +76,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
+import SearchBar from '@/components/SearchBar.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
-const loading = ref(false); const submitting = ref(false); const expanded = ref(false)
+const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
@@ -104,7 +96,6 @@ function onCreateTimeRangeChange(val: string[] | null) {
   query.createTimeEnd = val && val.length === 2 ? val[1] : ''
   onFilterChange()
 }
-function toggleExpand() { expanded.value = !expanded.value }
 async function loadData() {
   loading.value = true
   try {
@@ -139,17 +130,6 @@ onMounted(loadData)
 .page-header { margin-bottom: 0; }
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
-.search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
-    .search-item { display: flex; flex-direction: column; gap: 6px; }
-    .search-item-wide { width: 100%; }
-    .search-item-wide :deep(.el-input) { width: 100%; }
-    .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-    .search-item :deep(.el-input),
-    .search-item :deep(.el-select),
-    .search-item :deep(.el-date-editor),
-    .search-item :deep(.el-input-number) { width: 100%; }
-.search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
 .toolbar-left { display: flex; gap: 8px; }

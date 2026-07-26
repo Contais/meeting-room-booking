@@ -1,42 +1,30 @@
 <template>
   <div class="page-view">
     <div class="page-header"><h2>部门管理</h2></div>
-    <div class="search-bar">
-      <div class="search-fields">
-        <template v-if="!expanded">
-          <div class="search-item search-item-wide">
-            <el-input v-model="filterName" placeholder="搜索部门名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
-          </div>
-        </template>
-        <template v-else>
-          <div class="search-item">
-            <label>关键字</label>
-            <el-input v-model="filterName" placeholder="部门名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
-          </div>
-          <div class="search-item">
-            <label>状态</label>
-            <el-select v-model="filterStatus" placeholder="请选择" clearable @change="applyFilter">
-              <el-option label="启用" :value="1" />
-              <el-option label="禁用" :value="0" />
-            </el-select>
-          </div>
-          <div class="search-item">
-            <label>创建时间</label>
-            <el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至"
-              start-placeholder="开始时间" end-placeholder="结束时间"
-              value-format="YYYY-MM-DDTHH:mm:ss" @change="applyFilter" />
-          </div>
-        </template>
-      </div>
-      <div class="search-actions">
-        <el-button @click="resetFilter">重置</el-button>
-        <el-button type="primary" @click="applyFilter">查询</el-button>
-        <el-button link type="primary" @click="toggleExpand">
-          {{ expanded ? '收起' : '展开' }}
-          <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon>
-        </el-button>
-      </div>
-    </div>
+    <SearchBar @search="applyFilter" @reset="resetFilter">
+      <template #collapsed>
+        <el-input v-model="filterName" placeholder="搜索部门名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
+      </template>
+      <template #expanded>
+        <div class="search-item">
+          <label>关键字</label>
+          <el-input v-model="filterName" placeholder="部门名称" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
+        </div>
+        <div class="search-item">
+          <label>状态</label>
+          <el-select v-model="filterStatus" placeholder="请选择" clearable @change="applyFilter">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </div>
+        <div class="search-item">
+          <label>创建时间</label>
+          <el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至"
+            start-placeholder="开始时间" end-placeholder="结束时间"
+            value-format="YYYY-MM-DDTHH:mm:ss" @change="applyFilter" />
+        </div>
+      </template>
+    </SearchBar>
 
     <div class="table-card">
       <div class="table-toolbar">
@@ -83,13 +71,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment } from '@/api/department'
+import SearchBar from '@/components/SearchBar.vue'
 import type { Department } from '@/types/department'
 
 const loading = ref(false)
 const submitting = ref(false)
-const expanded = ref(false)
 const filterStatus = ref(undefined as number | undefined)
 const treeData = ref<Department[]>([])
 const dialogVisible = ref(false)
@@ -136,8 +124,8 @@ function resetFilter() {
   filterName.value = ''
   filterStatus.value = undefined
   createTimeRange.value = []
+  applyFilter()
 }
-function toggleExpand() { expanded.value = !expanded.value }
 
 async function loadData() {
   loading.value = true
@@ -155,16 +143,6 @@ onMounted(loadData)
 .page-header { margin-bottom: 0; }
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.search-bar { background: #fff; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-end; justify-content: space-between; border: 1px solid #f0f0f0; }
-.search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
-    .search-item { display: flex; flex-direction: column; gap: 6px; }
-    .search-item-wide { width: 100%; }
-    .search-item-wide :deep(.el-input) { width: 100%; }
-    .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-    .search-item :deep(.el-input),
-    .search-item :deep(.el-select),
-    .search-item :deep(.el-date-editor) { width: 100%; }
-.search-actions { display: flex; gap: 8px; }
 .table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
 .toolbar-left { display: flex; gap: 8px; }

@@ -2,23 +2,16 @@
   <div class="page-view">
     <div class="page-header"><h2>会议室</h2></div>
     <!-- 搜索栏 -->
-    <div class="search-bar">
-      <div class="search-fields">
-        <template v-if="!expanded">
-          <div class="search-item search-item-wide"><el-input v-model="filter.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-        </template>
-        <template v-else>
-          <div class="search-item"><label>关键字</label><el-input v-model="filter.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-          <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
-          <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
-        </template>
-      </div>
-      <div class="search-actions">
-        <el-button @click="resetFilter">重置</el-button>
-        <el-button type="primary" @click="applyFilter">查询</el-button>
-        <el-button link type="primary" @click="toggleExpand">{{ expanded ? '收起' : '展开' }} <el-icon><ArrowDown v-if="!expanded" /><ArrowUp v-else /></el-icon></el-button>
-      </div>
-    </div>
+    <SearchBar @search="applyFilter" @reset="resetFilter">
+      <template #collapsed>
+        <el-input v-model="filter.keyword" placeholder="搜索会议室名称或位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" />
+      </template>
+      <template #expanded>
+        <div class="search-item"><label>关键字</label><el-input v-model="filter.keyword" placeholder="名称/位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入位置" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
+        <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
+      </template>
+    </SearchBar>
 
     <!-- 卡片列表 -->
     <div class="room-grid" v-loading="loading">
@@ -46,13 +39,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { OfficeBuilding, User, Monitor, Location, ArrowDown, ArrowUp } from '@element-plus/icons-vue'
+import { OfficeBuilding, User, Monitor, Location } from '@element-plus/icons-vue'
 import { listActiveRooms } from '@/api/meeting'
+import SearchBar from '@/components/SearchBar.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
 const rooms = ref<MeetingRoom[]>([])
-const loading = ref(false); const expanded = ref(false)
+const loading = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 const filter = reactive({ keyword: '', location: '', minCapacity: undefined as number | undefined })
@@ -70,7 +64,6 @@ function applyFilter() {
   // 此处强制触发一次响应式更新，确保用户期望的"点击查询"反馈
   rooms.value = [...rooms.value]
 }
-function toggleExpand() { expanded.value = !expanded.value }
 function resetFilter() { filter.keyword = ''; filter.location = ''; filter.minCapacity = undefined }
 
 onMounted(async () => {
@@ -84,22 +77,6 @@ onMounted(async () => {
 .page-header { margin-bottom: 0; }
 .page-header h2 { font-size: 18px; font-weight: 600; color: #303133; margin: 0; }
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-
-/* 搜索栏 */
-.search-bar {
-  background: #fff; border-radius: 12px; padding: 20px 24px;
-  display: flex; align-items: flex-end; justify-content: space-between;
-  border: 1px solid #f0f0f0;
-}
-.search-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; align-items: end; }
-    .search-item { display: flex; flex-direction: column; gap: 6px; }
-    .search-item-wide { width: 100%; }
-    .search-item-wide :deep(.el-input) { width: 100%; }
-    .search-item label { font-size: 13px; color: #606266; font-weight: 500; }
-    .search-item :deep(.el-input),
-    .search-item :deep(.el-select),
-    .search-item :deep(.el-input-number) { width: 100%; }
-.search-actions { display: flex; gap: 8px; }
 
 /* 卡片网格 */
 .room-grid {
