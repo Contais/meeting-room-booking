@@ -16,6 +16,65 @@
   --radius: 12px;
 }
 
+/* 暗色模式 */
+html.dark {
+  --bg-page: #1a1a2e;
+  --bg-card: #252542;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border: #374151;
+  --border-light: #2d2d4a;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+html.dark .el-table {
+  --el-table-bg-color: var(--bg-card);
+  --el-table-tr-bg-color: var(--bg-card);
+  --el-table-header-bg-color: #1f1f3a;
+  --el-table-border-color: var(--border);
+  --el-table-text-color: var(--text-primary);
+  --el-table-header-text-color: var(--text-secondary);
+}
+
+html.dark .el-input__wrapper {
+  background: #1f1f3a;
+  box-shadow: 0 0 0 1px var(--border) inset;
+}
+
+html.dark .el-input__inner {
+  color: var(--text-primary);
+}
+
+html.dark .el-select-dropdown {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html.dark .el-dialog {
+  --el-dialog-bg-color: var(--bg-card);
+  --el-dialog-title-font-size: 16px;
+}
+
+html.dark .el-descriptions {
+  --el-descriptions-table-bg: var(--bg-card);
+}
+
+html.dark .el-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-text-color: rgba(255, 255, 255, 0.7);
+  --el-menu-active-color: #ffffff;
+  --el-menu-hover-bg-color: rgba(102, 126, 234, 0.15);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #app { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; color: var(--text-primary); }
 a { text-decoration: none; color: var(--primary); }

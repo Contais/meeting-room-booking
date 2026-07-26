@@ -141,6 +141,10 @@ function scrollToBottom() {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 }
+
+defineExpose({
+  togglePanel
+})
 </script>
 
 <style scoped>

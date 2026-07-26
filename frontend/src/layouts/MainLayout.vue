@@ -1,17 +1,18 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="220px" class="layout-aside">
+    <el-aside :width="isCollapsed ? '64px' : '220px'" class="layout-aside">
       <div class="logo">
         <div class="logo-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
             <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         </div>
-        <h2>会议室预约</h2>
+        <h2 v-if="!isCollapsed">会议室预约</h2>
       </div>
       <el-menu
         :default-active="route.path"
         router
+        :collapse="isCollapsed"
         background-color="transparent"
         text-color="rgba(255,255,255,0.7)"
         active-text-color="#ffffff"
@@ -32,13 +33,29 @@
     <el-container>
       <el-header class="layout-header">
         <div class="header-left">
-          <span class="greeting">你好，{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
+          <el-button class="collapse-btn" @click="toggleCollapse">
+            <el-icon><component :is="isCollapsed ? 'Expand' : 'Fold'" /></el-icon>
+          </el-button>
+          <h2 class="page-title">{{ currentTitle }}</h2>
         </div>
         <div class="header-right">
-          <el-tag v-if="userStore.isAdmin()" type="danger" size="small" effect="dark" round>管理员</el-tag>
-          <el-dropdown trigger="click">
+          <el-tooltip content="AI 助手" placement="bottom">
+            <el-button class="icon-btn" @click="toggleChat">
+              <el-icon><ChatDotRound /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip :content="themeStore.isDark ? '切换到亮色模式' : '切换到暗色模式'" placement="bottom">
+            <el-button class="icon-btn" @click="themeStore.toggle">
+              <el-icon><component :is="themeStore.isDark ? 'Sunny' : 'Moon'" /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-dropdown trigger="hover">
             <div class="avatar-btn">
               <div class="avatar">{{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}</div>
+              <div v-if="!isCollapsed" class="user-info-brief">
+                <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
+                <el-tag v-if="userStore.isAdmin()" type="danger" size="small" effect="dark" round>管理员</el-tag>
+              </div>
               <el-icon class="arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
@@ -55,15 +72,16 @@
       </el-main>
     </el-container>
   </el-container>
-  <ChatPanel />
+  <ChatPanel ref="chatPanelRef" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotRound } from '@element-plus/icons-vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
 import { getMyMenus } from '@/api/menu'
 import ChatPanel from '@/components/ChatPanel.vue'
 import type { MenuItem } from '@/types/menu'
@@ -71,13 +89,31 @@ import type { MenuItem } from '@/types/menu'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 const menuItems = ref<MenuItem[]>([])
+const isCollapsed = ref(false)
+const chatPanelRef = ref<InstanceType<typeof ChatPanel> | null>(null)
 
 // 注册所有 Element Plus 图标供动态菜单使用
 const icons = ElementPlusIconsVue
 const iconComponents = Object.fromEntries(
   Object.entries(icons).map(([key, component]) => [key, component])
 )
+
+// 当前页面标题
+const currentTitle = computed(() => {
+  return (route.meta.title as string) || ''
+})
+
+// 切换侧边栏折叠
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value
+}
+
+// 切换聊天面板
+function toggleChat() {
+  chatPanelRef.value?.togglePanel()
+}
 
 async function loadMenus() {
   try {
@@ -104,6 +140,7 @@ onMounted(loadMenus)
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s ease;
 }
 
 .logo {
@@ -113,6 +150,7 @@ onMounted(loadMenus)
   gap: 10px;
   padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: center;
 }
 
 .logo-icon {
@@ -124,6 +162,7 @@ onMounted(loadMenus)
   align-items: center;
   justify-content: center;
   color: #fff;
+  flex-shrink: 0;
 }
 
 .logo h2 {
@@ -163,14 +202,42 @@ onMounted(loadMenus)
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.greeting {
-  font-size: 14px;
-  color: #64748b;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.collapse-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.collapse-btn:hover {
+  background: var(--border-light);
+  color: var(--primary);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .header-right {
@@ -179,10 +246,30 @@ onMounted(loadMenus)
   gap: 12px;
 }
 
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--border-light);
+  color: var(--primary);
+}
+
 .avatar-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 8px;
@@ -190,7 +277,7 @@ onMounted(loadMenus)
 }
 
 .avatar-btn:hover {
-  background: #f8fafc;
+  background: var(--border-light);
 }
 
 .avatar {
@@ -204,15 +291,28 @@ onMounted(loadMenus)
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info-brief {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .arrow {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .layout-main {
-  background: #f5f7fa;
+  background: var(--bg-page);
   padding: 20px;
   overflow-y: auto;
 }
