@@ -3,12 +3,16 @@ package com.meetinghub.meeting.tools;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
+import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MeetingRoomTool {
 
+    private final ReservationService reservationService;
     private final MeetingRoomRepository meetingRoomRepository;
     private final ReservationRepository reservationRepository;
 
@@ -96,5 +101,20 @@ public class MeetingRoomTool {
             sb.append(String.format("- %s：%d个预约\n", r.getName(), count));
         }
         return sb.toString();
+    }
+
+    @Tool(description = "创建会议室预约，传入会议室名称、预约日期、开始时间、结束时间、预约主题，返回预约结果")
+    public String createReservation(ToolContext toolContext, ReservationCreateDTO dto) {
+        Long userId = ToolAuthHelper.requireUserId(toolContext);
+        reservationService.createReservation(userId, dto);
+        return "预约创建成功";
+    }
+
+    @Tool(description = "取消会议室预约，传入预约ID，仅管理员可使用")
+    public String cancelReservationByAdmin(ToolContext toolContext, @ToolParam(description = "预约记录ID") Long reservationId) {
+        ToolAuthHelper.requireRole(toolContext, "admin");
+        reservationService.cancelReservation(
+                ToolAuthHelper.requireUserId(toolContext), reservationId);
+        return "预约已取消";
     }
 }

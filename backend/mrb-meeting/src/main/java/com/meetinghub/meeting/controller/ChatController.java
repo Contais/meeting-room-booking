@@ -2,11 +2,14 @@ package com.meetinghub.meeting.controller;
 
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.meeting.model.dto.ChatRequest;
+import com.meetinghub.meeting.tools.ToolAuthHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+
+import java.util.Map;
 
 /**
  * AI 聊天控制器
@@ -38,16 +41,20 @@ public class ChatController {
     @PostMapping(value = "/stream", produces = "text/plain;charset=UTF-8")
     public Flux<String> chatStream(@RequestBody ChatRequest request,
                                    @RequestHeader(value = "X-Session-Id", required = false) String conversationId) {
-        // 在切换线程前从 ThreadLocal 捕获 userId
-        final String userId = String.valueOf(UserContext.getCurrentUserId());
+        // 在切换线程前从 ThreadLocal 捕获用户身份
+        final Long userId = UserContext.getCurrentUserId();
+        final String role = UserContext.getCurrentRole();
         if (conversationId == null || conversationId.isEmpty()) {
             conversationId = java.util.UUID.randomUUID().toString();
         }
         final String cid = conversationId;
         return chatClient.prompt()
                 .user(request.getMessage())
-                .advisors(advice -> advice.param(ChatMemory.CONVERSATION_ID, cid)
-                        .param("userId", userId))
+                .advisors(advice -> advice.param(ChatMemory.CONVERSATION_ID, cid))
+                .toolContext(Map.of(
+                        ToolAuthHelper.CTX_USER_ID, userId,
+                        ToolAuthHelper.CTX_ROLE, role != null ? role : ""
+                ))
                 .stream()
                 .content();
     }
