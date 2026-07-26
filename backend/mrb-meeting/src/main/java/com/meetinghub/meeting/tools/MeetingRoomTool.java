@@ -1,7 +1,6 @@
 package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
@@ -11,6 +10,7 @@ import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -110,13 +110,14 @@ public class MeetingRoomTool {
 
     @Tool(description = "创建会议室预约。传入会议室名称（支持模糊匹配，但需能唯一确定）、日期、开始/结束时间、会议主题。返回预约结果。")
     public String createReservation(
+            ToolContext toolContext,
             @ToolParam(description = "会议室名称") String roomName,
             @ToolParam(description = "预约日期，格式 yyyy-MM-dd") String date,
             @ToolParam(description = "开始时间，格式 HH:mm") String startTime,
             @ToolParam(description = "结束时间，格式 HH:mm") String endTime,
             @ToolParam(description = "会议主题") String subject,
             @ToolParam(description = "参会人数", required = false) Integer attendeeCount) {
-        Long userId = UserContext.getCurrentUserId();
+        Long userId = ToolAuthHelper.requireUserId(toolContext);
 
         if (roomName == null || roomName.isBlank()) return "请提供会议室名称";
         if (date == null || startTime == null || endTime == null) return "请提供日期和开始/结束时间";
@@ -165,8 +166,9 @@ public class MeetingRoomTool {
 
     @Tool(description = "取消本人的会议室预约，传入预约记录ID。仅可取消本人创建的预约，无法取消他人的预约。")
     public String cancelMyReservation(
+            ToolContext toolContext,
             @ToolParam(description = "预约记录ID") Long reservationId) {
-        Long userId = UserContext.getCurrentUserId();
+        Long userId = ToolAuthHelper.requireUserId(toolContext);
 
         // 防御性校验：在调用 Service 前先确认预约归属，防止通过 AI 误删他人数据
         MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
@@ -181,8 +183,8 @@ public class MeetingRoomTool {
     }
 
     @Tool(description = "查看本人未结束的预约（未进行或正在进行的），返回会议室名称、日期、时段、主题、状态")
-    public String listMyUpcomingReservations() {
-        Long userId = UserContext.getCurrentUserId();
+    public String listMyUpcomingReservations(ToolContext toolContext) {
+        Long userId = ToolAuthHelper.requireUserId(toolContext);
         LocalDateTime now = LocalDateTime.now();
 
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
