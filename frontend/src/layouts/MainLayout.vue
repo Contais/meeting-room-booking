@@ -39,19 +39,28 @@
           <h2 class="page-title">{{ currentTitle }}</h2>
         </div>
         <div class="header-right">
-          <el-tooltip content="AI 助手" placement="bottom">
-            <el-button class="icon-btn chat-btn" @click="toggleChat">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-button>
-          </el-tooltip>
-          <el-tooltip :content="themeStore.isDark ? '切换到亮色模式' : '切换到暗色模式'" placement="bottom">
-            <el-button class="icon-btn" @click="themeStore.toggle">
-              <el-icon><component :is="themeStore.isDark ? 'Sunny' : 'Moon'" /></el-icon>
-            </el-button>
-          </el-tooltip>
+          <div class="header-action-group">
+            <el-tooltip content="AI 助手" placement="bottom">
+              <el-button class="icon-btn chat-btn" @click="toggleChat">
+                <el-icon><ChatDotRound /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip :content="themeStore.isDark ? '切换到亮色模式' : '切换到暗色模式'" placement="bottom">
+              <el-button class="icon-btn" @click="themeStore.toggle">
+                <el-icon><component :is="themeStore.isDark ? 'Sunny' : 'Moon'" /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
           <el-dropdown trigger="hover">
             <div class="avatar-btn">
-              <div class="avatar">{{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}</div>
+              <div class="avatar" :style="getAvatarStyle()">
+                <template v-if="avatarIcon">
+                  <el-icon :size="18"><component :is="avatarIcon" /></el-icon>
+                </template>
+                <template v-else>
+                  {{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}
+                </template>
+              </div>
               <div v-if="!isCollapsed" class="user-info-brief">
                 <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
                 <el-tag v-if="userStore.isAdmin()" type="danger" size="small" effect="dark" round>管理员</el-tag>
@@ -104,6 +113,47 @@ const iconComponents = Object.fromEntries(
 const currentTitle = computed(() => {
   return (route.meta.title as string) || ''
 })
+
+// 头像渐变色
+const avatarGradients = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+  'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+  'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+  'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
+  'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)',
+  'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
+]
+
+const avatarData = computed(() => {
+  const avatar = userStore.userInfo?.avatar
+  if (!avatar) return { icon: '', gradient: 0 }
+  try {
+    const data = JSON.parse(avatar)
+    return { icon: data.icon || '', gradient: data.gradient ?? 0 }
+  } catch {
+    return { icon: '', gradient: 0 }
+  }
+})
+
+const avatarIcon = computed(() => {
+  const iconName = avatarData.value.icon
+  if (!iconName) return null
+  return iconComponents[iconName] || null
+})
+
+function getAvatarStyle(): Record<string, string> {
+  const gradient = avatarGradients[avatarData.value.gradient] || avatarGradients[0]
+  return {
+    background: gradient,
+    color: '#fff',
+  }
+}
 
 // 切换侧边栏折叠
 function toggleCollapse() {
@@ -259,7 +309,28 @@ onMounted(loadMenus)
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-page);
+  border-radius: 10px;
+}
+
+.header-action-group .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.header-action-group .chat-btn::after {
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
 }
 
 .icon-btn {
@@ -323,7 +394,6 @@ onMounted(loadMenus)
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #fff;
   display: flex;
   align-items: center;
