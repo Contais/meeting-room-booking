@@ -83,4 +83,9 @@ public interface UserService extends IService<User> {
      * 通讯录：查询所有启用用户
      */
     java.util.List<UserVO> listContacts(String keyword, Long departmentId);
+
+    /**
+     * 内部接口：按 ID 批量查询用户完整信息（含部门名称），供跨服务回填
+     */
+    java.util.List<UserVO> listByIdsDetailed(java.util.Collection<Long> ids);
 }

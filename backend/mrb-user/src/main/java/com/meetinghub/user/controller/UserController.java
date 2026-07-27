@@ -61,6 +61,22 @@ public class UserController {
         return Result.ok(userService.getUsernamesByIds(ids));
     }
 
+    /**
+     * 内部接口：按部门 ID 查询所有启用用户（跨服务调用，供 mrb-meeting 邀请参会人使用）
+     */
+    @GetMapping("/internal/list-by-department")
+    public Result<java.util.List<UserVO>> listByDepartment(@RequestParam Long departmentId) {
+        return Result.ok(userService.listContacts(null, departmentId));
+    }
+
+    /**
+     * 内部接口：按 ID 批量查询用户完整信息（供 mrb-meeting 回填参会人详情）
+     */
+    @GetMapping("/internal/list-by-ids")
+    public Result<java.util.List<UserVO>> listByIds(@RequestParam java.util.List<Long> ids) {
+        return Result.ok(userService.listByIdsDetailed(ids));
+    }
+
     @PostMapping("/register")
     public Result<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
         userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone(), registerDTO.getEmail());

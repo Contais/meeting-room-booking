@@ -47,7 +47,14 @@ public enum ErrorCode {
 
     // 设备相关
     EQUIPMENT_NOT_FOUND(1019, "设备不存在"),
-    EQUIPMENT_CODE_DUPLICATE(1020, "设备编码已存在");
+    EQUIPMENT_CODE_DUPLICATE(1020, "设备编码已存在"),
+
+    // 参会人相关
+    ATTENDEE_NOT_INVITED(1021, "该用户未被邀请"),
+    ATTENDEE_ALREADY_INVITED(1022, "该用户已被邀请"),
+
+    // 预约归属
+    RESERVATION_ACCESS_DENIED(1023, "无权操作他人预约");
 
     private final Integer code;
     private final String message;

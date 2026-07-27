@@ -10,6 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * mrb-user 远程调用客户端
+ * <p>
+ * 内部接口（/user/internal/**）仅供服务间调用，绕过网关鉴权。
+ * 返回的 {@link Result} 中 data 可能为 null，调用方需做防御性判空。
+ * </p>
+ */
 @FeignClient(name = "mrb-user")
 public interface UserFeignClient {
 
@@ -21,4 +28,16 @@ public interface UserFeignClient {
      */
     @GetMapping("/user/internal/batch")
     Result<Map<Long, String>> batchUsernames(@RequestParam("ids") List<Long> ids);
+
+    /**
+     * 按部门 ID 查询所有启用用户（用于邀请参会人）
+     */
+    @GetMapping("/user/internal/list-by-department")
+    Result<List<com.meetinghub.meeting.feign.dto.UserBriefDTO>> listByDepartment(@RequestParam("departmentId") Long departmentId);
+
+    /**
+     * 按 ID 批量查询用户完整信息（用于回填参会人详情）
+     */
+    @GetMapping("/user/internal/list-by-ids")
+    Result<List<com.meetinghub.meeting.feign.dto.UserBriefDTO>> listByIds(@RequestParam("ids") List<Long> ids);
 }

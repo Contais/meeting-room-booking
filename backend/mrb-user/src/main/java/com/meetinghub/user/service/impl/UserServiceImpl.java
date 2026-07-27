@@ -244,6 +244,14 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         return userRepository.selectContacts(keyword, departmentId).stream().map(this::toVO).collect(Collectors.toList());
     }
 
+    @Override
+    public List<UserVO> listByIdsDetailed(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return listByIds(ids).stream().map(this::toVO).collect(Collectors.toList());
+    }
+
     private UserVO toVO(User user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
