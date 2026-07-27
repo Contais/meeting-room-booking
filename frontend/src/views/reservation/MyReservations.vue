@@ -37,6 +37,9 @@
     </SearchBar>
 
     <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
+      <template #toolbar-left>
+        <el-button class="btn-outline" @click="bookingDialogVisible = true"><el-icon><Plus /></el-icon>预约会议室</el-button>
+      </template>
       <template #toolbar-right>
         <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
       </template>
@@ -72,6 +75,8 @@
         </el-table-column>
       </el-table>
     </TableCard>
+
+    <BookingDialog v-model="bookingDialogVisible" @success="loadData" />
   </div>
 </template>
 
@@ -79,15 +84,17 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Close, View, Delete } from '@element-plus/icons-vue'
+import { Plus, Refresh, Close, View, Delete } from '@element-plus/icons-vue'
 import { listMyReservations, cancelReservation, deleteReservation } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
+import BookingDialog from '@/components/BookingDialog.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
 const router = useRouter()
 
+const bookingDialogVisible = ref(false)
 const loading = ref(false)
 const tableData = ref<Reservation[]>([])
 const total = ref(0)
