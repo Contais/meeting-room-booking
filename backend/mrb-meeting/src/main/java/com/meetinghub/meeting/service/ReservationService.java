@@ -1,8 +1,10 @@
 package com.meetinghub.meeting.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
+import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 
 import com.meetinghub.meeting.model.vo.ScheduleVO;
@@ -11,7 +13,7 @@ import java.util.List;
 /**
  * 预约服务接口
  */
-public interface ReservationService {
+public interface ReservationService extends IService<MeetingRoomReservation> {
 
     /**
      * 创建预约（含规则校验 + 冲突检测）

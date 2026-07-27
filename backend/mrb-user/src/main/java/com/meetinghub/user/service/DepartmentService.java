@@ -1,7 +1,9 @@
 package com.meetinghub.user.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.meetinghub.user.model.dto.DepartmentCreateDTO;
 import com.meetinghub.user.model.dto.DepartmentUpdateDTO;
+import com.meetinghub.user.model.entity.Department;
 import com.meetinghub.user.model.vo.DepartmentVO;
 
 import java.util.List;
@@ -9,7 +11,7 @@ import java.util.List;
 /**
  * 部门服务接口
  */
-public interface DepartmentService {
+public interface DepartmentService extends IService<Department> {
 
     /**
      * 获取部门树

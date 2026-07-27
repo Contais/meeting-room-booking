@@ -1,12 +1,14 @@
 package com.meetinghub.user.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.meetinghub.user.model.dto.MenuCreateDTO;
 import com.meetinghub.user.model.dto.MenuUpdateDTO;
+import com.meetinghub.user.model.entity.Menu;
 import com.meetinghub.user.model.vo.MenuVO;
 
 import java.util.List;
 
-public interface MenuService {
+public interface MenuService extends IService<Menu> {
 
     /**
      * 管理端：获取全部菜单树

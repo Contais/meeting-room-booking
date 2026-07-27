@@ -1,6 +1,7 @@
 package com.meetinghub.user.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
@@ -11,7 +12,7 @@ import java.util.Map;
 /**
  * 用户服务接口
  */
-public interface UserService {
+public interface UserService extends IService<User> {
 
     /**
      * 根据ID查询用户

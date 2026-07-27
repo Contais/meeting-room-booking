@@ -4,6 +4,7 @@ import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.enums.DeletedEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.RoleEnum;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserRepository, User> implements UserService {
 
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;

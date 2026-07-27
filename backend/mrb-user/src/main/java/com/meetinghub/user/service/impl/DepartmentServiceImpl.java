@@ -1,6 +1,7 @@
 package com.meetinghub.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class DepartmentServiceImpl implements DepartmentService {
+public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Department> implements DepartmentService {
 
     /**
      * 顶级部门的父节点 ID

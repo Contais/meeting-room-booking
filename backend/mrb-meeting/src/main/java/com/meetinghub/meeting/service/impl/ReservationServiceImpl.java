@@ -3,6 +3,7 @@ package com.meetinghub.meeting.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class ReservationServiceImpl implements ReservationService {
+public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, MeetingRoomReservation> implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;

@@ -1,9 +1,11 @@
 package com.meetinghub.meeting.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.meetinghub.meeting.model.dto.RoomCreateDTO;
 import com.meetinghub.meeting.model.dto.RoomPageQuery;
 import com.meetinghub.meeting.model.dto.RoomUpdateDTO;
+import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.vo.MeetingRoomVO;
 
 import java.util.List;
@@ -11,7 +13,7 @@ import java.util.List;
 /**
  * 会议室服务接口
  */
-public interface MeetingRoomService {
+public interface MeetingRoomService extends IService<MeetingRoom> {
 
     /**
      * 查询所有启用的会议室（用户端列表）

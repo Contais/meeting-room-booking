@@ -1,6 +1,7 @@
 package com.meetinghub.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.VisibleEnum;
 import com.meetinghub.common.exception.BusinessException;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class MenuServiceImpl implements MenuService {
+public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implements MenuService {
 
     /**
      * 顶级菜单的父节点 ID
