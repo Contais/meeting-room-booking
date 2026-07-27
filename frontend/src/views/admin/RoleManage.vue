@@ -1,32 +1,34 @@
 <template>
-  <div class="role-manage-page">
-    <div class="page-header">
-      <h2 class="page-title">角色管理</h2>
-      <div class="header-actions">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索角色名称/编码"
-          clearable
-          style="width: 260px"
-          @keyup.enter="loadRoles"
-          @clear="loadRoles"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" @click="handleCreate">
-          <el-icon><Plus /></el-icon>
-          <span>新建角色</span>
-        </el-button>
-      </div>
-    </div>
+  <div class="page-view">
+    <SearchBar @search="onFilterChange" @reset="resetQuery">
+      <template #collapsed>
+        <el-input v-model="query.keyword" placeholder="搜索角色名称 / 编码" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
+      </template>
+      <template #expanded>
+        <div class="search-item"><label>角色名称</label><el-input v-model="query.roleName" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
+        <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item"><label>类型</label><el-select v-model="query.isSystem" placeholder="全部" clearable @change="onFilterChange"><el-option label="系统角色" :value="1" /><el-option label="自定义" :value="0" /></el-select></div>
+      </template>
+    </SearchBar>
 
-    <div class="role-table-wrapper">
-      <el-table :data="roleList" v-loading="loading" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+    <TableCard
+      :total="total"
+      v-model:page="query.pageNum"
+      v-model:size="query.pageSize"
+      @size-change="onSizeChange"
+      @current-change="loadRoles"
+    >
+      <template #toolbar-left>
+        <el-button class="btn-outline" @click="handleCreate"><el-icon><Plus /></el-icon>新建角色</el-button>
+      </template>
+      <template #toolbar-right>
+        <el-tooltip content="刷新"><el-button circle @click="loadRoles"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+      </template>
+
+      <el-table :data="roleList" v-loading="loading">
+        <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="roleCode" label="角色编码" width="160" />
-        <el-table-column prop="roleName" label="角色名称" width="180">
+        <el-table-column label="角色名称" width="180">
           <template #default="{ row }">
             <span class="role-name-cell">
               <span class="role-dot" :style="{ background: getRoleColor(row.id) }"></span>
@@ -35,25 +37,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="100" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="sort" label="排序" width="100" align="center" />
+        <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="light" round>
+            <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="类型" width="110">
+        <el-table-column label="类型" width="110" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.isSystem === 1" type="danger" effect="light" round>系统角色</el-tag>
-            <el-tag v-else type="info" effect="light" round>自定义</el-tag>
+            <el-tag v-if="row.isSystem === 1" type="danger" size="small" effect="light" round>系统角色</el-tag>
+            <el-tag v-else type="info" size="small" effect="light" round>自定义</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ formatDate(row.createTime) }}
-          </template>
-        </el-table-column>
+        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handlePermission(row)">
@@ -74,24 +72,11 @@
           </template>
         </el-table-column>
       </el-table>
+    </TableCard>
 
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="queryParams.pageNum"
-          v-model:page-size="queryParams.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          background
-          @size-change="loadRoles"
-          @current-change="loadRoles"
-        />
-      </div>
-    </div>
-
-    <!-- 新建/编辑角色对话框 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" width="500px" :close-on-click-modal="false">
-      <el-form :model="formData" :rules="formRules" ref="formRef" label-width="100px">
+    <!-- 新建/编辑角色抽屉 -->
+    <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" :loading="submitting" @submit="handleSubmit">
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="角色编码" prop="roleCode">
           <el-input v-model="formData.roleCode" placeholder="请输入角色编码" :disabled="isEdit" />
         </el-form-item>
@@ -105,13 +90,9 @@
           <el-input-number v-model="formData.sort" :min="0" :max="999" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+    </FormDrawer>
 
-    <!-- 权限配置对话框 -->
+    <!-- 权限配置对话框（角色管理独有，保留 el-dialog） -->
     <el-dialog v-model="permDialogVisible" title="权限配置" width="600px" :close-on-click-modal="false">
       <div class="perm-dialog-header">
         <span>角色：<strong>{{ currentRole?.roleName }}</strong></span>
@@ -139,7 +120,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Search, Plus, Edit, Delete, Key } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Key, Refresh } from '@element-plus/icons-vue'
 import {
   listRoles,
   createRole,
@@ -153,15 +134,20 @@ import {
 } from '@/api/role'
 import { getMenuTree } from '@/api/menu'
 import type { MenuItem } from '@/types/menu'
+import SearchBar from '@/components/SearchBar.vue'
+import TableCard from '@/components/TableCard.vue'
+import FormDrawer from '@/components/FormDrawer.vue'
+import { formatDateTime } from '@/utils/datetime'
 
 const loading = ref(false)
+const submitting = ref(false)
 const roleList = ref<RoleInfo[]>([])
 const total = ref(0)
-const keyword = ref('')
 
-const queryParams = reactive<RolePageQuery>({
+const query = reactive<RolePageQuery & { roleName?: string; status?: number; isSystem?: number }>({
   pageNum: 1,
   pageSize: 10,
+  keyword: '',
 })
 
 const roleColors = [
@@ -169,28 +155,44 @@ const roleColors = [
   '#fa709a', '#a8edea', '#ff9a9e', '#ffecd2',
   '#a1c4fd', '#d299c2', '#89f7fe', '#fddb92',
 ]
-
 function getRoleColor(id: number): string {
   return roleColors[id % roleColors.length]
-}
-
-function formatDate(date: string): string {
-  if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN')
 }
 
 async function loadRoles() {
   loading.value = true
   try {
-    const res = await listRoles({
-      ...queryParams,
-      keyword: keyword.value || undefined,
-    })
-    roleList.value = res.data.records
-    total.value = res.data.total
+    const params: RolePageQuery = { pageNum: query.pageNum, pageSize: query.pageSize }
+    if (query.keyword) params.keyword = query.keyword
+    const res = await listRoles(params)
+    let records = res.data.records
+    // 前端二次过滤（角色名称/状态/类型，后端未支持这些筛选）
+    if (query.roleName) {
+      records = records.filter(r => r.roleName.includes(query.roleName!))
+    }
+    if (query.status != null) {
+      records = records.filter(r => r.status === query.status)
+    }
+    if (query.isSystem != null) {
+      records = records.filter(r => r.isSystem === query.isSystem)
+    }
+    roleList.value = records
+    total.value = Number(res.data.total) || 0
   } catch { /* */ } finally {
     loading.value = false
   }
+}
+
+function onSizeChange() { query.pageNum = 1; loadRoles() }
+function onFilterChange() { query.pageNum = 1; loadRoles() }
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+function onSearchInput() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { query.pageNum = 1; loadRoles() }, 300)
+}
+function resetQuery() {
+  query.keyword = ''; query.roleName = undefined; query.status = undefined; query.isSystem = undefined
+  query.pageNum = 1; loadRoles()
 }
 
 // 新建/编辑相关
@@ -231,31 +233,32 @@ function handleEdit(row: RoleInfo) {
 }
 
 async function handleSubmit() {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    try {
-      if (isEdit.value) {
-        await updateRole({
-          id: formData.id,
-          roleName: formData.roleName,
-          description: formData.description,
-          sort: formData.sort,
-        })
-        ElMessage.success('更新成功')
-      } else {
-        await createRole({
-          roleCode: formData.roleCode,
-          roleName: formData.roleName,
-          description: formData.description,
-          sort: formData.sort,
-        })
-        ElMessage.success('创建成功')
-      }
-      dialogVisible.value = false
-      loadRoles()
-    } catch { /* */ }
-  })
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  submitting.value = true
+  try {
+    if (isEdit.value) {
+      await updateRole({
+        id: formData.id,
+        roleName: formData.roleName,
+        description: formData.description,
+        sort: formData.sort,
+      })
+      ElMessage.success('更新成功')
+    } else {
+      await createRole({
+        roleCode: formData.roleCode,
+        roleName: formData.roleName,
+        description: formData.description,
+        sort: formData.sort,
+      })
+      ElMessage.success('创建成功')
+    }
+    dialogVisible.value = false
+    loadRoles()
+  } catch { /* */ } finally {
+    submitting.value = false
+  }
 }
 
 async function handleToggle(row: RoleInfo) {
@@ -336,37 +339,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.role-manage-page {
-  padding: 24px;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.page-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.role-table-wrapper {
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
-  padding: 20px;
-}
-
 .role-name-cell {
   display: flex;
   align-items: center;
@@ -377,12 +349,7 @@ onMounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
+  flex-shrink: 0;
 }
 
 .perm-dialog-header {

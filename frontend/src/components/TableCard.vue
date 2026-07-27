@@ -1,0 +1,55 @@
+<template>
+  <div class="table-card">
+    <div v-if="$slots['toolbar-left'] || $slots['toolbar-right']" class="table-toolbar">
+      <div class="toolbar-left"><slot name="toolbar-left" /></div>
+      <div class="toolbar-right"><slot name="toolbar-right" /></div>
+    </div>
+    <slot />
+    <div v-if="showPagination" class="pagination-wrap">
+      <span class="total-text">共 {{ total }} 条</span>
+      <el-pagination
+        v-model:current-page="pageModel"
+        v-model:page-size="sizeModel"
+        :total="total"
+        :page-sizes="pageSizes"
+        background
+        layout="prev, pager, next, sizes, jumper"
+        @size-change="$emit('size-change', $event)"
+        @current-change="$emit('current-change', $event)"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = withDefaults(defineProps<{
+  total: number
+  page?: number
+  size?: number
+  pageSizes?: number[]
+  showPagination?: boolean
+}>(), {
+  page: 1,
+  size: 10,
+  pageSizes: () => [10, 20, 50],
+  showPagination: true,
+})
+
+const emit = defineEmits<{
+  (e: 'update:page', value: number): void
+  (e: 'update:size', value: number): void
+  (e: 'size-change', value: number): void
+  (e: 'current-change', value: number): void
+}>()
+
+const pageModel = computed({
+  get: () => props.page,
+  set: (val: number) => emit('update:page', val),
+})
+const sizeModel = computed({
+  get: () => props.size,
+  set: (val: number) => emit('update:size', val),
+})
+</script>

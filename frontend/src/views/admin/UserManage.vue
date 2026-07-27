@@ -11,11 +11,9 @@
         <div class="search-item is-wide"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
       </template>
     </SearchBar>
-    <div class="table-card">
-      <div class="table-toolbar">
-        <div class="toolbar-left"><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></div>
-        <div class="toolbar-right"><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></div>
-      </div>
+    <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
+      <template #toolbar-left><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></template>
+      <template #toolbar-right><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></template>
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="用户名" min-width="200">
@@ -44,8 +42,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="pagination-wrap"><span class="total-text">共 {{ total }} 条</span><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10, 20, 50]" :total="total" background layout="prev, pager, next, sizes, jumper" @size-change="onSizeChange" @current-change="loadData" /></div>
-    </div>
+    </TableCard>
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" :loading="submitting" @submit="handleSubmit">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="用户名" prop="username"><el-input v-model="form.username" :disabled="isEdit" placeholder="请输入用户名" /></el-form-item>
@@ -74,6 +71,7 @@ import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/
 import { getDepartmentTree } from '@/api/department'
 import { listAllRoles } from '@/api/role'
 import SearchBar from '@/components/SearchBar.vue'
+import TableCard from '@/components/TableCard.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
@@ -141,15 +139,10 @@ onMounted(() => { loadData(); loadDeptTree(); loadRoleList() })
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
-.toolbar-right { display: flex; gap: 4px; }
 .user-cell { display: flex; align-items: center; gap: 10px; }
 .user-avatar { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-email { font-size: 11px; color: var(--text-muted); }
 .action-buttons { display: flex; justify-content: center; gap: 0; }
-.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border-light); }
-.total-text { font-size: 13px; color: var(--text-muted); }
 </style>
