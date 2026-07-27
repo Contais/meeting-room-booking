@@ -58,7 +58,7 @@
               </el-button>
             </el-tooltip>
           </div>
-          <el-dropdown trigger="hover">
+          <el-dropdown trigger="hover" popper-class="user-dropdown-popper" placement="bottom-end">
             <div class="avatar-btn">
               <div class="avatar" :style="getAvatarStyle()">
                 <template v-if="avatarIcon">
@@ -70,15 +70,41 @@
               </div>
               <div v-if="!isCollapsed" class="user-info-brief">
                 <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
-                <el-tag v-if="userStore.isAdmin()" type="danger" size="small" effect="dark" round>管理员</el-tag>
+                <span class="user-role-tag" v-if="userStore.isAdmin()">管理员</span>
               </div>
               <el-icon class="arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
+              <div class="user-dropdown-panel">
+                <div class="dropdown-header">
+                  <div class="dropdown-avatar" :style="getAvatarStyle()">
+                    <template v-if="avatarIcon">
+                      <el-icon :size="22"><component :is="avatarIcon" /></el-icon>
+                    </template>
+                    <template v-else>
+                      {{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}
+                    </template>
+                  </div>
+                  <div class="dropdown-user-info">
+                    <div class="dropdown-username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</div>
+                    <div class="dropdown-account">@{{ userStore.userInfo?.username || 'unknown' }}</div>
+                  </div>
+                  <span class="dropdown-role" v-if="userStore.isAdmin()">管理员</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-menu-list">
+                  <button type="button" class="dropdown-menu-item" @click="router.push('/profile')">
+                    <el-icon class="menu-icon"><User /></el-icon>
+                    <span class="menu-text">个人中心</span>
+                    <el-icon class="menu-arrow"><Right /></el-icon>
+                  </button>
+                  <button type="button" class="dropdown-menu-item danger" @click="handleLogout">
+                    <el-icon class="menu-icon"><SwitchButton /></el-icon>
+                    <span class="menu-text">退出登录</span>
+                    <el-icon class="menu-arrow"><Right /></el-icon>
+                  </button>
+                </div>
+              </div>
             </template>
           </el-dropdown>
         </div>
@@ -94,7 +120,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, ChatDotRound } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotRound, User, SwitchButton, Right } from '@element-plus/icons-vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
@@ -427,13 +453,15 @@ onMounted(loadMenus)
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  padding: 4px 10px 4px 4px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
 }
 
 .avatar-btn:hover {
-  background: var(--border-light);
+  background: var(--bg-card);
+  border-color: var(--border-light);
 }
 
 .avatar {
@@ -447,6 +475,7 @@ onMounted(loadMenus)
   font-size: 14px;
   font-weight: 600;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .user-info-brief {
@@ -456,14 +485,156 @@ onMounted(loadMenus)
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: #fff;
   font-weight: 500;
 }
 
 .arrow {
   font-size: 12px;
   color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.avatar-btn:hover .arrow {
+  transform: rotate(180deg);
+}
+
+/* 用户下拉面板样式（通过 popper-class 全局生效） */
+:global(.user-dropdown-popper) {
+  width: 260px !important;
+  padding: 0 !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  background: var(--bg-card) !important;
+  overflow: hidden;
+}
+
+:global(.user-dropdown-popper .user-dropdown-panel) {
+  width: 100%;
+}
+
+:global(.user-dropdown-popper .dropdown-header) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--primary-light, #f5f7ff), transparent);
+}
+
+:global(.user-dropdown-popper .dropdown-avatar) {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+:global(.user-dropdown-popper .dropdown-user-info) {
+  flex: 1;
+  min-width: 0;
+}
+
+:global(.user-dropdown-popper .dropdown-username) {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(.user-dropdown-popper .dropdown-account) {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+:global(.user-dropdown-popper .dropdown-role) {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: #fff;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+:global(.user-dropdown-popper .dropdown-divider) {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-list) {
+  padding: 6px;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: all 0.15s;
+  text-align: left;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item:hover) {
+  background: var(--primary-light, #f5f7ff);
+  color: var(--primary);
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item.danger:hover) {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item .menu-icon) {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item .menu-text) {
+  flex: 1;
+  font-weight: 500;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item .menu-arrow) {
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+:global(.user-dropdown-popper .dropdown-menu-item:hover .menu-arrow) {
+  opacity: 1;
 }
 
 .layout-main {

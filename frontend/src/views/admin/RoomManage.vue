@@ -10,6 +10,7 @@
         <div class="search-item"><label>设备</label><el-input v-model="query.equipment" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" /></div>
         <div class="search-item"><label>可容纳人数</label><el-input-number v-model="query.minCapacity" :min="1" :max="1000" controls-position="right" style="width:100%" @change="onFilterChange" /></div>
         <div class="search-item"><label>状态</label><el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange"><el-option label="启用" :value="1" /><el-option label="禁用" :value="0" /></el-select></div>
+        <div class="search-item"><label>当天状态</label><el-select v-model="query.availability" placeholder="全部" clearable @change="onFilterChange"><el-option label="空闲" value="available" /><el-option label="使用中" value="busy" /><el-option label="禁用" value="inactive" /></el-select></div>
         <div class="search-item"><label>审批</label><el-select v-model="query.needApproval" placeholder="全部" clearable @change="onFilterChange"><el-option label="需审批" :value="1" /><el-option label="免审批" :value="0" /></el-select></div>
         <div class="search-item is-wide"><label>创建时间</label><el-date-picker v-model="createTimeRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="YYYY-MM-DDTHH:mm:ss" @change="onCreateTimeRangeChange" /></div>
       </template>
@@ -34,7 +35,7 @@
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="当前" width="80" align="center"><template #default="{ row }"><el-tag v-if="row.status === 1" :type="row.currentAvailable ? 'success' : 'warning'" size="small" effect="light" round>{{ row.currentAvailable ? '空闲' : '使用中' }}</el-tag><span v-else style="color: var(--text-muted)">-</span></template></el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="router.push(`/meeting/rooms/${row.id}`)">
@@ -87,7 +88,7 @@ const router = useRouter()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
-const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
+const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '', availability: '' as string })
 const createTimeRange = ref<string[]>([])
 const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
@@ -112,8 +113,19 @@ async function loadData() {
     if (query.status != null) params.status = query.status
     if (query.createTimeStart) params.createTimeStart = query.createTimeStart
     if (query.createTimeEnd) params.createTimeEnd = query.createTimeEnd
-    const res = await listRoomsAdmin(params); tableData.value = res.data.records; total.value = Number(res.data.total) || 0
+    const res = await listRoomsAdmin(params)
+    let records = res.data.records
+    // 当天状态为前端客户端过滤（基于 currentAvailable 字段）
+    if (query.availability) {
+      records = records.filter((r: MeetingRoom) => roomAvailabilityClass(r) === query.availability)
+    }
+    tableData.value = records
+    total.value = Number(res.data.total) || 0
   } catch { /* */ } finally { loading.value = false }
+}
+function roomAvailabilityClass(room: MeetingRoom): string {
+  if (room.status !== 1) return 'inactive'
+  return room.currentAvailable ? 'available' : 'busy'
 }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() {
@@ -121,7 +133,7 @@ function onSearchInput() {
   searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300)
 }
 
-function resetQuery() { query.keyword = ''; query.name = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.page = 1; createTimeRange.value = []; loadData() }
+function resetQuery() { query.keyword = ''; query.name = ''; query.location = ''; query.equipment = ''; query.minCapacity = undefined; query.bookableStart = ''; query.bookableEnd = ''; query.needApproval = undefined; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.availability = ''; query.page = 1; createTimeRange.value = []; loadData() }
 function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 }); dialogVisible.value = true }
 function showEditDialog(row: MeetingRoom) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, location: row.location || '', capacity: row.capacity || 10, equipment: row.equipment || '', imageUrl: row.imageUrl || '', description: row.description || '', bookableStart: row.bookableStart || '08:00', bookableEnd: row.bookableEnd || '20:00', maxDuration: row.maxDuration || 480, advanceDays: row.advanceDays || 7, needApproval: row.needApproval || 0 }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateRoom(form); ElMessage.success('更新成功') } else { await createRoom(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }

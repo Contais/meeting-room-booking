@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
-import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.feign.DepartmentFeignClient;
 import com.meetinghub.meeting.feign.dto.DepartmentBriefDTO;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
@@ -28,6 +27,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -58,33 +58,46 @@ public class MeetingRoomTool {
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         if (rooms.isEmpty()) return "当前没有可用的会议室";
-        StringBuilder sb = new StringBuilder("可用会议室列表：\n");
-        for (MeetingRoom r : rooms) {
-            sb.append(String.format("- %s（%s，容纳%d人，设备：%s）\n",
-                    r.getName(), r.getLocation(), r.getCapacity(), r.getEquipment()));
-        }
-        return sb.toString();
+        return ToolResponseFormatter.formatRooms(rooms);
     }
 
     @Tool(description = "查询指定日期某个会议室的预约情况")
-    public List<MeetingRoomReservation> queryRoomReservationsNew(
+    public String queryRoomReservationsNew(
             @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().like(MeetingRoom::getName, roomName).eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
         if (CollUtil.isEmpty(rooms)) {
-            throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
+            return "未找到名为「" + roomName + "」的可用会议室";
+        }
+        if (rooms.size() > 1) {
+            StringBuilder sb = new StringBuilder("匹配到多个会议室，请明确指定：\n");
+            for (MeetingRoom r : rooms) {
+                sb.append(String.format("- %s（%s）\n", r.getName(), r.getLocation()));
+            }
+            return sb.toString();
         }
         MeetingRoom room = rooms.get(0);
-        LocalDate d = LocalDate.parse(date);
-        return reservationRepository.selectList(
+        LocalDate d;
+        try {
+            d = LocalDate.parse(date, DATE_FMT);
+        } catch (Exception e) {
+            return "日期格式有误，请用 yyyy-MM-dd";
+        }
+        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, room.getId())
                         .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
+        if (reservations.isEmpty()) {
+            return String.format("%s 在 %s 没有预约", room.getName(), date);
+        }
+        Map<Long, String> roomNameMap = Map.of(room.getId(), room.getName());
+        return String.format("%s 在 %s 的预约情况：\n", room.getName(), date)
+                + ToolResponseFormatter.formatReservations(reservations, roomNameMap);
     }
 
     @Tool(description = "查询所有会议室今天的整体预约统计，返回每个会议室的预约数量")
@@ -178,16 +191,32 @@ public class MeetingRoomTool {
     }
 
     @Tool(description = "查看本人未结束的预约，返回会议室名称、日期、时段、预约编号、主题、状态")
-    public List<MeetingRoomReservation> listMyUpcomingReservations(ToolContext toolContext) {
+    public String listMyUpcomingReservations(ToolContext toolContext) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
         LocalDateTime now = LocalDateTime.now();
-        return reservationRepository.selectList(
+        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getUserId, userId)
                         .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .ge(MeetingRoomReservation::getEndTime, now)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
+        if (reservations.isEmpty()) {
+            return "您当前没有未结束的预约";
+        }
+        // 批量查询会议室名称
+        List<Long> roomIds = reservations.stream().map(MeetingRoomReservation::getRoomId).distinct().collect(Collectors.toList());
+        Map<Long, String> roomNameMap = batchRoomNames(roomIds);
+        return "您未结束的预约：\n" + ToolResponseFormatter.formatReservations(reservations, roomNameMap);
+    }
+
+    /**
+     * 批量查询会议室名称
+     */
+    private Map<Long, String> batchRoomNames(List<Long> roomIds) {
+        if (roomIds == null || roomIds.isEmpty()) return Map.of();
+        List<MeetingRoom> rooms = meetingRoomRepository.selectBatchIds(roomIds);
+        return rooms.stream().collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName, (a, b) -> a));
     }
 
     // ============== 二期新工具 ==============

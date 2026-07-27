@@ -50,7 +50,7 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="router.push(`/admin/equipments/${row.id}`)">

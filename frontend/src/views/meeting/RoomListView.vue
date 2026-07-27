@@ -9,13 +9,31 @@
         <div class="search-item"><label>会议室名称</label><el-input v-model="filter.keyword" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
         <div class="search-item"><label>位置</label><el-input v-model="filter.location" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="applyFilter" /></div>
         <div class="search-item"><label>最少人数</label><el-input-number v-model="filter.minCapacity" :min="1" :max="1000" controls-position="right" @change="applyFilter" /></div>
+        <div class="search-item"><label>当天状态</label>
+          <el-select v-model="filter.availability" placeholder="全部" clearable @change="applyFilter">
+            <el-option label="空闲" value="available" />
+            <el-option label="使用中" value="busy" />
+            <el-option label="禁用" value="inactive" />
+          </el-select>
+        </div>
       </template>
     </SearchBar>
 
     <div class="status-legend">
-      <span class="legend-item"><span class="status-badge active"><span class="status-dot"></span>空闲</span>当前无预约</span>
-      <span class="legend-item"><span class="status-badge busy"><span class="status-dot"></span>使用中</span>当前有进行中的会议</span>
-      <span class="legend-item"><span class="status-badge inactive"><span class="status-dot"></span>禁用</span>会议室已停用</span>
+      <span class="legend-tip">状态说明（点击筛选）：</span>
+      <button type="button" class="legend-item" :class="{ active: filter.availability === 'available' }" @click="toggleLegendFilter('available')">
+        <span class="status-badge active"><span class="status-dot"></span>空闲</span>
+        <span class="legend-desc">当前无进行中的会议</span>
+      </button>
+      <button type="button" class="legend-item" :class="{ active: filter.availability === 'busy' }" @click="toggleLegendFilter('busy')">
+        <span class="status-badge busy"><span class="status-dot"></span>使用中</span>
+        <span class="legend-desc">当前有进行中的会议</span>
+      </button>
+      <button type="button" class="legend-item" :class="{ active: filter.availability === 'inactive' }" @click="toggleLegendFilter('inactive')">
+        <span class="status-badge inactive"><span class="status-dot"></span>禁用</span>
+        <span class="legend-desc">会议室已停用</span>
+      </button>
+      <button v-if="filter.availability" type="button" class="legend-clear" @click="clearLegendFilter">清除筛选</button>
     </div>
 
     <!-- 卡片列表 -->
@@ -74,12 +92,16 @@ const rooms = ref<MeetingRoom[]>([])
 const loading = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
-const filter = reactive({ keyword: '', location: '', minCapacity: undefined as number | undefined })
+const filter = reactive({ keyword: '', location: '', minCapacity: undefined as number | undefined, availability: '' as string })
 
 const filteredRooms = computed(() => rooms.value.filter(room => {
   if (filter.keyword && !room.name.includes(filter.keyword)) return false
   if (filter.location && !(room.location || '').includes(filter.location)) return false
   if (filter.minCapacity && (!room.capacity || room.capacity < filter.minCapacity)) return false
+  if (filter.availability) {
+    const cls = roomStatusClass(room)
+    if (cls !== filter.availability) return false
+  }
   return true
 }))
 
@@ -98,7 +120,12 @@ function applyFilter() {
   // 此处强制触发一次响应式更新，确保用户期望的"点击查询"反馈
   rooms.value = [...rooms.value]
 }
-function resetFilter() { filter.keyword = ''; filter.location = ''; filter.minCapacity = undefined }
+function resetFilter() { filter.keyword = ''; filter.location = ''; filter.minCapacity = undefined; filter.availability = '' }
+
+function toggleLegendFilter(status: string) {
+  filter.availability = filter.availability === status ? '' : status
+}
+function clearLegendFilter() { filter.availability = '' }
 
 onMounted(async () => {
   loading.value = true
@@ -109,8 +136,24 @@ onMounted(async () => {
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.status-legend { display: flex; gap: 20px; padding: 10px 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted); }
-.legend-item { display: flex; align-items: center; gap: 6px; }
+.status-legend { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.legend-tip { color: var(--text-muted); font-size: 12px; margin-right: 4px; }
+.legend-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 16px;
+  background: transparent; border: 1px solid var(--border-light);
+  cursor: pointer; transition: all 0.2s; font-size: 12px;
+  color: var(--text-secondary);
+}
+.legend-item:hover { border-color: var(--primary); background: var(--primary-light, #f5f7ff); }
+.legend-item.active { border-color: var(--primary); background: var(--primary-light, #ecf5ff); color: var(--primary); }
+.legend-desc { color: var(--text-muted); font-size: 11px; }
+.legend-clear {
+  margin-left: auto; padding: 4px 10px; border-radius: 16px;
+  background: transparent; border: 1px solid #f56c6c; color: #f56c6c;
+  cursor: pointer; font-size: 12px; transition: all 0.2s;
+}
+.legend-clear:hover { background: #f56c6c; color: #fff; }
 
 /* 卡片网格 */
 .room-grid {
