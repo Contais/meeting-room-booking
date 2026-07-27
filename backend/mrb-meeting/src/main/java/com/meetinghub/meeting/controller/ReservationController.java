@@ -39,6 +39,12 @@ public class ReservationController {
         return Result.ok();
     }
 
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteReservation(@PathVariable Long id) {
+        reservationService.deleteReservation(UserContext.getCurrentUserId(), id);
+        return Result.ok();
+    }
+
     @GetMapping("/my")
     public Result<IPage<ReservationVO>> listMyReservations(ReservationPageQuery query) {
         return Result.ok(reservationService.listMyReservations(UserContext.getCurrentUserId(), query));
@@ -86,5 +92,12 @@ public class ReservationController {
     @GetMapping("/admin/detail/{id}")
     public Result<ReservationVO> getReservationDetail(@PathVariable Long id) {
         return Result.ok(reservationService.getReservationDetail(id));
+    }
+
+    @RequiresRole("admin")
+    @DeleteMapping("/admin/{id}")
+    public Result<Void> adminDeleteReservation(@PathVariable Long id) {
+        reservationService.adminDeleteReservation(id);
+        return Result.ok();
     }
 }

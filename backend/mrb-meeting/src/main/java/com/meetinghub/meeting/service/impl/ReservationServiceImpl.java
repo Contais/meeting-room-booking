@@ -151,10 +151,30 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权取消他人的预约");
         }
         if (reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消");
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消，请勿重复操作");
+        }
+        // 只能取消未进行的预约（开始时间在当前时间之后）
+        if (reservation.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "已开始或已结束的预约无法取消");
         }
         reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
         updateById(reservation);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteReservation(Long userId, Long reservationId) {
+        MeetingRoomReservation reservation = getById(reservationId);
+        if (reservation == null) {
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+        if (!reservation.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权删除他人的预约");
+        }
+        if (!reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消的预约");
+        }
+        removeById(reservationId);
     }
 
     @Override
@@ -392,5 +412,18 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         } catch (Exception ignored) {}
 
         return toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adminDeleteReservation(Long reservationId) {
+        MeetingRoomReservation reservation = getById(reservationId);
+        if (reservation == null) {
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+        if (!reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消的预约");
+        }
+        removeById(reservationId);
     }
 }

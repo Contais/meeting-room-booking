@@ -24,8 +24,15 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
 
     /**
      * 取消预约（仅限本人）
+     * 只能取消未进行的预约（待确认/已确认且开始时间在未来）
      */
     void cancelReservation(Long userId, Long reservationId);
+
+    /**
+     * 删除预约（仅限本人）
+     * 只能删除已取消的预约
+     */
+    void deleteReservation(Long userId, Long reservationId);
 
     /**
      * 查询我的预约列表
@@ -61,4 +68,10 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
      * 查询预约详情（管理端）
      */
     ReservationVO getReservationDetail(Long reservationId);
+
+    /**
+     * 管理端删除预约
+     * 只能删除已取消的预约
+     */
+    void adminDeleteReservation(Long reservationId);
 }
