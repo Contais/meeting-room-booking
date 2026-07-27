@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, MeetingRoom> implements MeetingRoomService {
 
+    private final MeetingRoomRepository meetingRoomRepository;
+
     @Override
     public List<MeetingRoomVO> listActiveRooms() {
         List<MeetingRoom> rooms = list(
@@ -52,45 +54,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
     @Override
     public IPage<MeetingRoomVO> listRooms(RoomPageQuery query) {
         Page<MeetingRoom> page = new Page<>(query.getPage(), query.getSize());
-        LambdaQueryWrapper<MeetingRoom> wrapper = new LambdaQueryWrapper<>();
-
-        if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.and(w -> w.like(MeetingRoom::getName, query.getKeyword())
-                    .or().like(MeetingRoom::getLocation, query.getKeyword()));
-        }
-        if (StringUtils.hasText(query.getName())) {
-            wrapper.like(MeetingRoom::getName, query.getName());
-        }
-        if (query.getStatus() != null) {
-            wrapper.eq(MeetingRoom::getStatus, query.getStatus());
-        }
-        if (StringUtils.hasText(query.getLocation())) {
-            wrapper.like(MeetingRoom::getLocation, query.getLocation());
-        }
-        if (StringUtils.hasText(query.getEquipment())) {
-            wrapper.like(MeetingRoom::getEquipment, query.getEquipment());
-        }
-        if (query.getMinCapacity() != null) {
-            wrapper.ge(MeetingRoom::getCapacity, query.getMinCapacity());
-        }
-        if (StringUtils.hasText(query.getBookableStart())) {
-            wrapper.ge(MeetingRoom::getBookableStart, query.getBookableStart());
-        }
-        if (StringUtils.hasText(query.getBookableEnd())) {
-            wrapper.le(MeetingRoom::getBookableEnd, query.getBookableEnd());
-        }
-        if (query.getNeedApproval() != null) {
-            wrapper.eq(MeetingRoom::getNeedApproval, query.getNeedApproval());
-        }
-        if (StringUtils.hasText(query.getCreateTimeStart())) {
-            wrapper.ge(MeetingRoom::getCreateTime, query.getCreateTimeStart());
-        }
-        if (StringUtils.hasText(query.getCreateTimeEnd())) {
-            wrapper.le(MeetingRoom::getCreateTime, query.getCreateTimeEnd());
-        }
-        wrapper.orderByDesc(MeetingRoom::getCreateTime);
-
-        return page(page, wrapper).convert(this::toVO);
+        return meetingRoomRepository.selectRoomPage(page, query).convert(this::toVO);
     }
 
     @Override

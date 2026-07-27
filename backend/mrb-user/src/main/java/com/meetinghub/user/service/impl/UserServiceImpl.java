@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl extends ServiceImpl<UserRepository, User> implements UserService {
 
     private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
@@ -109,28 +110,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     @Override
     public IPage<UserVO> listUsers(UserPageQuery query) {
         Page<User> page = new Page<>(query.getPage(), query.getSize());
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(query.getKeyword())) {
-            wrapper.and(w -> w.like(User::getUsername, query.getKeyword())
-                    .or().like(User::getRealName, query.getKeyword()));
-        }
-        if (StringUtils.hasText(query.getUsername())) {
-            wrapper.like(User::getUsername, query.getUsername());
-        }
-        if (StringUtils.hasText(query.getPhone())) {
-            wrapper.like(User::getPhone, query.getPhone());
-        }
-        if (query.getStatus() != null) {
-            wrapper.eq(User::getStatus, query.getStatus());
-        }
-        if (StringUtils.hasText(query.getCreateTimeStart())) {
-            wrapper.ge(User::getCreateTime, query.getCreateTimeStart());
-        }
-        if (StringUtils.hasText(query.getCreateTimeEnd())) {
-            wrapper.le(User::getCreateTime, query.getCreateTimeEnd());
-        }
-        wrapper.orderByDesc(User::getCreateTime);
-        return page(page, wrapper).convert(this::toVO);
+        return userRepository.selectUserPage(page, query).convert(this::toVO);
     }
 
     @Override
@@ -261,20 +241,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     @Override
     public List<UserVO> listContacts(String keyword, Long departmentId) {
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getStatus, EnableStatusEnum.ENABLED.getCode());
-        wrapper.eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode());
-        if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(User::getUsername, keyword)
-                    .or().like(User::getRealName, keyword)
-                    .or().like(User::getPhone, keyword)
-                    .or().like(User::getEmail, keyword));
-        }
-        if (departmentId != null) {
-            wrapper.eq(User::getDepartmentId, departmentId);
-        }
-        wrapper.orderByAsc(User::getDepartmentId).orderByAsc(User::getUsername);
-        return list(wrapper).stream().map(this::toVO).collect(Collectors.toList());
+        return userRepository.selectContacts(keyword, departmentId).stream().map(this::toVO).collect(Collectors.toList());
     }
 
     private UserVO toVO(User user) {

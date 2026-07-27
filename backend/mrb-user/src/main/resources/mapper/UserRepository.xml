@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meetinghub.user.repository.UserRepository">
+
+    <!-- 公共筛选片段：关键字 OR + 用户名 + 手机号 + 状态 + 创建时间范围 -->
+    <sql id="userFilters">
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (username LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR real_name LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.username != null and query.username != ''">
+            AND username LIKE CONCAT('%', #{query.username}, '%')
+        </if>
+        <if test="query.phone != null and query.phone != ''">
+            AND phone LIKE CONCAT('%', #{query.phone}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        <if test="query.createTimeStart != null and query.createTimeStart != ''">
+            AND create_time &gt;= #{query.createTimeStart}
+        </if>
+        <if test="query.createTimeEnd != null and query.createTimeEnd != ''">
+            AND create_time &lt;= #{query.createTimeEnd}
+        </if>
+    </sql>
+
+    <!--
+        用户列表分页查询：多条件动态过滤（含关键字 OR 检索）
+        说明：departmentName 由 Service 层 toVO 填充
+    -->
+    <select id="selectUserPage" resultType="com.meetinghub.user.model.entity.User">
+        SELECT * FROM user
+        WHERE deleted = 0
+        <include refid="userFilters"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!--
+        通讯录查询：仅启用用户，支持关键字多字段 OR 与部门过滤
+    -->
+    <select id="selectContacts" resultType="com.meetinghub.user.model.entity.User">
+        SELECT * FROM user
+        WHERE deleted = 0
+          AND status = 1
+        <if test="keyword != null and keyword != ''">
+            AND (username LIKE CONCAT('%', #{keyword}, '%')
+                 OR real_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR phone LIKE CONCAT('%', #{keyword}, '%')
+                 OR email LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="departmentId != null">
+            AND department_id = #{departmentId}
+        </if>
+        ORDER BY department_id ASC, username ASC
+    </select>
+
+</mapper>

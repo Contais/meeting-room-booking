@@ -83,7 +83,7 @@ class UserServiceImplTest {
         when(userRepository.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
         when(userRepository.insert(any(User.class))).thenReturn(1);
 
-        userService.register("newuser", "password123", "13900139000");
+        userService.register("newuser", "password123", "13900139000", "10086@qq.com");
 
         verify(userRepository).insert(any(User.class));
     }
@@ -92,7 +92,7 @@ class UserServiceImplTest {
     void should_throwException_when_registerWithDuplicateUsername() {
         when(userRepository.selectOne(any(LambdaQueryWrapper.class))).thenReturn(mockUser);
 
-        assertThatThrownBy(() -> userService.register("testuser", "pass", "13900139000"))
+        assertThatThrownBy(() -> userService.register("testuser", "pass", "13900139000", "10086@qq.com"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ErrorCode.USER_ALREADY_EXISTS.getCode()));
@@ -100,7 +100,7 @@ class UserServiceImplTest {
 
     @Test
     void should_throwException_when_registerWithInvalidUsername() {
-        assertThatThrownBy(() -> userService.register("a", "pass", "13900139000"))
+        assertThatThrownBy(() -> userService.register("a", "pass", "13900139000", "10086@qq.com"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ErrorCode.USERNAME_FORMAT_ERROR.getCode()));
@@ -108,7 +108,7 @@ class UserServiceImplTest {
 
     @Test
     void should_throwException_when_registerWithInvalidPhone() {
-        assertThatThrownBy(() -> userService.register("validuser", "pass", "123"))
+        assertThatThrownBy(() -> userService.register("validuser", "pass", "123", "10086@qq.com"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ErrorCode.PHONE_FORMAT_ERROR.getCode()));
@@ -119,7 +119,7 @@ class UserServiceImplTest {
         when(userRepository.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
         when(userRepository.selectCount(any(LambdaQueryWrapper.class))).thenReturn(1L);
 
-        assertThatThrownBy(() -> userService.register("newuser", "pass", "13800138000"))
+        assertThatThrownBy(() -> userService.register("newuser", "pass", "13800138000", "10086@qq.com"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ErrorCode.PHONE_ALREADY_EXISTS.getCode()));
@@ -130,7 +130,7 @@ class UserServiceImplTest {
         when(userRepository.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
         when(userRepository.insert(any(User.class))).thenReturn(1);
 
-        userService.register("newuser", "pass", null);
+        userService.register("newuser", "pass", null, "10086@qq.com");
 
         verify(userRepository).insert(any(User.class));
     }

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meetinghub.meeting.repository.MeetingRoomRepository">
+
+    <!--
+        会议室列表分页查询：关键字 OR + 名称 + 位置 + 设备 + 容纳人数 + 可预约时段 + 审批模式 + 状态 + 创建时间范围
+    -->
+    <select id="selectRoomPage" resultType="com.meetinghub.meeting.model.entity.MeetingRoom">
+        SELECT * FROM meeting_room
+        WHERE deleted = 0
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (name LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR location LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.name != null and query.name != ''">
+            AND name LIKE CONCAT('%', #{query.name}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        <if test="query.location != null and query.location != ''">
+            AND location LIKE CONCAT('%', #{query.location}, '%')
+        </if>
+        <if test="query.equipment != null and query.equipment != ''">
+            AND equipment LIKE CONCAT('%', #{query.equipment}, '%')
+        </if>
+        <if test="query.minCapacity != null">
+            AND capacity &gt;= #{query.minCapacity}
+        </if>
+        <if test="query.bookableStart != null and query.bookableStart != ''">
+            AND bookable_start &gt;= #{query.bookableStart}
+        </if>
+        <if test="query.bookableEnd != null and query.bookableEnd != ''">
+            AND bookable_end &lt;= #{query.bookableEnd}
+        </if>
+        <if test="query.needApproval != null">
+            AND need_approval = #{query.needApproval}
+        </if>
+        <if test="query.createTimeStart != null and query.createTimeStart != ''">
+            AND create_time &gt;= #{query.createTimeStart}
+        </if>
+        <if test="query.createTimeEnd != null and query.createTimeEnd != ''">
+            AND create_time &lt;= #{query.createTimeEnd}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
