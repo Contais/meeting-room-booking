@@ -32,7 +32,7 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册
      */
-    void register(String username, String password, String phone);
+    void register(String username, String password, String phone, String email);
 
     /**
      * 分页查询用户列表（管理端）
@@ -78,4 +78,9 @@ public interface UserService extends IService<User> {
      * 重置用户密码（管理端）
      */
     void resetPassword(Long userId, String newPassword);
+
+    /**
+     * 通讯录：查询所有启用用户
+     */
+    java.util.List<UserVO> listContacts(String keyword, Long departmentId);
 }

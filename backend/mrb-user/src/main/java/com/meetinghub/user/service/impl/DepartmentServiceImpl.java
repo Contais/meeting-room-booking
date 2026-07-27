@@ -34,12 +34,11 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
      */
     private static final Long ROOT_PARENT_ID = 0L;
 
-    private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
 
     @Override
     public List<DepartmentVO> listTree() {
-        List<Department> all = departmentRepository.selectList(
+        List<Department> all = list(
                 new LambdaQueryWrapper<Department>().orderByAsc(Department::getSortOrder)
         );
         List<DepartmentVO> voList = all.stream().map(this::toVO).collect(Collectors.toList());
@@ -48,7 +47,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
 
     @Override
     public List<DepartmentVO> listFlat() {
-        List<Department> all = departmentRepository.selectList(
+        List<Department> all = list(
                 new LambdaQueryWrapper<Department>()
                         .eq(Department::getStatus, EnableStatusEnum.ENABLED.getCode())
                         .orderByAsc(Department::getSortOrder)
@@ -64,7 +63,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
         }
         // 校验父部门存在
         if (!ROOT_PARENT_ID.equals(dto.getParentId())) {
-            Department parent = departmentRepository.selectById(dto.getParentId());
+            Department parent = getById(dto.getParentId());
             if (parent == null) {
                 throw new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
             }
@@ -76,13 +75,13 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
         dept.setParentId(dto.getParentId());
         dept.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
         dept.setStatus(EnableStatusEnum.ENABLED.getCode());
-        departmentRepository.insert(dept);
+        save(dept);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void update(DepartmentUpdateDTO dto) {
-        Department dept = departmentRepository.selectById(dto.getId());
+        Department dept = getById(dto.getId());
         if (dept == null) {
             throw new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
@@ -102,18 +101,18 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
         if (dto.getSortOrder() != null) {
             dept.setSortOrder(dto.getSortOrder());
         }
-        departmentRepository.updateById(dept);
+        updateById(dept);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
-        Department dept = departmentRepository.selectById(id);
+        Department dept = getById(id);
         if (dept == null) {
             throw new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
         // 校验无子部门
-        Long childCount = departmentRepository.selectCount(
+        Long childCount = count(
                 new LambdaQueryWrapper<Department>().eq(Department::getParentId, id)
         );
         if (childCount > 0) {
@@ -126,7 +125,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
         if (userCount > 0) {
             throw new BusinessException(ErrorCode.DEPARTMENT_HAS_USERS);
         }
-        departmentRepository.deleteById(id);
+        removeById(id);
     }
 
     private void checkNameUnique(String name, Long parentId, Long excludeId) {
@@ -136,7 +135,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
         if (excludeId != null) {
             wrapper.ne(Department::getId, excludeId);
         }
-        Long count = departmentRepository.selectCount(wrapper);
+        Long count = count(wrapper);
         if (count > 0) {
             throw new BusinessException(ErrorCode.DEPARTMENT_NAME_DUPLICATE);
         }
@@ -144,7 +143,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
 
     private boolean isDescendant(Long ancestorId, Long targetId) {
         if (targetId.equals(ancestorId)) return true;
-        Department target = departmentRepository.selectById(targetId);
+        Department target = getById(targetId);
         if (target == null || ROOT_PARENT_ID.equals(target.getParentId())) return false;
         if (target.getParentId().equals(ancestorId)) return true;
         return isDescendant(ancestorId, target.getParentId());

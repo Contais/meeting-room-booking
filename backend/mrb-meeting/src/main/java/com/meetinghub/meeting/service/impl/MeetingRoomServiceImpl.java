@@ -30,11 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, MeetingRoom> implements MeetingRoomService {
 
-    private final MeetingRoomRepository meetingRoomRepository;
-
     @Override
     public List<MeetingRoomVO> listActiveRooms() {
-        List<MeetingRoom> rooms = meetingRoomRepository.selectList(
+        List<MeetingRoom> rooms = list(
                 new LambdaQueryWrapper<MeetingRoom>()
                         .eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
                         .orderByDesc(MeetingRoom::getCreateTime)
@@ -44,7 +42,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
 
     @Override
     public MeetingRoomVO getRoomDetail(Long id) {
-        MeetingRoom room = meetingRoomRepository.selectById(id);
+        MeetingRoom room = getById(id);
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
@@ -92,7 +90,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         }
         wrapper.orderByDesc(MeetingRoom::getCreateTime);
 
-        return meetingRoomRepository.selectPage(page, wrapper).convert(this::toVO);
+        return page(page, wrapper).convert(this::toVO);
     }
 
     @Override
@@ -111,13 +109,13 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : 7);
         room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : ApprovalModeEnum.FREE_APPROVAL.getCode());
         room.setStatus(EnableStatusEnum.ENABLED.getCode());
-        meetingRoomRepository.insert(room);
+        save(room);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateRoom(RoomUpdateDTO dto) {
-        MeetingRoom room = meetingRoomRepository.selectById(dto.getId());
+        MeetingRoom room = getById(dto.getId());
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
@@ -132,13 +130,13 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         if (dto.getMaxDuration() != null) room.setMaxDuration(dto.getMaxDuration());
         if (dto.getAdvanceDays() != null) room.setAdvanceDays(dto.getAdvanceDays());
         if (dto.getNeedApproval() != null) room.setNeedApproval(dto.getNeedApproval());
-        meetingRoomRepository.updateById(room);
+        updateById(room);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void toggleStatus(Long id) {
-        MeetingRoom room = meetingRoomRepository.selectById(id);
+        MeetingRoom room = getById(id);
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
@@ -146,17 +144,17 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
                 ? EnableStatusEnum.DISABLED.getCode()
                 : EnableStatusEnum.ENABLED.getCode();
         room.setStatus(newStatus);
-        meetingRoomRepository.updateById(room);
+        updateById(room);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRoom(Long id) {
-        MeetingRoom room = meetingRoomRepository.selectById(id);
+        MeetingRoom room = getById(id);
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        meetingRoomRepository.deleteById(id);
+        removeById(id);
     }
 
     private MeetingRoomVO toVO(MeetingRoom room) {

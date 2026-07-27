@@ -1,8 +1,11 @@
 package com.meetinghub.meeting.tools;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.common.exception.BusinessException;
+import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
@@ -54,17 +57,16 @@ public class MeetingRoomTool {
     }
 
     @Tool(description = "查询指定日期某个会议室的预约情况")
-    public String queryRoomReservations(
+    public List<MeetingRoomReservation> queryRoomReservationsNew(
             @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {
-        if (roomName == null || date == null) return "请提供会议室名称和日期";
-
         // 查找会议室
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().like(MeetingRoom::getName, roomName).eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
-        if (rooms.isEmpty()) return "未找到名为" + roomName + "的会议室";
-
+        if (CollUtil.isEmpty(rooms)) {
+            throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
+        }
         MeetingRoom room = rooms.get(0);
         LocalDate d = LocalDate.parse(date);
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
@@ -74,20 +76,45 @@ public class MeetingRoomTool {
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-
-        if (reservations.isEmpty()) return room.getName() + " 在 " + date + " 没有预约，全天可用";
-
-        StringBuilder sb = new StringBuilder(room.getName() + " 在 " + date + " 的预约情况：\n");
-        for (MeetingRoomReservation r : reservations) {
-            String status = r.getStatus().equals(ReservationStatusEnum.PENDING.getCode()) ? "待确认" : "已确认";
-            sb.append(String.format("- %s ~ %s  %s（%s）\n",
-                    r.getStartTime().format(TIME_FMT),
-                    r.getEndTime().format(TIME_FMT),
-                    r.getSubject() != null ? r.getSubject() : "未命名",
-                    status));
-        }
-        return sb.toString();
+        return reservations;
     }
+
+//    @Tool(description = "查询指定日期某个会议室的预约情况")
+//    public String queryRoomReservations(
+//            @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
+//            @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {
+//        if (roomName == null || date == null) return "请提供会议室名称和日期";
+//
+//        // 查找会议室
+//        List<MeetingRoom> rooms = meetingRoomRepository.selectList(
+//                new LambdaQueryWrapper<MeetingRoom>().like(MeetingRoom::getName, roomName).eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
+//        );
+//        if (rooms.isEmpty()) return "未找到名为" + roomName + "的会议室";
+//
+//        MeetingRoom room = rooms.get(0);
+//        LocalDate d = LocalDate.parse(date);
+//        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+//                new LambdaQueryWrapper<MeetingRoomReservation>()
+//                        .eq(MeetingRoomReservation::getRoomId, room.getId())
+//                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+//                        .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
+//                        .orderByAsc(MeetingRoomReservation::getStartTime)
+//        );
+//
+//        if (reservations.isEmpty()) return room.getName() + " 在 " + date + " 没有预约，全天可用";
+//
+//        StringBuilder sb = new StringBuilder(room.getName() + " 在 " + date + " 的预约情况：\n");
+//        for (MeetingRoomReservation r : reservations) {
+//            String statusDesc = ReservationStatusEnum.getDescByCode(r.getStatus());
+//            sb.append(String.format("- %s ~ %s  %s  %s （%s）\n",
+//                    r.getStartTime().format(TIME_FMT),
+//                    r.getEndTime().format(TIME_FMT),
+//                    StrUtil.isNotBlank(r.getReservationCode()) ? r.getReservationCode() : "-",
+//                    r.getSubject() != null ? r.getSubject() : "未命名",
+//                    statusDesc));
+//        }
+//        return sb.toString();
+//    }
 
     @Tool(description = "查询所有会议室今天的整体预约统计，返回每个会议室的预约数量")
     public String todayReservationStats() {
@@ -182,8 +209,8 @@ public class MeetingRoomTool {
         return "预约 " + reservationId + " 已取消";
     }
 
-    @Tool(description = "查看本人未结束的预约（未进行或正在进行的），返回会议室名称、日期、时段、主题、状态")
-    public String listMyUpcomingReservations(ToolContext toolContext) {
+    @Tool(description = "查看本人未结束的预约，返回会议室名称、日期、时段、预约编号、主题、状态")
+    public List<MeetingRoomReservation> listMyUpcomingReservations(ToolContext toolContext) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
         LocalDateTime now = LocalDateTime.now();
 
@@ -194,28 +221,32 @@ public class MeetingRoomTool {
                         .ge(MeetingRoomReservation::getEndTime, now)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-
-        if (reservations.isEmpty()) return "您当前没有未结束的预约";
-
-        // 批量查询会议室名称
-        Set<Long> roomIds = reservations.stream()
-                .map(MeetingRoomReservation::getRoomId)
-                .collect(Collectors.toSet());
-        Map<Long, String> roomNameMap = meetingRoomRepository.selectBatchIds(roomIds).stream()
-                .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
-
-        StringBuilder sb = new StringBuilder("您的未结束预约：\n");
-        for (MeetingRoomReservation r : reservations) {
-            String status = r.getStatus().equals(ReservationStatusEnum.PENDING.getCode()) ? "待确认" : "已确认";
-            String roomName = roomNameMap.getOrDefault(r.getRoomId(), "未知会议室");
-            sb.append(String.format("- %s | %s %s~%s | %s | %s\n",
-                    roomName,
-                    r.getStartTime().format(DATE_FMT),
-                    r.getStartTime().format(TIME_FMT),
-                    r.getEndTime().format(TIME_FMT),
-                    r.getSubject() != null ? r.getSubject() : "未命名",
-                    status));
-        }
-        return sb.toString();
+        return reservations;
+//
+//        if (CollUtil.isEmpty(reservations)) {
+//            return CollUtil.newArrayList();
+//        }
+//
+//        // 批量查询会议室名称
+//        Set<Long> roomIds = reservations.stream()
+//                .map(MeetingRoomReservation::getRoomId)
+//                .collect(Collectors.toSet());
+//        Map<Long, String> roomNameMap = meetingRoomRepository.selectBatchIds(roomIds).stream()
+//                .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
+//
+//        StringBuilder sb = new StringBuilder("您的未结束预约：\n");
+//        for (MeetingRoomReservation r : reservations) {
+//            String status = r.getStatus().equals(ReservationStatusEnum.PENDING.getCode()) ? "待确认" : "已确认";
+//            String roomName = roomNameMap.getOrDefault(r.getRoomId(), "未知会议室");
+//            sb.append(String.format("- %s | %s %s~%s | %s | %s | %s\n",
+//                    roomName,
+//                    r.getStartTime().format(DATE_FMT),
+//                    r.getStartTime().format(TIME_FMT),
+//                    r.getEndTime().format(TIME_FMT),
+//                    r.getReservationCode(),
+//                    r.getSubject() != null ? r.getSubject() : "未命名",
+//                    status));
+//        }
+//        return sb.toString();
     }
 }

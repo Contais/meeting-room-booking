@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `username` VARCHAR(64) NOT NULL COMMENT '用户名',
     `password` VARCHAR(128) NOT NULL COMMENT '密码（BCrypt哈希）',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
+    `email` VARCHAR(128) DEFAULT NULL COMMENT '邮箱',
     `real_name` VARCHAR(64) DEFAULT NULL COMMENT '真实姓名',
     `department_id` BIGINT DEFAULT NULL COMMENT '所属部门ID',
     `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT '角色: admin-管理员, user-普通用户',
@@ -122,6 +123,25 @@ CREATE TABLE IF NOT EXISTS `menu` (
     KEY `idx_parent_id` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单表';
 
+CREATE TABLE IF NOT EXISTS `role` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+    `role_code` VARCHAR(50) NOT NULL COMMENT '角色编码',
+    `role_name` VARCHAR(100) NOT NULL COMMENT '角色名称',
+    `description` VARCHAR(500) DEFAULT NULL COMMENT '角色描述',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-启用，0-禁用',
+    `is_system` TINYINT NOT NULL DEFAULT 0 COMMENT '是否系统角色：1-是，0-否',
+    `sort` INT NOT NULL DEFAULT 0 COMMENT '排序',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_role_code` (`role_code`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+
+INSERT INTO `role` (`role_code`, `role_name`, `description`, `status`, `is_system`, `sort`) VALUES
+('admin', '超级管理员', '拥有系统所有权限', 1, 1, 1),
+('user', '普通用户', '基础功能权限', 1, 1, 2);
+
 CREATE TABLE IF NOT EXISTS `role_menu` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
     `role` VARCHAR(20) NOT NULL COMMENT '角色编码',
@@ -137,16 +157,18 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 (2, '会议室', '/meeting/rooms', 'OfficeBuilding', 0, 2, 1, 1),
 (3, '我的预约', '/reservation/my', 'Calendar', 0, 3, 1, 1),
 (4, '日历视图', '/schedule', 'Calendar', 0, 4, 1, 1),
+(5, '通讯录', '/contacts', 'User', 0, 5, 1, 1),
 (10, '系统管理', NULL, 'Setting', 0, 10, 1, 1),
 (11, '用户管理', '/admin/users', 'User', 10, 11, 1, 1),
 (12, '部门管理', '/admin/departments', 'Menu', 10, 12, 1, 1),
 (13, '会议室管理', '/admin/rooms', 'OfficeBuilding', 10, 13, 1, 1),
 (14, '预约管理', '/admin/reservations', 'Calendar', 10, 14, 1, 1),
-(15, '菜单管理', '/admin/menus', 'Setting', 10, 15, 1, 1);
+(15, '菜单管理', '/admin/menus', 'Setting', 10, 15, 1, 1),
+(16, '角色管理', '/admin/roles', 'Lock', 10, 16, 1, 1);
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('admin', 1), ('admin', 2), ('admin', 3), ('admin', 4),
-('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15);
+('admin', 1), ('admin', 2), ('admin', 3), ('admin', 4), ('admin', 5),
+('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15), ('admin', 16);
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('user', 1), ('user', 2), ('user', 3), ('user', 4);
+('user', 1), ('user', 2), ('user', 3), ('user', 4), ('user', 5);

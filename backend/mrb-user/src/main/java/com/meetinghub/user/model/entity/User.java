@@ -33,6 +33,16 @@ public class User {
     private String phone;
 
     /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 头像URL
+     */
+    private String avatar;
+
+    /**
      * 真实姓名
      */
     private String realName;

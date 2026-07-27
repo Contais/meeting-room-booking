@@ -63,7 +63,7 @@ public class UserController {
 
     @PostMapping("/register")
     public Result<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
-        userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone());
+        userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone(), registerDTO.getEmail());
         return Result.ok();
     }
 
@@ -82,6 +82,15 @@ public class UserController {
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         userService.changePassword(UserContext.getCurrentUserId(), dto);
         return Result.ok();
+    }
+
+    /**
+     * 通讯录：获取所有启用用户列表（按部门）
+     */
+    @GetMapping("/contacts")
+    public Result<java.util.List<UserVO>> listContacts(@RequestParam(required = false) String keyword,
+                                                       @RequestParam(required = false) Long departmentId) {
+        return Result.ok(userService.listContacts(keyword, departmentId));
     }
 
     @RequiresRole("admin")

@@ -84,12 +84,12 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                 ? ReservationStatusEnum.PENDING.getCode()
                 : ReservationStatusEnum.CONFIRMED.getCode();
         reservation.setStatus(initialStatus);
-        reservationRepository.insert(reservation);
+        save(reservation);
 
         // 6. 生成预约编号：B + yyyyMMdd + 6位自增序列（基于主键 id，保证唯一）
         String reservationCode = generateReservationCode(reservation.getId());
         reservation.setReservationCode(reservationCode);
-        reservationRepository.updateById(reservation);
+        updateById(reservation);
         return reservationCode;
     }
 
@@ -143,7 +143,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelReservation(Long userId, Long reservationId) {
-        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
+        MeetingRoomReservation reservation = getById(reservationId);
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
@@ -154,7 +154,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消");
         }
         reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
-        reservationRepository.updateById(reservation);
+        updateById(reservation);
     }
 
     @Override
@@ -172,7 +172,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         LocalDateTime dayStart = targetDate.atStartOfDay();
         LocalDateTime dayEnd = targetDate.atTime(LocalTime.MAX);
 
-        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+        List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, roomId)
                         .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
@@ -239,23 +239,23 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void approveReservation(Long reservationId) {
-        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
+        MeetingRoomReservation reservation = getById(reservationId);
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
         reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
-        reservationRepository.updateById(reservation);
+        updateById(reservation);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rejectReservation(Long reservationId) {
-        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
+        MeetingRoomReservation reservation = getById(reservationId);
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
         reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
-        reservationRepository.updateById(reservation);
+        updateById(reservation);
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
@@ -270,7 +270,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (excludeId != null) {
             wrapper.ne(MeetingRoomReservation::getId, excludeId);
         }
-        return reservationRepository.selectCount(wrapper) > 0;
+        return count(wrapper) > 0;
     }
 
 
@@ -295,7 +295,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode()).orderByAsc(MeetingRoom::getName)
         );
 
-        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
+        List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
                         .lt(MeetingRoomReservation::getStartTime, rangeEnd)
@@ -368,7 +368,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
 
     @Override
     public ReservationVO getReservationDetail(Long reservationId) {
-        MeetingRoomReservation r = reservationRepository.selectById(reservationId);
+        MeetingRoomReservation r = getById(reservationId);
         if (r == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }

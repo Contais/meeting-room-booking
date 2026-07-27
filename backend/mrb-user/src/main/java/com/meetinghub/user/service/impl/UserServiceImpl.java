@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserRepository, User> implements UserService {
 
-    private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
@@ -44,7 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public User getUserById(Long id) {
-        User user = userRepository.selectById(id);
+        User user = getById(id);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
@@ -53,7 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     @Override
     public User getUserByUsername(String username) {
-        return userRepository.selectOne(
+        return getOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, username)
         );
     }
@@ -63,14 +62,14 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         if (ids == null || ids.isEmpty()) {
             return java.util.Collections.emptyMap();
         }
-        List<User> users = userRepository.selectBatchIds(ids);
+        List<User> users = listByIds(ids);
         return users.stream().collect(
                 Collectors.toMap(User::getId, u -> u.getUsername() != null ? u.getUsername() : "")
         );
     }
 
     private User getActiveUserByUsername(String username) {
-        return userRepository.selectOne(
+        return getOne(
                 new LambdaQueryWrapper<User>()
                         .eq(User::getUsername, username)
                         .eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
@@ -79,7 +78,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void register(String username, String password, String phone) {
+    public void register(String username, String password, String phone, String email) {
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             throw new BusinessException(ErrorCode.USERNAME_FORMAT_ERROR);
         }
@@ -90,7 +89,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
         if (StringUtils.hasText(phone)) {
-            Long count = userRepository.selectCount(
+            Long count = count(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
             );
             if (count > 0) {
@@ -101,9 +100,10 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         user.setUsername(username);
         user.setPassword(BCrypt.hashpw(password));
         user.setPhone(phone);
+        user.setEmail(email);
         user.setRole(RoleEnum.USER.getCode());
         user.setStatus(EnableStatusEnum.ENABLED.getCode());
-        userRepository.insert(user);
+        save(user);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             wrapper.le(User::getCreateTime, query.getCreateTimeEnd());
         }
         wrapper.orderByDesc(User::getCreateTime);
-        return userRepository.selectPage(page, wrapper).convert(this::toVO);
+        return page(page, wrapper).convert(this::toVO);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
         if (StringUtils.hasText(dto.getPhone())) {
-            Long count = userRepository.selectCount(
+            Long count = count(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
             );
             if (count > 0) {
@@ -162,11 +162,12 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         user.setUsername(dto.getUsername());
         user.setPassword(BCrypt.hashpw(dto.getPassword()));
         user.setPhone(dto.getPhone());
+        user.setEmail(dto.getEmail());
         user.setRealName(dto.getRealName());
         user.setRole(StringUtils.hasText(dto.getRole()) ? dto.getRole() : RoleEnum.USER.getCode());
         user.setDepartmentId(dto.getDepartmentId());
         user.setStatus(EnableStatusEnum.ENABLED.getCode());
-        userRepository.insert(user);
+        save(user);
     }
 
     @Override
@@ -177,7 +178,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
-            Long count = userRepository.selectCount(
+            Long count = count(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, dto.getId())
             );
             if (count > 0) {
@@ -185,12 +186,13 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             }
         }
         user.setPhone(dto.getPhone());
+        user.setEmail(dto.getEmail());
         user.setRealName(dto.getRealName());
         if (StringUtils.hasText(dto.getRole())) {
             user.setRole(dto.getRole());
         }
         user.setDepartmentId(dto.getDepartmentId());
-        userRepository.updateById(user);
+        updateById(user);
     }
 
     @Override
@@ -201,7 +203,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
                 ? EnableStatusEnum.DISABLED.getCode()
                 : EnableStatusEnum.ENABLED.getCode();
         user.setStatus(newStatus);
-        userRepository.updateById(user);
+        updateById(user);
     }
 
     @Override
@@ -211,7 +213,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         if (RoleEnum.ADMIN.getCode().equals(user.getRole())) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "不允许删除管理员账号");
         }
-        userRepository.deleteById(id);
+        removeById(id);
     }
 
     @Override
@@ -222,7 +224,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
                 throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
             }
-            Long count = userRepository.selectCount(
+            Long count = count(
                     new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, userId)
             );
             if (count > 0) {
@@ -230,8 +232,12 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             }
         }
         user.setPhone(dto.getPhone());
+        user.setEmail(dto.getEmail());
         user.setRealName(dto.getRealName());
-        userRepository.updateById(user);
+        if (dto.getAvatar() != null) {
+            user.setAvatar(dto.getAvatar());
+        }
+        updateById(user);
     }
 
     @Override
@@ -242,7 +248,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "旧密码错误");
         }
         user.setPassword(BCrypt.hashpw(dto.getNewPassword()));
-        userRepository.updateById(user);
+        updateById(user);
     }
 
     @Override
@@ -250,7 +256,25 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     public void resetPassword(Long userId, String newPassword) {
         User user = getUserById(userId);
         user.setPassword(BCrypt.hashpw(newPassword));
-        userRepository.updateById(user);
+        updateById(user);
+    }
+
+    @Override
+    public List<UserVO> listContacts(String keyword, Long departmentId) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getStatus, EnableStatusEnum.ENABLED.getCode());
+        wrapper.eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode());
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(User::getUsername, keyword)
+                    .or().like(User::getRealName, keyword)
+                    .or().like(User::getPhone, keyword)
+                    .or().like(User::getEmail, keyword));
+        }
+        if (departmentId != null) {
+            wrapper.eq(User::getDepartmentId, departmentId);
+        }
+        wrapper.orderByAsc(User::getDepartmentId).orderByAsc(User::getUsername);
+        return list(wrapper).stream().map(this::toVO).collect(Collectors.toList());
     }
 
     private UserVO toVO(User user) {
@@ -258,6 +282,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setPhone(user.getPhone());
+        vo.setEmail(user.getEmail());
+        vo.setAvatar(user.getAvatar());
         vo.setRealName(user.getRealName());
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());

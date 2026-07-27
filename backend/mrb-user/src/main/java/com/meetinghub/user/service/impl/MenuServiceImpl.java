@@ -33,12 +33,11 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
      */
     private static final Long ROOT_PARENT_ID = 0L;
 
-    private final MenuRepository menuRepository;
     private final RoleMenuRepository roleMenuRepository;
 
     @Override
     public List<MenuVO> listTree() {
-        List<Menu> all = menuRepository.selectList(
+        List<Menu> all = list(
                 new LambdaQueryWrapper<Menu>().orderByAsc(Menu::getSortOrder)
         );
         List<MenuVO> voList = all.stream().map(this::toVO).collect(Collectors.toList());
@@ -54,7 +53,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
         if (roleMenus.isEmpty()) return List.of();
 
         List<Long> menuIds = roleMenus.stream().map(RoleMenu::getMenuId).collect(Collectors.toList());
-        List<Menu> menus = menuRepository.selectList(
+        List<Menu> menus = list(
                 new LambdaQueryWrapper<Menu>()
                         .in(Menu::getId, menuIds)
                         .eq(Menu::getStatus, EnableStatusEnum.ENABLED.getCode())
@@ -70,7 +69,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
     public void create(MenuCreateDTO dto) {
         if (dto.getParentId() == null) dto.setParentId(ROOT_PARENT_ID);
         if (!ROOT_PARENT_ID.equals(dto.getParentId())) {
-            Menu parent = menuRepository.selectById(dto.getParentId());
+            Menu parent = getById(dto.getParentId());
             if (parent == null) throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         }
         Menu menu = new Menu();
@@ -81,13 +80,13 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
         menu.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
         menu.setVisible(dto.getVisible() != null ? dto.getVisible() : VisibleEnum.VISIBLE.getCode());
         menu.setStatus(dto.getStatus() != null ? dto.getStatus() : EnableStatusEnum.ENABLED.getCode());
-        menuRepository.insert(menu);
+        save(menu);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void update(MenuUpdateDTO dto) {
-        Menu menu = menuRepository.selectById(dto.getId());
+        Menu menu = getById(dto.getId());
         if (menu == null) throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         menu.setName(dto.getName());
         menu.setPath(dto.getPath());
@@ -96,19 +95,19 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
         if (dto.getSortOrder() != null) menu.setSortOrder(dto.getSortOrder());
         if (dto.getVisible() != null) menu.setVisible(dto.getVisible());
         if (dto.getStatus() != null) menu.setStatus(dto.getStatus());
-        menuRepository.updateById(menu);
+        updateById(menu);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
-        Menu menu = menuRepository.selectById(id);
+        Menu menu = getById(id);
         if (menu == null) throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
-        Long childCount = menuRepository.selectCount(
+        Long childCount = count(
                 new LambdaQueryWrapper<Menu>().eq(Menu::getParentId, id)
         );
         if (childCount > 0) throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
-        menuRepository.deleteById(id);
+        removeById(id);
         // 同时删除角色菜单关联
         roleMenuRepository.delete(
                 new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getMenuId, id)
