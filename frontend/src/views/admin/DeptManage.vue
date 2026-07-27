@@ -42,12 +42,18 @@
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
         </el-table-column>
         <el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-tooltip content="添加子部门"><el-button type="primary" link circle size="small" @click="showCreateDialog(row.id)"><el-icon><Plus /></el-icon></el-button></el-tooltip>
-              <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
-              <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+            <div class="action-links">
+              <el-button type="primary" link @click="showCreateDialog(row.id)">
+                <el-icon><Plus /></el-icon>添加子部门
+              </el-button>
+              <el-button type="primary" link @click="showEditDialog(row)">
+                <el-icon><Edit /></el-icon>编辑
+              </el-button>
+              <el-button type="danger" link @click="handleDelete(row.id)">
+                <el-icon><Delete /></el-icon>删除
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -140,9 +146,4 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.table-card { background: #fff; border-radius: 12px; border: 1px solid #f0f0f0; overflow: hidden; }
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; }
-.toolbar-left { display: flex; gap: 8px; }
-.toolbar-right { display: flex; gap: 4px; }
-.action-buttons { display: flex; justify-content: center; gap: 4px; }
 </style>

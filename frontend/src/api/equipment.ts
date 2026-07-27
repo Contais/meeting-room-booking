@@ -19,7 +19,7 @@ export function listEquipmentsByRoom(roomId: number): Promise<Result<Equipment[]
   return request.get(`/api/meeting/equipment/admin/room/${roomId}`)
 }
 
-export function createEquipment(data: Partial<Equipment> & { rooms?: RoomEquipmentItem[] }): Promise<Result<void>> {
+export function createEquipment(data: Omit<Partial<Equipment>, 'rooms'> & { rooms?: RoomEquipmentItem[] }): Promise<Result<void>> {
   return request.post('/api/meeting/equipment/admin/create', data)
 }
 

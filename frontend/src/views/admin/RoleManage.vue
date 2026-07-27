@@ -54,21 +54,23 @@
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handlePermission(row)">
-              <el-icon><Key /></el-icon>
-              权限配置
-            </el-button>
-            <el-button type="primary" link :disabled="row.isSystem === 1" @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
-            <el-button :type="row.status === 1 ? 'warning' : 'success'" link :disabled="row.isSystem === 1" @click="handleToggle(row)">
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button type="danger" link :disabled="row.isSystem === 1" @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>
-              删除
-            </el-button>
+            <div class="action-links">
+              <el-button type="primary" link @click="handlePermission(row)">
+                <el-icon><Key /></el-icon>
+                权限配置
+              </el-button>
+              <el-button type="primary" link :disabled="row.isSystem === 1" @click="handleEdit(row)">
+                <el-icon><Edit /></el-icon>
+                编辑
+              </el-button>
+              <el-button :type="row.status === 1 ? 'warning' : 'success'" link :disabled="row.isSystem === 1" @click="handleToggle(row)">
+                {{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-button type="danger" link :disabled="row.isSystem === 1" @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>
+                删除
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>

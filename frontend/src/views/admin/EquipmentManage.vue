@@ -50,12 +50,22 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/equipments/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
-            <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
-            <el-tooltip :content="row.status === 1 ? '禁用' : '启用'"><el-button :type="row.status === 1 ? 'warning' : 'success'" link circle size="small" @click="handleToggle(row)"><el-icon><Switch /></el-icon></el-button></el-tooltip>
-            <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+            <div class="action-links">
+              <el-button type="primary" link @click="router.push(`/admin/equipments/${row.id}`)">
+                <el-icon><View /></el-icon>详情
+              </el-button>
+              <el-button type="primary" link @click="showEditDialog(row)">
+                <el-icon><Edit /></el-icon>编辑
+              </el-button>
+              <el-button :type="row.status === 1 ? 'warning' : 'success'" link @click="handleToggle(row)">
+                <el-icon><Switch /></el-icon>{{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+              <el-button type="danger" link @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>删除
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>

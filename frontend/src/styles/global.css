@@ -348,7 +348,7 @@ a { text-decoration: none; color: var(--primary); }
 
 
 /* 表格 - 加大行高 */
-.table-card { padding: 0; overflow: hidden; }
+.table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); padding: 0; overflow: hidden; }
 .table-card .el-table { --el-table-border-color: var(--border-light); }
 .table-card .el-table th.el-table__cell { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .table-card .el-table td.el-table__cell { font-size: 13px; padding: 18px 0; }
@@ -357,10 +357,84 @@ a { text-decoration: none; color: var(--primary); }
 .table-card .el-table .el-table__row:hover > td.el-table__cell { background: var(--primary-light) !important; }
 
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
-.table-toolbar-left { display: flex; align-items: center; gap: 8px; }
-.table-toolbar-right { display: flex; align-items: center; gap: 4px; }
+.table-toolbar .toolbar-left { display: flex; align-items: center; gap: 8px; }
+.table-toolbar .toolbar-right { display: flex; align-items: center; gap: 4px; }
+
+.pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border-light); background: var(--bg-card); }
+.total-text { font-size: 13px; color: var(--text-muted); }
 
 .table-footer { display: flex; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border-light); }
+
+/* 列表页操作列 - 统一「图标+文本」link 按钮模版（参考 RoleManage） */
+.action-links { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
+.action-links .el-button + .el-button { margin-left: 4px; }
+.action-links .el-button { font-size: 13px; padding: 0 4px; height: auto; }
+.action-links .el-button .el-icon { margin-right: 2px; font-size: 14px; }
+
+/* 详情页卡片头部工具条 - 将按钮整合到卡片顶部，避免独立空旷的按钮行 */
+.detail-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
+.detail-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-card); }
+.detail-card-header .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.detail-card-header .header-title { font-size: 16px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-card-header .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.detail-card-header .header-actions .el-button + .el-button { margin-left: 0; }
+.detail-card-body { padding: 24px; }
+
+/* 详情页头部按钮统一样式（与详情卡片融为一体） */
+.detail-card-header .back-btn,
+.detail-card-header .header-actions .el-button {
+  height: 34px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+.detail-card-header .back-btn {
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+.detail-card-header .back-btn:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  background: var(--primary-light) !important;
+}
+.detail-card-header .header-actions .el-button--primary {
+  border: 1px solid var(--primary) !important;
+  color: var(--primary) !important;
+  background: transparent !important;
+}
+.detail-card-header .header-actions .el-button--primary:hover {
+  background: var(--primary) !important;
+  color: #fff !important;
+}
+.detail-card-header .header-actions .el-button--danger {
+  border: 1px solid #f56c6c !important;
+  color: #f56c6c !important;
+  background: transparent !important;
+}
+.detail-card-header .header-actions .el-button--danger:hover {
+  background: #f56c6c !important;
+  color: #fff !important;
+}
+.detail-card-header .header-actions .el-button--warning {
+  border: 1px solid #e6a23c !important;
+  color: #e6a23c !important;
+  background: transparent !important;
+}
+.detail-card-header .header-actions .el-button--warning:hover {
+  background: #e6a23c !important;
+  color: #fff !important;
+}
+.detail-card-header .header-actions .el-button--success {
+  border: 1px solid #67c23a !important;
+  color: #67c23a !important;
+  background: transparent !important;
+}
+.detail-card-header .header-actions .el-button--success:hover {
+  background: #67c23a !important;
+  color: #fff !important;
+}
 
 /* 按钮 */
 .btn-gradient { background: var(--primary-gradient); border: none; color: #fff; font-weight: 500; }

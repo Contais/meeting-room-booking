@@ -1,68 +1,71 @@
 <template>
   <div class="page-view">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button class="back-btn" @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-          <span>返回</span>
-        </el-button>
-      </div>
-      <div v-if="user" class="header-actions">
-        <el-button :type="user.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">
-          <el-icon><component :is="user.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
-          <span>{{ user.status === 1 ? '禁用' : '启用' }}</span>
-        </el-button>
-        <el-button type="primary" plain @click="openEditDialog">
-          <el-icon><Edit /></el-icon>
-          <span>编辑</span>
-        </el-button>
-      </div>
-    </div>
-
     <div v-loading="loading" class="detail-card">
-      <div v-if="user" class="user-header">
-        <div class="avatar-large">
-          {{ (user.username || 'U').charAt(0).toUpperCase() }}
+      <div class="detail-card-header">
+        <div class="header-left">
+          <el-button class="back-btn" @click="router.back()">
+            <el-icon><ArrowLeft /></el-icon>
+            <span>返回</span>
+          </el-button>
+          <span v-if="user" class="header-title">{{ user.realName || user.username }}</span>
         </div>
-        <div class="user-info">
-          <h3>{{ user.realName || user.username }}</h3>
-          <p>{{ user.username }}</p>
-          <el-tag :type="user.status === 1 ? 'success' : 'danger'" size="small">
-            {{ user.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
+        <div v-if="user" class="header-actions">
+          <el-button :type="user.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">
+            <el-icon><component :is="user.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
+            <span>{{ user.status === 1 ? '禁用' : '启用' }}</span>
+          </el-button>
+          <el-button type="primary" plain @click="openEditDialog">
+            <el-icon><Edit /></el-icon>
+            <span>编辑</span>
+          </el-button>
         </div>
       </div>
 
-      <el-descriptions v-if="user" :column="2" border class="mt-20">
-        <el-descriptions-item label="用户ID">
-          {{ user.id }}
-        </el-descriptions-item>
-        <el-descriptions-item label="角色">
-          <el-tag :type="user.role === 'admin' ? 'danger' : 'info'" size="small">
-            {{ user.role === 'admin' ? '管理员' : '普通用户' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="姓名">
-          {{ user.realName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="手机号">
-          {{ user.phone || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="邮箱">
-          {{ user.email || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="部门">
-          {{ user.departmentName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ formatDateTime(user.createTime) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="更新时间">
-          {{ formatDateTime(user.updateTime) }}
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="detail-card-body">
+        <div v-if="user" class="user-header">
+          <div class="avatar-large">
+            {{ (user.username || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-info">
+            <h3>{{ user.realName || user.username }}</h3>
+            <p>{{ user.username }}</p>
+            <el-tag :type="user.status === 1 ? 'success' : 'danger'" size="small">
+              {{ user.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </div>
+        </div>
 
-      <el-empty v-else description="暂无数据" />
+        <el-descriptions v-if="user" :column="2" border class="mt-20">
+          <el-descriptions-item label="用户ID">
+            {{ user.id }}
+          </el-descriptions-item>
+          <el-descriptions-item label="角色">
+            <el-tag :type="user.role === 'admin' ? 'danger' : 'info'" size="small">
+              {{ user.role === 'admin' ? '管理员' : '普通用户' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="姓名">
+            {{ user.realName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="手机号">
+            {{ user.phone || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="邮箱">
+            {{ user.email || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="部门">
+            {{ user.departmentName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDateTime(user.createTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="更新时间">
+            {{ formatDateTime(user.updateTime) }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-empty v-else description="暂无数据" />
+      </div>
     </div>
 
     <FormDrawer v-model:visible="editDialogVisible" title="编辑用户" :loading="submitting" @submit="handleSubmit">
@@ -169,50 +172,6 @@ onMounted(() => { loadDetail(); loadDeptTree() })
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.back-btn {
-  /* 完全使用 Element Plus 默认样式 */
-}
-
-.header-actions {
-  display: flex;
-  gap: 2px;
-}
-
-.header-actions .el-button {
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-.header-actions .el-button:hover {
-  transform: translateY(-1px);
-}
-
-.detail-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
-  padding: 24px;
-}
-
 .user-header {
   display: flex;
   align-items: center;

@@ -1,96 +1,101 @@
 <template>
   <div class="page-view">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button class="back-btn" @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-          <span>返回</span>
-        </el-button>
-      </div>
-      <div v-if="room" class="header-actions">
-        <el-button type="danger" plain @click="handleDelete">
-          <el-icon><Delete /></el-icon>
-          <span>删除</span>
-        </el-button>
-        <el-button :type="room.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">
-          <el-icon><component :is="room.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
-          <span>{{ room.status === 1 ? '禁用' : '启用' }}</span>
-        </el-button>
-        <el-button type="primary" plain @click="openEditDialog">
-          <el-icon><Edit /></el-icon>
-          <span>编辑</span>
-        </el-button>
-      </div>
-    </div>
-
     <div v-loading="loading" class="detail-card">
-      <div v-if="room" class="room-header">
-        <div class="room-avatar">
-          <el-icon :size="28"><OfficeBuilding /></el-icon>
+      <div class="detail-card-header">
+        <div class="header-left">
+          <el-button class="back-btn" @click="router.back()">
+            <el-icon><ArrowLeft /></el-icon>
+            <span>返回</span>
+          </el-button>
+          <span v-if="room" class="header-title">{{ room.name }}</span>
         </div>
-        <div class="room-info">
-          <h3>{{ room.name }}</h3>
-          <p>{{ room.location || '未设置位置' }}</p>
-          <el-tag :type="room.status === 1 ? 'success' : 'warning'" size="small">
-            {{ room.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
+        <div v-if="room" class="header-actions">
+          <el-button type="danger" plain @click="handleDelete">
+            <el-icon><Delete /></el-icon>
+            <span>删除</span>
+          </el-button>
+          <el-button :type="room.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">
+            <el-icon><component :is="room.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
+            <span>{{ room.status === 1 ? '禁用' : '启用' }}</span>
+          </el-button>
+          <el-button type="primary" plain @click="openEditDialog">
+            <el-icon><Edit /></el-icon>
+            <span>编辑</span>
+          </el-button>
         </div>
       </div>
 
-      <el-descriptions v-if="room" :column="2" border class="mt-20">
-        <el-descriptions-item label="会议室ID">
-          {{ room.id }}
-        </el-descriptions-item>
-        <el-descriptions-item label="容纳人数">
-          {{ room.capacity }} 人
-        </el-descriptions-item>
-        <el-descriptions-item label="设备">
-          {{ room.equipment || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="审批模式">
-          <el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small">
-            {{ room.needApproval === 1 ? '需审批' : '免审批' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="可预约时段">
-          {{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="最大预约时长">
-          {{ room.maxDuration || 480 }} 分钟
-        </el-descriptions-item>
-        <el-descriptions-item label="提前预约天数">
-          {{ room.advanceDays || 7 }} 天
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ formatDateTime(room.createTime) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="描述" :span="2">
-          {{ room.description || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="detail-card-body">
+        <div v-if="room" class="room-header">
+          <div class="room-avatar">
+            <el-icon :size="28"><OfficeBuilding /></el-icon>
+          </div>
+          <div class="room-info">
+            <h3>{{ room.name }}</h3>
+            <p>{{ room.location || '未设置位置' }}</p>
+            <el-tag :type="room.status === 1 ? 'success' : 'warning'" size="small">
+              {{ room.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </div>
+        </div>
 
-      <el-empty v-else description="暂无数据" />
+        <el-descriptions v-if="room" :column="2" border class="mt-20">
+          <el-descriptions-item label="会议室ID">
+            {{ room.id }}
+          </el-descriptions-item>
+          <el-descriptions-item label="容纳人数">
+            {{ room.capacity }} 人
+          </el-descriptions-item>
+          <el-descriptions-item label="设备">
+            {{ room.equipment || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="审批模式">
+            <el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small">
+              {{ room.needApproval === 1 ? '需审批' : '免审批' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="可预约时段">
+            {{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最大预约时长">
+            {{ room.maxDuration || 480 }} 分钟
+          </el-descriptions-item>
+          <el-descriptions-item label="提前预约天数">
+            {{ room.advanceDays || 7 }} 天
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDateTime(room.createTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="描述" :span="2">
+            {{ room.description || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-empty v-else description="暂无数据" />
+      </div>
     </div>
 
     <!-- 关联设备 -->
     <div v-if="room" class="detail-card">
-      <div class="section-header">
-        <h4 class="section-title">关联设备</h4>
-        <el-button class="btn-outline" size="small" @click="openEquipmentDialog">
-          <el-icon><Plus /></el-icon>管理设备
-        </el-button>
-      </div>
-      <div v-if="equipments.length" class="equipment-list">
-        <div v-for="eq in equipments" :key="eq.id" class="equipment-item" @click="router.push(`/admin/equipments/${eq.id}`)">
-          <div class="equipment-item-icon"><el-icon><Box /></el-icon></div>
-          <div class="equipment-item-info">
-            <span class="equipment-item-name">{{ eq.name }}</span>
-            <span class="equipment-item-meta">{{ [eq.category, eq.brand, eq.model].filter(Boolean).join(' / ') || '无品牌型号' }}</span>
-          </div>
-          <el-tag type="success" size="small" effect="light" round>×{{ eq.quantity || 1 }}</el-tag>
+      <div class="detail-card-body">
+        <div class="section-header">
+          <h4 class="section-title">关联设备</h4>
+          <el-button class="btn-outline" size="small" @click="openEquipmentDialog">
+            <el-icon><Plus /></el-icon>管理设备
+          </el-button>
         </div>
+        <div v-if="equipments.length" class="equipment-list">
+          <div v-for="eq in equipments" :key="eq.id" class="equipment-item" @click="router.push(`/admin/equipments/${eq.id}`)">
+            <div class="equipment-item-icon"><el-icon><Box /></el-icon></div>
+            <div class="equipment-item-info">
+              <span class="equipment-item-name">{{ eq.name }}</span>
+              <span class="equipment-item-meta">{{ [eq.category, eq.brand, eq.model].filter(Boolean).join(' / ') || '无品牌型号' }}</span>
+            </div>
+            <el-tag type="success" size="small" effect="light" round>×{{ eq.quantity || 1 }}</el-tag>
+          </div>
+        </div>
+        <el-empty v-else description="暂未关联任何设备" :image-size="80" />
       </div>
-      <el-empty v-else description="暂未关联任何设备" :image-size="80" />
     </div>
 
     <!-- 管理关联设备 -->
@@ -259,50 +264,6 @@ onMounted(loadDetail)
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.back-btn {
-  /* 完全使用 Element Plus 默认样式 */
-}
-
-.header-actions {
-  display: flex;
-  gap: 2px;
-}
-
-.header-actions .el-button {
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-.header-actions .el-button:hover {
-  transform: translateY(-1px);
-}
-
-.detail-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
-  padding: 24px;
-}
-
 .room-header {
   display: flex;
   align-items: center;

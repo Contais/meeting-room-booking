@@ -1,56 +1,59 @@
 <template>
   <div class="page-view">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button class="back-btn" @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-          <span>返回</span>
-        </el-button>
-      </div>
-      <div v-if="reservation" class="header-actions">
-        <el-button v-if="reservation.status === 2" type="danger" plain @click="handleDelete">
-          <el-icon><Delete /></el-icon>
-          <span>删除</span>
-        </el-button>
-        <el-button v-if="canCancel" type="danger" plain @click="handleCancel">
-          <el-icon><Close /></el-icon>
-          <span>取消预约</span>
-        </el-button>
-      </div>
-    </div>
-
     <div v-loading="loading" class="detail-card">
-      <el-descriptions v-if="reservation" :column="2" border>
-        <el-descriptions-item label="预约编号">
-          <el-tag type="primary">{{ reservation.reservationCode }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag :type="statusType(reservation.status)">{{ statusText(reservation.status) }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="会议主题">
-          {{ reservation.subject }}
-        </el-descriptions-item>
-        <el-descriptions-item label="会议室">
-          {{ reservation.roomName }}
-        </el-descriptions-item>
-        <el-descriptions-item label="参会人数">
-          {{ reservation.attendeeCount }} 人
-        </el-descriptions-item>
-        <el-descriptions-item label="联系电话">
-          {{ reservation.contactPhone || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="预约时段" :span="2">
-          {{ formatDateTime(reservation.startTime) }} ~ {{ formatDateTime(reservation.endTime) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ formatDateTime(reservation.createTime) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="备注" :span="2">
-          {{ reservation.remark || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="detail-card-header">
+        <div class="header-left">
+          <el-button class="back-btn" @click="router.back()">
+            <el-icon><ArrowLeft /></el-icon>
+            <span>返回</span>
+          </el-button>
+          <span v-if="reservation" class="header-title">{{ reservation.subject }}</span>
+        </div>
+        <div v-if="reservation" class="header-actions">
+          <el-button v-if="reservation.status === 2" type="danger" plain @click="handleDelete">
+            <el-icon><Delete /></el-icon>
+            <span>删除</span>
+          </el-button>
+          <el-button v-if="canCancel" type="danger" plain @click="handleCancel">
+            <el-icon><Close /></el-icon>
+            <span>取消预约</span>
+          </el-button>
+        </div>
+      </div>
 
-      <el-empty v-else description="暂无数据" />
+      <div class="detail-card-body">
+        <el-descriptions v-if="reservation" :column="2" border>
+          <el-descriptions-item label="预约编号">
+            <el-tag type="primary">{{ reservation.reservationCode }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="statusType(reservation.status)">{{ statusText(reservation.status) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="会议主题">
+            {{ reservation.subject }}
+          </el-descriptions-item>
+          <el-descriptions-item label="会议室">
+            {{ reservation.roomName }}
+          </el-descriptions-item>
+          <el-descriptions-item label="参会人数">
+            {{ reservation.attendeeCount }} 人
+          </el-descriptions-item>
+          <el-descriptions-item label="联系电话">
+            {{ reservation.contactPhone || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="预约时段" :span="2">
+            {{ formatDateTime(reservation.startTime) }} ~ {{ formatDateTime(reservation.endTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDateTime(reservation.createTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="备注" :span="2">
+            {{ reservation.remark || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-empty v-else description="暂无数据" />
+      </div>
     </div>
   </div>
 </template>
@@ -123,47 +126,4 @@ onMounted(loadDetail)
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.back-btn {
-  /* 完全使用 Element Plus 默认样式 */
-}
-
-.header-actions {
-  display: flex;
-  gap: 2px;
-}
-
-.header-actions .el-button {
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-.header-actions .el-button:hover {
-  transform: translateY(-1px);
-}
-
-.detail-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
-  padding: 24px;
-}
 </style>

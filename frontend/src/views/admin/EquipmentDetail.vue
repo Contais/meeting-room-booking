@@ -1,77 +1,82 @@
 <template>
   <div class="page-view" v-loading="loading">
-    <div class="page-header">
-      <div class="header-left">
-        <el-button class="back-btn" @click="router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-          <span>返回</span>
-        </el-button>
-      </div>
-      <div v-if="equipment" class="header-actions">
-        <el-button :type="equipment.status === 1 ? 'warning' : 'success'" plain @click="handleToggle">
-          <el-icon><Switch /></el-icon>
-          <span>{{ equipment.status === 1 ? '禁用' : '启用' }}</span>
-        </el-button>
-        <el-button type="primary" plain @click="openEditDialog">
-          <el-icon><Edit /></el-icon>
-          <span>编辑</span>
-        </el-button>
-        <el-button type="danger" plain @click="handleDelete">
-          <el-icon><Delete /></el-icon>
-          <span>删除</span>
-        </el-button>
-      </div>
-    </div>
-
     <template v-if="equipment">
       <!-- 设备基础信息 -->
       <div class="detail-card">
-        <div class="equipment-header">
-          <div class="equipment-icon">
-            <el-icon :size="28"><Box /></el-icon>
+        <div class="detail-card-header">
+          <div class="header-left">
+            <el-button class="back-btn" @click="router.back()">
+              <el-icon><ArrowLeft /></el-icon>
+              <span>返回</span>
+            </el-button>
+            <span class="header-title">{{ equipment.name }}</span>
           </div>
-          <div class="equipment-info">
-            <h2>{{ equipment.name }}</h2>
-            <p class="equipment-code"><el-icon><Key /></el-icon> {{ equipment.code }}</p>
+          <div class="header-actions">
+            <el-button :type="equipment.status === 1 ? 'warning' : 'success'" plain @click="handleToggle">
+              <el-icon><Switch /></el-icon>
+              <span>{{ equipment.status === 1 ? '禁用' : '启用' }}</span>
+            </el-button>
+            <el-button type="primary" plain @click="openEditDialog">
+              <el-icon><Edit /></el-icon>
+              <span>编辑</span>
+            </el-button>
+            <el-button type="danger" plain @click="handleDelete">
+              <el-icon><Delete /></el-icon>
+              <span>删除</span>
+            </el-button>
           </div>
-          <el-tag :type="equipment.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>
-            {{ equipment.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
         </div>
 
-        <div class="info-grid">
-          <div class="info-item"><span class="info-label">设备分类</span><span class="info-value">{{ equipment.category || '-' }}</span></div>
-          <div class="info-item"><span class="info-label">品牌</span><span class="info-value">{{ equipment.brand || '-' }}</span></div>
-          <div class="info-item"><span class="info-label">型号</span><span class="info-value">{{ equipment.model || '-' }}</span></div>
-          <div class="info-item"><span class="info-label">购置日期</span><span class="info-value">{{ equipment.purchaseDate || '-' }}</span></div>
-          <div class="info-item"><span class="info-label">创建时间</span><span class="info-value">{{ formatDateTime(equipment.createTime) }}</span></div>
-        </div>
+        <div class="detail-card-body">
+          <div class="equipment-header">
+            <div class="equipment-icon">
+              <el-icon :size="28"><Box /></el-icon>
+            </div>
+            <div class="equipment-info">
+              <h2>{{ equipment.name }}</h2>
+              <p class="equipment-code"><el-icon><Key /></el-icon> {{ equipment.code }}</p>
+            </div>
+            <el-tag :type="equipment.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>
+              {{ equipment.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </div>
 
-        <div v-if="equipment.description" class="description">
-          <h4>设备描述</h4>
-          <p>{{ equipment.description }}</p>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">设备分类</span><span class="info-value">{{ equipment.category || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">品牌</span><span class="info-value">{{ equipment.brand || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">型号</span><span class="info-value">{{ equipment.model || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">购置日期</span><span class="info-value">{{ equipment.purchaseDate || '-' }}</span></div>
+            <div class="info-item"><span class="info-label">创建时间</span><span class="info-value">{{ formatDateTime(equipment.createTime) }}</span></div>
+          </div>
+
+          <div v-if="equipment.description" class="description">
+            <h4>设备描述</h4>
+            <p>{{ equipment.description }}</p>
+          </div>
         </div>
       </div>
 
       <!-- 关联会议室 -->
       <div class="detail-card">
-        <div class="section-header">
-          <h4 class="section-title">关联会议室</h4>
-          <el-button class="btn-outline" size="small" @click="openAssignDialog">
-            <el-icon><Plus /></el-icon>管理关联
-          </el-button>
-        </div>
-        <div v-if="equipment.rooms && equipment.rooms.length" class="room-list">
-          <div v-for="room in equipment.rooms" :key="room.id" class="room-item" @click="router.push(`/meeting/rooms/${room.id}`)">
-            <div class="room-item-icon"><el-icon><OfficeBuilding /></el-icon></div>
-            <div class="room-item-info">
-              <span class="room-item-name">{{ room.name }}</span>
-              <span class="room-item-location">{{ room.location || '暂无位置' }}</span>
-            </div>
-            <el-tag type="success" size="small" effect="light" round>×{{ room.quantity || 1 }}</el-tag>
+        <div class="detail-card-body">
+          <div class="section-header">
+            <h4 class="section-title">关联会议室</h4>
+            <el-button class="btn-outline" size="small" @click="openAssignDialog">
+              <el-icon><Plus /></el-icon>管理关联
+            </el-button>
           </div>
+          <div v-if="equipment.rooms && equipment.rooms.length" class="room-list">
+            <div v-for="room in equipment.rooms" :key="room.id" class="room-item" @click="router.push(`/meeting/rooms/${room.id}`)">
+              <div class="room-item-icon"><el-icon><OfficeBuilding /></el-icon></div>
+              <div class="room-item-info">
+                <span class="room-item-name">{{ room.name }}</span>
+                <span class="room-item-location">{{ room.location || '暂无位置' }}</span>
+              </div>
+              <el-tag type="success" size="small" effect="light" round>×{{ room.quantity || 1 }}</el-tag>
+            </div>
+          </div>
+          <el-empty v-else description="暂未关联任何会议室" :image-size="80" />
         </div>
-        <el-empty v-else description="暂未关联任何会议室" :image-size="80" />
       </div>
     </template>
 
@@ -266,65 +271,7 @@ onMounted(loadDetail)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.page-header { display: flex; align-items: center; justify-content: space-between; }
-.header-actions { display: flex; gap: 8px; }
 
-/* 详情页按钮统一样式（与 UserDetail/RoomDetail 一致） */
-.back-btn,
-.header-actions :deep(.el-button) {
-  height: 36px !important;
-  padding: 0 16px !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-}
-.back-btn {
-  background: transparent !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text-secondary) !important;
-}
-.back-btn:hover {
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
-  background: var(--primary-light, #ecf5ff) !important;
-}
-.header-actions :deep(.el-button--primary) {
-  border: 1px solid var(--primary) !important;
-  color: var(--primary) !important;
-  background: transparent !important;
-}
-.header-actions :deep(.el-button--primary:hover) {
-  background: var(--primary) !important;
-  color: #fff !important;
-}
-.header-actions :deep(.el-button--danger) {
-  border: 1px solid #f56c6c !important;
-  color: #f56c6c !important;
-  background: transparent !important;
-}
-.header-actions :deep(.el-button--danger:hover) {
-  background: #f56c6c !important;
-  color: #fff !important;
-}
-.header-actions :deep(.el-button--warning) {
-  border: 1px solid #e6a23c !important;
-  color: #e6a23c !important;
-  background: transparent !important;
-}
-.header-actions :deep(.el-button--warning:hover) {
-  background: #e6a23c !important;
-  color: #fff !important;
-}
-.header-actions :deep(.el-button--success) {
-  border: 1px solid #67c23a !important;
-  color: #67c23a !important;
-  background: transparent !important;
-}
-.header-actions :deep(.el-button--success:hover) {
-  background: #67c23a !important;
-  color: #fff !important;
-}
-
-.detail-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); padding: 24px; }
 .equipment-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .equipment-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; }
 .equipment-info h2 { font-size: 20px; font-weight: 600; color: var(--text-primary); margin: 0; }

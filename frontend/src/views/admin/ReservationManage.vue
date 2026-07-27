@@ -74,18 +74,26 @@
         </el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/reservations/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
+            <div class="action-links">
+              <el-button type="primary" link @click="router.push(`/admin/reservations/${row.id}`)">
+                <el-icon><View /></el-icon>详情
+              </el-button>
               <template v-if="row.status === 0">
-                <el-tooltip content="通过"><el-button type="success" link circle size="small" @click="handleApprove(row.id)"><el-icon><Check /></el-icon></el-button></el-tooltip>
-                <el-tooltip content="拒绝"><el-button type="danger" link circle size="small" @click="handleReject(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
+                <el-button type="success" link @click="handleApprove(row.id)">
+                  <el-icon><Check /></el-icon>通过
+                </el-button>
+                <el-button type="danger" link @click="handleReject(row.id)">
+                  <el-icon><Close /></el-icon>拒绝
+                </el-button>
               </template>
-              <template v-else-if="canCancel(row)">
-                <el-tooltip content="取消预约"><el-button type="danger" link circle size="small" @click="handleCancel(row)"><el-icon><Close /></el-icon></el-button></el-tooltip>
-              </template>
-              <el-tooltip v-if="row.status === 2" content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+              <el-button v-else-if="canCancel(row)" type="danger" link @click="handleCancel(row)">
+                <el-icon><Close /></el-icon>取消
+              </el-button>
+              <el-button v-if="row.status === 2" type="danger" link @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>删除
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -214,7 +222,6 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.action-buttons { display: flex; justify-content: center; gap: 0; }
 .time-slot-cell { display: flex; flex-direction: column; gap: 2px; line-height: 1.4; }
 .ts-date { font-size: 13px; color: var(--text-primary); }
 .ts-range { font-size: 12px; color: var(--text-muted); }

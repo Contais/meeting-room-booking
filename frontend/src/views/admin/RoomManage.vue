@@ -34,12 +34,18 @@
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="当前" width="80" align="center"><template #default="{ row }"><el-tag v-if="row.status === 1" :type="row.currentAvailable ? 'success' : 'warning'" size="small" effect="light" round>{{ row.currentAvailable ? '空闲' : '使用中' }}</el-tag><span v-else style="color: var(--text-muted)">-</span></template></el-table-column>
-        <el-table-column label="操作" width="100" fixed="right" align="center">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/meeting/rooms/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
-              <el-tooltip content="编辑"><el-button type="primary" link circle size="small" @click="showEditDialog(row)"><el-icon><Edit /></el-icon></el-button></el-tooltip>
-              <el-tooltip content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row.id)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
+            <div class="action-links">
+              <el-button type="primary" link @click="router.push(`/meeting/rooms/${row.id}`)">
+                <el-icon><View /></el-icon>详情
+              </el-button>
+              <el-button type="primary" link @click="showEditDialog(row)">
+                <el-icon><Edit /></el-icon>编辑
+              </el-button>
+              <el-button type="danger" link @click="handleDelete(row.id)">
+                <el-icon><Delete /></el-icon>删除
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -125,5 +131,4 @@ onMounted(loadData)
 
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
-.action-buttons { display: flex; justify-content: center; gap: 0; }
 </style>
