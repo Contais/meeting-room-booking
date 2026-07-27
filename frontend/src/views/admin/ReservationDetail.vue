@@ -6,17 +6,21 @@
         <span>返回</span>
       </el-button>
       <div v-if="reservation" class="header-actions">
+        <el-button v-if="reservation.status === 2" class="action-btn action-danger-outline" @click="handleDelete">
+          <el-icon><Delete /></el-icon>
+          <span>删除</span>
+        </el-button>
         <template v-if="reservation.status === 0">
           <el-button class="action-btn action-danger-outline" @click="handleReject">
             <el-icon><Close /></el-icon>
             <span>拒绝</span>
           </el-button>
-          <el-button class="action-btn action-success" @click="handleApprove">
+          <el-button class="action-btn action-primary" @click="handleApprove">
             <el-icon><Check /></el-icon>
             <span>通过</span>
           </el-button>
         </template>
-        <template v-else-if="reservation.status === 1">
+        <template v-else-if="canCancel">
           <el-button class="action-btn action-danger-outline" @click="handleCancel">
             <el-icon><Close /></el-icon>
             <span>取消预约</span>
@@ -68,11 +72,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Check, Close } from '@element-plus/icons-vue'
-import { getReservationDetail, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
+import { ArrowLeft, Check, Close, Delete } from '@element-plus/icons-vue'
+import { getReservationDetail, approveReservation, rejectReservation, cancelReservation, adminDeleteReservation } from '@/api/reservation'
 import { formatDateTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
@@ -83,6 +87,12 @@ const loading = ref(false)
 const reservation = ref<Reservation | null>(null)
 
 const id = Number(route.params.id)
+
+const canCancel = computed(() => {
+  if (!reservation.value) return false
+  if (reservation.value.status === 2) return false
+  return new Date(reservation.value.startTime) > new Date()
+})
 
 function statusText(s: number) {
   return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知'
@@ -137,6 +147,17 @@ async function handleCancel() {
   }
 }
 
+async function handleDelete() {
+  try {
+    await ElMessageBox.confirm('确定删除该预约？删除后不可恢复。', '确认删除', { type: 'warning' })
+    await adminDeleteReservation(id)
+    ElMessage.success('已删除')
+    router.back()
+  } catch {
+    // 用户取消
+  }
+}
+
 onMounted(loadDetail)
 </script>
 
@@ -145,17 +166,17 @@ onMounted(loadDetail)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .back-btn {
   height: 36px;
   padding: 0 16px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border-light);
   background: var(--bg-card);
   color: var(--text-secondary);
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -174,26 +195,39 @@ onMounted(loadDetail)
 }
 
 .action-btn {
-  height: 38px;
-  padding: 0 20px;
-  border-radius: 10px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 8px;
   font-weight: 500;
-  transition: all 0.25s ease;
+  font-size: 14px;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
 }
-.action-success {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+.action-primary {
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(67, 233, 123, 0.3);
+  border-color: var(--primary);
 }
-.action-success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(67, 233, 123, 0.45);
+.action-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+.action-secondary {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+.action-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(102, 126, 234, 0.04);
+  transform: translateY(-1px);
 }
 .action-danger-outline {
   background: var(--bg-card);
@@ -201,16 +235,15 @@ onMounted(loadDetail)
   border: 1px solid #fbc4c4;
 }
 .action-danger-outline:hover {
-  background: rgba(245, 108, 108, 0.06);
+  background: rgba(245, 108, 108, 0.05);
   border-color: #f56c6c;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .detail-card {
   background: var(--bg-card);
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border-light);
-  padding: 28px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 24px;
 }
 </style>

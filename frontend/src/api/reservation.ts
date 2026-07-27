@@ -10,6 +10,10 @@ export function cancelReservation(id: number): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/cancel/${id}`)
 }
 
+export function deleteReservation(id: number): Promise<Result<void>> {
+  return request.delete(`/api/meeting/reservation/${id}`)
+}
+
 export function listMyReservations(params: ReservationPageQuery): Promise<Result<ReservationPageResult>> {
   return request.get('/api/meeting/reservation/my', { params })
 }
@@ -33,6 +37,10 @@ export function approveReservation(id: number): Promise<Result<void>> {
 
 export function rejectReservation(id: number): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/reject/${id}`)
+}
+
+export function adminDeleteReservation(id: number): Promise<Result<void>> {
+  return request.delete(`/api/meeting/reservation/admin/${id}`)
 }
 
 export function getSchedule(params: { date?: string; startDate?: string; endDate?: string }): Promise<Result<any>> {

@@ -74,7 +74,7 @@
         </el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-tooltip content="详情"><el-button type="info" link circle size="small" @click="router.push(`/admin/reservations/${row.id}`)"><el-icon><View /></el-icon></el-button></el-tooltip>
@@ -82,9 +82,10 @@
                 <el-tooltip content="通过"><el-button type="success" link circle size="small" @click="handleApprove(row.id)"><el-icon><Check /></el-icon></el-button></el-tooltip>
                 <el-tooltip content="拒绝"><el-button type="danger" link circle size="small" @click="handleReject(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
               </template>
-              <template v-else-if="row.status === 1">
-                <el-tooltip content="取消预约"><el-button type="danger" link circle size="small" @click="handleCancel(row.id)"><el-icon><Close /></el-icon></el-button></el-tooltip>
+              <template v-else-if="canCancel(row)">
+                <el-tooltip content="取消预约"><el-button type="danger" link circle size="small" @click="handleCancel(row)"><el-icon><Close /></el-icon></el-button></el-tooltip>
               </template>
+              <el-tooltip v-if="row.status === 2" content="删除"><el-button type="danger" link circle size="small" @click="handleDelete(row)"><el-icon><Delete /></el-icon></el-button></el-tooltip>
             </div>
           </template>
         </el-table-column>
@@ -101,9 +102,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Check, Close, Refresh, View } from '@element-plus/icons-vue'
-import { listAllReservations, approveReservation, rejectReservation, cancelReservation } from '@/api/reservation'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Check, Close, Refresh, View, Delete } from '@element-plus/icons-vue'
+import { listAllReservations, approveReservation, rejectReservation, cancelReservation, adminDeleteReservation } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
@@ -188,7 +189,26 @@ async function loadData() {
 }
 async function handleApprove(id: number) { try { await approveReservation(id); ElMessage.success('通过'); loadData() } catch { /* */ } }
 async function handleReject(id: number) { try { await rejectReservation(id); ElMessage.success('已拒绝'); loadData() } catch { /* */ } }
-async function handleCancel(id: number) { try { await cancelReservation(id); ElMessage.success('已取消'); loadData() } catch { /* */ } }
+function canCancel(row: Reservation): boolean {
+  if (row.status === 2) return false
+  return new Date(row.startTime) > new Date()
+}
+async function handleCancel(row: Reservation) {
+  try {
+    await ElMessageBox.confirm(`确定要取消预约"${row.subject}"吗？`, '提示', { type: 'warning' })
+    await cancelReservation(row.id)
+    ElMessage.success('已取消')
+    loadData()
+  } catch { /* */ }
+}
+async function handleDelete(row: Reservation) {
+  try {
+    await ElMessageBox.confirm(`确定要删除预约"${row.subject}"吗？删除后不可恢复。`, '确认删除', { type: 'warning' })
+    await adminDeleteReservation(row.id)
+    ElMessage.success('已删除')
+    loadData()
+  } catch { /* */ }
+}
 onMounted(loadData)
 </script>
 
