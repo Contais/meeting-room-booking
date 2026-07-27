@@ -1,14 +1,23 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <el-button @click="router.back()">
+      <el-button class="back-btn" @click="router.back()">
         <el-icon><ArrowLeft /></el-icon>
-        返回
+        <span>返回</span>
       </el-button>
       <div v-if="room" class="header-actions">
-        <el-button type="primary" @click="openEditDialog"><el-icon><Edit /></el-icon>编辑</el-button>
-        <el-button :type="room.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus">{{ room.status === 1 ? '禁用' : '启用' }}</el-button>
-        <el-button type="danger" @click="handleDelete"><el-icon><Delete /></el-icon>删除</el-button>
+        <el-button class="action-btn action-danger-outline" @click="handleDelete">
+          <el-icon><Delete /></el-icon>
+          <span>删除</span>
+        </el-button>
+        <el-button class="action-btn action-secondary" @click="handleToggleStatus">
+          <el-icon><component :is="room.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
+          <span>{{ room.status === 1 ? '禁用' : '启用' }}</span>
+        </el-button>
+        <el-button class="action-btn action-primary" @click="openEditDialog">
+          <el-icon><Edit /></el-icon>
+          <span>编辑</span>
+        </el-button>
       </div>
     </div>
 
@@ -180,19 +189,84 @@ onMounted(loadDetail)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.back-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-card);
+  transform: translateX(-2px);
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+}
+
+.action-btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+}
+.action-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+.action-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
+  color: #fff;
+}
+.action-secondary {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+.action-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-2px);
+}
+.action-danger-outline {
+  background: var(--bg-card);
+  color: #f56c6c;
+  border: 1px solid #fbc4c4;
+}
+.action-danger-outline:hover {
+  background: rgba(245, 108, 108, 0.06);
+  border-color: #f56c6c;
+  transform: translateY(-2px);
 }
 
 .detail-card {
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid var(--border-light);
-  padding: 24px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .room-header {

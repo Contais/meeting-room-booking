@@ -1,13 +1,19 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <el-button @click="router.back()">
+      <el-button class="back-btn" @click="router.back()">
         <el-icon><ArrowLeft /></el-icon>
-        返回
+        <span>返回</span>
       </el-button>
       <div v-if="user" class="header-actions">
-        <el-button type="primary" @click="openEditDialog"><el-icon><Edit /></el-icon>编辑</el-button>
-        <el-button :type="user.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus">{{ user.status === 1 ? '禁用' : '启用' }}</el-button>
+        <el-button class="action-btn action-secondary" @click="handleToggleStatus">
+          <el-icon><component :is="user.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
+          <span>{{ user.status === 1 ? '禁用' : '启用' }}</span>
+        </el-button>
+        <el-button class="action-btn action-primary" @click="openEditDialog">
+          <el-icon><Edit /></el-icon>
+          <span>编辑</span>
+        </el-button>
       </div>
     </div>
 
@@ -62,6 +68,7 @@
         <el-form-item label="用户名" prop="username"><el-input v-model="form.username" disabled /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
+        <el-form-item label="邮箱"><el-input v-model="form.email" placeholder="请输入邮箱" /></el-form-item>
         <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
         <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
       </el-form>
@@ -94,7 +101,7 @@ const editDialogVisible = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const deptTree = ref<Department[]>([])
-const form = reactive({ id: undefined as number | undefined, username: '', realName: '', phone: '', role: 'user', departmentId: undefined as number | undefined })
+const form = reactive({ id: undefined as number | undefined, username: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined as number | undefined })
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }]
@@ -119,6 +126,7 @@ function openEditDialog() {
     username: user.value.username || '',
     realName: user.value.realName || '',
     phone: user.value.phone || '',
+    email: user.value.email || '',
     role: user.value.role || 'user',
     departmentId: user.value.departmentId || undefined
   })
@@ -163,19 +171,74 @@ onMounted(() => { loadDetail(); loadDeptTree() })
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.back-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-card);
+  transform: translateX(-2px);
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+}
+
+.action-btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+}
+.action-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+.action-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
+  color: #fff;
+}
+.action-secondary {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+.action-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-2px);
 }
 
 .detail-card {
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid var(--border-light);
-  padding: 24px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .user-header {

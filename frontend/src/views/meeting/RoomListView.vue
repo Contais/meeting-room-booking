@@ -15,16 +15,36 @@
     <!-- 卡片列表 -->
     <div class="room-grid" v-loading="loading">
       <div v-for="room in filteredRooms" :key="room.id" class="room-card" @click="goDetail(room.id)">
-        <div class="card-top">
-          <div class="status-dot" :class="room.status === 1 ? 'active' : 'inactive'"></div>
-          <el-tag :type="room.status === 1 ? 'success' : 'info'" size="small" effect="light">{{ room.status === 1 ? '可用' : '禁用' }}</el-tag>
+        <div class="card-header">
+          <div class="card-title-row">
+            <div class="card-icon">
+              <el-icon><OfficeBuilding /></el-icon>
+            </div>
+            <div class="card-title-wrap">
+              <h3 class="card-title">{{ room.name }}</h3>
+              <p class="card-capacity-mini">容纳 {{ room.capacity || '-' }} 人</p>
+            </div>
+          </div>
+          <div class="card-status-wrap">
+            <span class="status-badge" :class="room.status === 1 ? 'active' : 'inactive'">
+              <span class="status-dot"></span>
+              {{ room.status === 1 ? '可用' : '禁用' }}
+            </span>
+          </div>
         </div>
-        <div class="card-icon"><el-icon :size="28"><OfficeBuilding /></el-icon></div>
-        <h3 class="card-title">{{ room.name }}</h3>
-        <p class="card-location"><el-icon><Location /></el-icon> {{ room.location || '暂无位置' }}</p>
-        <div class="card-tags">
-          <span class="tag"><el-icon><User /></el-icon>{{ room.capacity || '-' }}人</span>
-          <span v-if="room.equipment" class="tag"><el-icon><Monitor /></el-icon>{{ room.equipment }}</span>
+        <div class="card-body">
+          <div class="card-info-item">
+            <el-icon class="info-icon"><Location /></el-icon>
+            <span>{{ room.location || '暂无位置信息' }}</span>
+          </div>
+          <div v-if="room.equipment" class="card-info-item">
+            <el-icon class="info-icon"><Monitor /></el-icon>
+            <span>{{ room.equipment }}</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="view-detail">查看详情</span>
+          <el-icon class="arrow-icon"><Right /></el-icon>
         </div>
       </div>
       <div v-if="filteredRooms.length === 0 && !loading" class="empty-state">
@@ -38,7 +58,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { OfficeBuilding, User, Monitor, Location } from '@element-plus/icons-vue'
+import { OfficeBuilding, Monitor, Location, Right } from '@element-plus/icons-vue'
 import { listActiveRooms } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import type { MeetingRoom } from '@/types/meeting'
@@ -73,42 +93,164 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-view { display: flex; flex-direction: column; gap: 16px; }
+.page-view { display: flex; flex-direction: column; gap: 20px; }
 
 /* 卡片网格 */
 .room-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .room-card {
-  background: #fff; border: 1px solid #f0f0f0; border-radius: 16px;
-  padding: 20px; cursor: pointer; transition: all 0.15s;
-  display: flex; flex-direction: column;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-light);
 }
-.room-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.room-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.08);
+  transform: translateY(-2px);
+}
 
-.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; }
-.status-dot.active { background: var(--success); box-shadow: 0 0 6px rgba(16,185,129,0.4); }
-.status-dot.inactive { background: var(--info); }
+/* 卡片头部 */
+.card-header {
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
 
 .card-icon {
-  width: 48px; height: 48px; border-radius: 14px;
-  background: var(--primary-light); display: flex; align-items: center;
-  justify-content: center; color: var(--primary); margin-bottom: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--primary-light, #eef0ff);
+  color: var(--primary, #667eea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
 }
 
-.card-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 6px 0; }
-.card-location { font-size: 12px; color: var(--text-muted); margin: 0 0 12px 0; display: flex; align-items: center; gap: 4px; }
-
-.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
-.tag {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 11px; color: var(--text-secondary);
-  background: #f5f7fa; padding: 3px 8px; border-radius: 6px;
+.card-title-wrap {
+  flex: 1;
+  min-width: 0;
 }
 
-.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 0; color: var(--text-muted); }
-.empty-state p { margin-top: 12px; font-size: 13px; }
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-capacity-mini {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.card-status-wrap {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-badge.active {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
+}
+.status-badge.inactive {
+  background: rgba(144, 147, 153, 0.1);
+  color: #909399;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 卡片内容 */
+.card-body {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-icon {
+  color: var(--text-muted);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* 卡片底部 */
+.card-footer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+.view-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 0.25s ease;
+}
+.room-card:hover .view-detail {
+  color: var(--primary);
+}
+
+.arrow-icon {
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+.room-card:hover .arrow-icon {
+  color: var(--primary);
+  transform: translateX(3px);
+}
+
+.empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 0; color: var(--text-muted); }
+.empty-state p { margin-top: 12px; font-size: 14px; }
 </style>
