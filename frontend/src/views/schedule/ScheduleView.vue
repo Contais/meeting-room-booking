@@ -744,8 +744,8 @@ function openQuickBook() {
 function onBookingSuccess() {
   loadData()
 }
-function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] || 'info' }
-function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
+function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] || 'info' }
+function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
 function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
 
 watch([viewMode, currentDate], loadData)

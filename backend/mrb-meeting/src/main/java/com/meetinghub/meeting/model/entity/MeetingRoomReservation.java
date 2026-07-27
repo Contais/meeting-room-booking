@@ -63,9 +63,14 @@ public class MeetingRoomReservation {
     private LocalDateTime endTime;
 
     /**
-     * 状态: 0-待确认, 1-已确认, 2-已取消
+     * 状态: 0-待确认, 1-已确认, 2-已取消, 3-已拒绝
      */
     private Integer status;
+
+    /**
+     * 拒绝原因（status=3 时填充）
+     */
+    private String rejectReason;
 
     /**
      * 创建时间

@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,7 +89,7 @@ public class MeetingRoomTool {
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, room.getId())
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -111,7 +112,7 @@ public class MeetingRoomTool {
             long count = reservationRepository.selectCount(
                     new LambdaQueryWrapper<MeetingRoomReservation>()
                             .eq(MeetingRoomReservation::getRoomId, r.getId())
-                            .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                            .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                             .between(MeetingRoomReservation::getStartTime, today.atStartOfDay(), today.atTime(LocalTime.MAX))
             );
             sb.append(String.format("- %s：%d个预约\n", r.getName(), count));
@@ -197,7 +198,7 @@ public class MeetingRoomTool {
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getUserId, userId)
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .ge(MeetingRoomReservation::getEndTime, now)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -269,7 +270,7 @@ public class MeetingRoomTool {
                 Long conflict = reservationRepository.selectCount(
                         new LambdaQueryWrapper<MeetingRoomReservation>()
                                 .eq(MeetingRoomReservation::getRoomId, r.getId())
-                                .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                                .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                                 .lt(MeetingRoomReservation::getStartTime, rangeEnd)
                                 .gt(MeetingRoomReservation::getEndTime, rangeStart)
                 );
@@ -321,7 +322,7 @@ public class MeetingRoomTool {
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, room.getId())
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );

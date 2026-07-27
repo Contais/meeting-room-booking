@@ -50,14 +50,16 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
     IPage<ReservationVO> listAllReservations(ReservationPageQuery query);
 
     /**
-     * 审批通过
+     * 审批通过（仅限 PENDING 状态，CAS 更新避免并发覆盖）
      */
     void approveReservation(Long reservationId);
 
     /**
-     * 审批拒绝
+     * 审批拒绝（仅限 PENDING 状态，CAS 更新避免并发覆盖）
+     *
+     * @param reason 拒绝原因（可为空）
      */
-    void rejectReservation(Long reservationId);
+    void rejectReservation(Long reservationId, String reason);
 
     /**
      * 日程视图数据

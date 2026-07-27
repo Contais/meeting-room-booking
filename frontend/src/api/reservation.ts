@@ -35,8 +35,8 @@ export function approveReservation(id: number): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/approve/${id}`)
 }
 
-export function rejectReservation(id: number): Promise<Result<void>> {
-  return request.put(`/api/meeting/reservation/admin/reject/${id}`)
+export function rejectReservation(id: number, reason?: string): Promise<Result<void>> {
+  return request.put(`/api/meeting/reservation/admin/reject/${id}`, { reason: reason || '' })
 }
 
 export function adminDeleteReservation(id: number): Promise<Result<void>> {

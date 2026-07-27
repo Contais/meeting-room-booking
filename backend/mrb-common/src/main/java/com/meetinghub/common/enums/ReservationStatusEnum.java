@@ -12,7 +12,8 @@ public enum ReservationStatusEnum {
 
     PENDING(0, "待确认"),
     CONFIRMED(1, "已确认"),
-    CANCELLED(2, "已取消");
+    CANCELLED(2, "已取消"),
+    REJECTED(3, "已拒绝");
 
     private final Integer code;
     private final String desc;

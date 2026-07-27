@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
+import com.meetinghub.meeting.model.dto.RejectDTO;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.dto.ReservationPageQuery;
 import com.meetinghub.meeting.model.vo.ReservationVO;
@@ -83,8 +84,9 @@ public class ReservationController {
 
     @RequiresRole("admin")
     @PutMapping("/admin/reject/{id}")
-    public Result<Void> rejectReservation(@PathVariable Long id) {
-        reservationService.rejectReservation(id);
+    public Result<Void> rejectReservation(@PathVariable Long id, @RequestBody(required = false) RejectDTO dto) {
+        String reason = dto != null ? dto.getReason() : null;
+        reservationService.rejectReservation(id, reason);
         return Result.ok();
     }
 

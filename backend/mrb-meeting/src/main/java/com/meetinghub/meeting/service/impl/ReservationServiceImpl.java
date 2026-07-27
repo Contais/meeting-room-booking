@@ -29,6 +29,7 @@ import com.meetinghub.meeting.model.vo.ScheduleReservationVO;
 import com.meetinghub.meeting.model.vo.ScheduleRoomVO;
 import com.meetinghub.meeting.model.vo.ScheduleVO;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -150,8 +151,12 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (!reservation.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权取消他人的预约");
         }
-        if (reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
+        Integer status = reservation.getStatus();
+        if (status.equals(ReservationStatusEnum.CANCELLED.getCode())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消，请勿重复操作");
+        }
+        if (status.equals(ReservationStatusEnum.REJECTED.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被拒绝，无法取消");
         }
         // 只能取消未进行的预约（开始时间在当前时间之后）
         if (reservation.getStartTime().isBefore(LocalDateTime.now())) {
@@ -171,8 +176,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (!reservation.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权删除他人的预约");
         }
-        if (!reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消的预约");
+        if (!isDeletableStatus(reservation.getStatus())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消或已拒绝的预约");
         }
         removeById(reservationId);
     }
@@ -195,7 +200,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, roomId)
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -263,19 +268,50 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
-        updateById(reservation);
+        if (!reservation.getStatus().equals(ReservationStatusEnum.PENDING.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "非待确认状态，无法审批通过");
+        }
+        // CAS 更新：WHERE status=PENDING 避免并发覆盖
+        MeetingRoomReservation update = new MeetingRoomReservation();
+        update.setId(reservationId);
+        update.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
+        boolean ok = update(update, new LambdaQueryWrapper<MeetingRoomReservation>()
+                .eq(MeetingRoomReservation::getId, reservationId)
+                .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode()));
+        if (!ok) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
+        }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void rejectReservation(Long reservationId) {
+    public void rejectReservation(Long reservationId, String reason) {
         MeetingRoomReservation reservation = getById(reservationId);
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
-        updateById(reservation);
+        if (!reservation.getStatus().equals(ReservationStatusEnum.PENDING.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "非待确认状态，无法拒绝");
+        }
+        // CAS 更新：WHERE status=PENDING 避免并发覆盖
+        MeetingRoomReservation update = new MeetingRoomReservation();
+        update.setId(reservationId);
+        update.setStatus(ReservationStatusEnum.REJECTED.getCode());
+        update.setRejectReason(reason != null && !reason.isBlank() ? reason : "管理员拒绝");
+        boolean ok = update(update, new LambdaQueryWrapper<MeetingRoomReservation>()
+                .eq(MeetingRoomReservation::getId, reservationId)
+                .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode()));
+        if (!ok) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
+        }
+    }
+
+    /**
+     * 可删除状态：已取消 / 已拒绝
+     */
+    private boolean isDeletableStatus(Integer status) {
+        return status != null && (status.equals(ReservationStatusEnum.CANCELLED.getCode())
+                || status.equals(ReservationStatusEnum.REJECTED.getCode()));
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
@@ -284,7 +320,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 且不依赖 DATETIME 小数秒精度（原 minusNanos/plusNanos 会被 MySQL 截断导致边界误判）
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
                 .eq(MeetingRoomReservation::getRoomId, roomId)
-                .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                 .lt(MeetingRoomReservation::getStartTime, endTime)
                 .gt(MeetingRoomReservation::getEndTime, startTime);
         if (excludeId != null) {
@@ -317,7 +353,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
 
         List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .lt(MeetingRoomReservation::getStartTime, rangeEnd)
                         .gt(MeetingRoomReservation::getEndTime, rangeStart)
         );
@@ -382,6 +418,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         vo.setStartTime(r.getStartTime());
         vo.setEndTime(r.getEndTime());
         vo.setStatus(r.getStatus());
+        vo.setRejectReason(r.getRejectReason());
         vo.setCreateTime(r.getCreateTime());
         return vo;
     }
@@ -421,8 +458,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        if (!reservation.getStatus().equals(ReservationStatusEnum.CANCELLED.getCode())) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消的预约");
+        if (!isDeletableStatus(reservation.getStatus())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消或已拒绝的预约");
         }
         removeById(reservationId);
     }

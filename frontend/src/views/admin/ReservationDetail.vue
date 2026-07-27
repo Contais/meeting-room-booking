@@ -10,7 +10,7 @@
           <span v-if="reservation" class="header-title">{{ reservation.subject }}</span>
         </div>
         <div v-if="reservation" class="header-actions">
-          <el-button v-if="reservation.status === 2" type="danger" plain @click="handleDelete">
+          <el-button v-if="reservation.status === 2 || reservation.status === 3" type="danger" plain @click="handleDelete">
             <el-icon><Delete /></el-icon>
             <span>删除</span>
           </el-button>
@@ -68,6 +68,9 @@
           <el-descriptions-item label="备注" :span="2">
             {{ reservation.remark || '-' }}
           </el-descriptions-item>
+          <el-descriptions-item v-if="reservation.status === 3" label="拒绝原因" :span="2">
+            <span style="color: var(--el-color-danger)">{{ reservation.rejectReason || '-' }}</span>
+          </el-descriptions-item>
         </el-descriptions>
 
         <el-empty v-else description="暂无数据" />
@@ -95,16 +98,17 @@ const id = Number(route.params.id)
 
 const canCancel = computed(() => {
   if (!reservation.value) return false
-  if (reservation.value.status === 2) return false
+  // 已取消(2) / 已拒绝(3) 不可取消
+  if (reservation.value.status === 2 || reservation.value.status === 3) return false
   return new Date(reservation.value.startTime) > new Date()
 })
 
 function statusText(s: number) {
-  return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知'
+  return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知'
 }
 
 function statusType(s: number) {
-  return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info'
+  return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info'
 }
 
 async function loadDetail() {
@@ -132,8 +136,14 @@ async function handleApprove() {
 
 async function handleReject() {
   try {
-    await ElMessageBox.confirm('确定拒绝该预约？', '提示', { type: 'warning' })
-    await rejectReservation(id)
+    const { value } = await ElMessageBox.prompt('请输入拒绝原因（可选）', '拒绝预约', {
+      confirmButtonText: '确定拒绝',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '请输入拒绝原因，留空将默认为「管理员拒绝」',
+      type: 'warning'
+    })
+    await rejectReservation(id, value || '')
     ElMessage.success('已拒绝')
     loadDetail()
   } catch {

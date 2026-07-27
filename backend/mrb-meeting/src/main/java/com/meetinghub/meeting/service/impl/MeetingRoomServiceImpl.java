@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,7 +148,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         List<MeetingRoomReservation> activeReservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .in(MeetingRoomReservation::getRoomId, roomIds)
-                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
                         .le(MeetingRoomReservation::getStartTime, now)
                         .gt(MeetingRoomReservation::getEndTime, now)
         );

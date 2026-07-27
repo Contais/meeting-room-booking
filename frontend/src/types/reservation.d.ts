@@ -12,6 +12,7 @@ export interface Reservation {
   startTime: string
   endTime: string
   status: number
+  rejectReason?: string
   createTime: string
   updateTime?: string
 }

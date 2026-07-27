@@ -73,7 +73,7 @@
               <el-button v-if="canCancel(row)" type="danger" link @click="handleCancel(row)">
                 <el-icon><Close /></el-icon>取消
               </el-button>
-              <el-button v-if="row.status === 2" type="danger" link @click="handleDelete(row)">
+              <el-button v-if="row.status === 2 || row.status === 3" type="danger" link @click="handleDelete(row)">
                 <el-icon><Delete /></el-icon>删除
               </el-button>
             </div>
@@ -119,8 +119,8 @@ const query = reactive({
 const timeRange = ref<string[]>([])
 const createTimeRange = ref<string[]>([])
 
-function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消' }[s] || '未知' }
-function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info' }[s] as any || 'info' }
+function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
+function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info' }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer)
@@ -171,7 +171,8 @@ async function loadData() {
   } catch { /* */ } finally { loading.value = false }
 }
 function canCancel(row: Reservation): boolean {
-  if (row.status === 2) return false
+  // 已取消(2) / 已拒绝(3) 不可取消
+  if (row.status === 2 || row.status === 3) return false
   return new Date(row.startTime) > new Date()
 }
 async function handleCancel(row: Reservation) {

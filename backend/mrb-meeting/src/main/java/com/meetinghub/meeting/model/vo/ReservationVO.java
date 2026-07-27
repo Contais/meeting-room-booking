@@ -22,5 +22,6 @@ public class ReservationVO implements Serializable {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer status;
+    private String rejectReason;
     private LocalDateTime createTime;
 }
