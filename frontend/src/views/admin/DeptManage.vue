@@ -38,11 +38,10 @@
 
       <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
         <el-table-column prop="name" label="部门名称" min-width="220" />
-        <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="创建时间" min-width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">

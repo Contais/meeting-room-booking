@@ -79,7 +79,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setParentId(dto.getParentId());
         menu.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
         menu.setVisible(dto.getVisible() != null ? dto.getVisible() : VisibleEnum.VISIBLE.getCode());
-        menu.setStatus(EnableStatusEnum.ENABLED.getCode());
+        menu.setStatus(dto.getStatus() != null ? dto.getStatus() : EnableStatusEnum.ENABLED.getCode());
         menuRepository.insert(menu);
     }
 
@@ -94,6 +94,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setParentId(dto.getParentId() != null ? dto.getParentId() : ROOT_PARENT_ID);
         if (dto.getSortOrder() != null) menu.setSortOrder(dto.getSortOrder());
         if (dto.getVisible() != null) menu.setVisible(dto.getVisible());
+        if (dto.getStatus() != null) menu.setStatus(dto.getStatus());
         menuRepository.updateById(menu);
     }
 

@@ -46,11 +46,15 @@
 
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="reservationCode" label="预约编号" width="170" />
+        <el-table-column label="预约编号" width="170">
+          <template #default="{ row }">
+            <el-link type="primary" :underline="false" @click="router.push(`/admin/reservations/${row.id}`)">{{ row.reservationCode }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
         <el-table-column prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
         <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
-        <el-table-column label="预约时段" min-width="160">
+        <el-table-column label="预约时段" min-width="110">
           <template #default="{ row }">
             <div class="time-slot-cell">
               <div class="ts-date">{{ formatDate(row.startTime) }}</div>
@@ -58,8 +62,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
+        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="80" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">

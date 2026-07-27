@@ -52,7 +52,7 @@
             <span style="color: #c0c4cc">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" min-width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column prop="status" label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">
@@ -80,6 +80,7 @@
         <el-form-item label="图标"><el-input v-model="form.icon" placeholder="如: HomeFilled" /></el-form-item>
         <el-form-item label="上级菜单"><el-tree-select v-model="form.parentId" :data="treeData" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="留空则为顶级菜单" style="width:100%" /></el-form-item>
         <el-form-item label="排序号"><el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width:180px" /></el-form-item>
+        <el-form-item label="是否启用"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">禁用</el-radio></el-radio-group></el-form-item>
         <el-form-item label="是否显示"><el-radio-group v-model="form.visible"><el-radio :value="1">显示</el-radio><el-radio :value="0">隐藏</el-radio></el-radio-group></el-form-item>
       </el-form>
     </FormDrawer>
@@ -111,7 +112,7 @@ const createTimeRange = ref<string[]>([])
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
 
-const form = reactive({ id: undefined as number | undefined, name: '', path: '', icon: '', parentId: undefined as number | undefined, sortOrder: 0, visible: 1 })
+const form = reactive({ id: undefined as number | undefined, name: '', path: '', icon: '', parentId: undefined as number | undefined, sortOrder: 0, status: 1, visible: 1 })
 const rules: FormRules = { name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }] }
 
 import { reactive } from 'vue'
@@ -158,13 +159,13 @@ function toggleExpandAll() {
 
 function showCreateDialog(parentId?: number) {
   isEdit.value = false
-  Object.assign(form, { id: undefined, name: '', path: '', icon: '', parentId: parentId || undefined, sortOrder: 0, visible: 1 })
+  Object.assign(form, { id: undefined, name: '', path: '', icon: '', parentId: parentId || undefined, sortOrder: 0, status: 1, visible: 1 })
   dialogVisible.value = true
 }
 
 function showEditDialog(row: MenuItem) {
   isEdit.value = true
-  Object.assign(form, { id: row.id, name: row.name, path: row.path || '', icon: row.icon || '', parentId: row.parentId === 0 ? undefined : row.parentId, sortOrder: row.sortOrder, visible: row.visible })
+  Object.assign(form, { id: row.id, name: row.name, path: row.path || '', icon: row.icon || '', parentId: row.parentId === 0 ? undefined : row.parentId, sortOrder: row.sortOrder, status: row.status, visible: row.visible })
   dialogVisible.value = true
 }
 

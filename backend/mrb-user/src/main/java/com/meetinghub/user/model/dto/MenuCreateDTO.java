@@ -19,5 +19,7 @@ public class MenuCreateDTO {
 
     private Integer sortOrder;
 
+    private Integer status;
+
     private Integer visible;
 }

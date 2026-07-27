@@ -23,5 +23,7 @@ public class MenuUpdateDTO {
 
     private Integer sortOrder;
 
+    private Integer status;
+
     private Integer visible;
 }

@@ -64,7 +64,7 @@
         <el-table-column prop="username" label="预约人" min-width="90" />
         <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
         <el-table-column prop="contactPhone" label="电话" min-width="120" />
-        <el-table-column label="预约时段" min-width="160">
+        <el-table-column label="预约时段" min-width="110">
           <template #default="{ row }">
             <div class="time-slot-cell">
               <div class="ts-date">{{ formatDate(row.startTime) }}</div>
@@ -72,8 +72,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="创建时间" width="160"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
+        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">

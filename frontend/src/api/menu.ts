@@ -10,11 +10,11 @@ export function getMyMenus(): Promise<Result<MenuItem[]>> {
   return request.get('/api/uc/menu/my')
 }
 
-export function createMenu(data: { name: string; path?: string; icon?: string; parentId?: number; sortOrder?: number; visible?: number }): Promise<Result<void>> {
+export function createMenu(data: { name: string; path?: string; icon?: string; parentId?: number; sortOrder?: number; status?: number; visible?: number }): Promise<Result<void>> {
   return request.post('/api/uc/menu/admin/create', data)
 }
 
-export function updateMenu(data: { id: number; name: string; path?: string; icon?: string; parentId?: number; sortOrder?: number; visible?: number }): Promise<Result<void>> {
+export function updateMenu(data: { id: number; name: string; path?: string; icon?: string; parentId?: number; sortOrder?: number; status?: number; visible?: number }): Promise<Result<void>> {
   return request.put('/api/uc/menu/admin/update', data)
 }
 
