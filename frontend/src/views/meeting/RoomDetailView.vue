@@ -15,8 +15,8 @@
             <h2>{{ room.name }}</h2>
             <p class="room-location"><el-icon><Location /></el-icon> {{ room.location || '暂无位置' }}</p>
           </div>
-          <el-tag :type="room.status === 1 ? 'success' : 'info'" size="small" effect="light" round>
-            {{ room.status === 1 ? '可用' : '禁用' }}
+          <el-tag :type="roomStatusType(room)" size="small" effect="light" round>
+            {{ roomStatusText(room) }}
           </el-tag>
         </div>
 
@@ -80,6 +80,15 @@ const reserveDialogVisible = ref(false)
 const bookingDate = ref('')
 const bookingStartTime = ref('')
 const bookingEndTime = ref('')
+
+function roomStatusType(r: MeetingRoom): 'success' | 'warning' | 'info' {
+  if (r.status !== 1) return 'info'
+  return r.currentAvailable ? 'success' : 'warning'
+}
+function roomStatusText(r: MeetingRoom): string {
+  if (r.status !== 1) return '禁用'
+  return r.currentAvailable ? '空闲' : '使用中'
+}
 
 function showReserveDialog() {
   const today = new Date()

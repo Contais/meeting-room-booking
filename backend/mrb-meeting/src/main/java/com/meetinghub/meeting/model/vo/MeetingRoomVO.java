@@ -23,4 +23,8 @@ public class MeetingRoomVO implements Serializable {
     private Integer advanceDays;
     private Integer needApproval;
     private LocalDateTime createTime;
+    /**
+     * 当前是否空闲（基于当前时间的实时状态）
+     */
+    private Boolean currentAvailable;
 }

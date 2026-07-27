@@ -12,6 +12,12 @@
       </template>
     </SearchBar>
 
+    <div class="status-legend">
+      <span class="legend-item"><span class="status-badge active"><span class="status-dot"></span>空闲</span>当前无预约</span>
+      <span class="legend-item"><span class="status-badge busy"><span class="status-dot"></span>使用中</span>当前有进行中的会议</span>
+      <span class="legend-item"><span class="status-badge inactive"><span class="status-dot"></span>禁用</span>会议室已停用</span>
+    </div>
+
     <!-- 卡片列表 -->
     <div class="room-grid" v-loading="loading">
       <div v-for="room in filteredRooms" :key="room.id" class="room-card" @click="goDetail(room.id)">
@@ -26,9 +32,9 @@
             </div>
           </div>
           <div class="card-status-wrap">
-            <span class="status-badge" :class="room.status === 1 ? 'active' : 'inactive'">
+            <span class="status-badge" :class="roomStatusClass(room)">
               <span class="status-dot"></span>
-              {{ room.status === 1 ? '可用' : '禁用' }}
+              {{ roomStatusText(room) }}
             </span>
           </div>
         </div>
@@ -78,6 +84,15 @@ const filteredRooms = computed(() => rooms.value.filter(room => {
 }))
 
 function goDetail(id: number) { router.push(`/meeting/rooms/${id}`) }
+
+function roomStatusClass(room: MeetingRoom): string {
+  if (room.status !== 1) return 'inactive'
+  return room.currentAvailable ? 'active' : 'busy'
+}
+function roomStatusText(room: MeetingRoom): string {
+  if (room.status !== 1) return '禁用'
+  return room.currentAvailable ? '空闲' : '使用中'
+}
 function applyFilter() {
   // 客户端过滤通过 computed(filteredRooms) 自动响应；查询按钮提供显式触发入口
   // 此处强制触发一次响应式更新，确保用户期望的"点击查询"反馈
@@ -93,7 +108,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-view { display: flex; flex-direction: column; gap: 20px; }
+.page-view { display: flex; flex-direction: column; gap: 16px; }
+.status-legend { display: flex; gap: 20px; padding: 10px 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted); }
+.legend-item { display: flex; align-items: center; gap: 6px; }
 
 /* 卡片网格 */
 .room-grid {
@@ -184,6 +201,10 @@ onMounted(async () => {
 .status-badge.active {
   background: rgba(103, 194, 58, 0.1);
   color: #67c23a;
+}
+.status-badge.busy {
+  background: rgba(230, 162, 60, 0.1);
+  color: #e6a23c;
 }
 .status-badge.inactive {
   background: rgba(144, 147, 153, 0.1);

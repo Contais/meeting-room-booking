@@ -13,6 +13,7 @@ export interface MeetingRoom {
   advanceDays: number
   needApproval: number
   createTime: string
+  currentAvailable?: boolean
 }
 
 export interface MeetingRoomPageQuery {

@@ -33,6 +33,7 @@
         <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
+        <el-table-column label="当前" width="80" align="center"><template #default="{ row }"><el-tag v-if="row.status === 1" :type="row.currentAvailable ? 'success' : 'warning'" size="small" effect="light" round>{{ row.currentAvailable ? '空闲' : '使用中' }}</el-tag><span v-else style="color: var(--text-muted)">-</span></template></el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-buttons">

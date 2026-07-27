@@ -7,20 +7,26 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
+import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.model.dto.RoomCreateDTO;
 import com.meetinghub.meeting.model.dto.RoomPageQuery;
 import com.meetinghub.meeting.model.dto.RoomUpdateDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
+import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.MeetingRoomVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
+import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.MeetingRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +37,7 @@ import java.util.stream.Collectors;
 public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, MeetingRoom> implements MeetingRoomService {
 
     private final MeetingRoomRepository meetingRoomRepository;
+    private final ReservationRepository reservationRepository;
 
     @Override
     public List<MeetingRoomVO> listActiveRooms() {
@@ -39,7 +46,9 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
                         .eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
                         .orderByDesc(MeetingRoom::getCreateTime)
         );
-        return rooms.stream().map(this::toVO).collect(Collectors.toList());
+        List<MeetingRoomVO> voList = rooms.stream().map(this::toVO).collect(Collectors.toList());
+        fillCurrentAvailable(voList);
+        return voList;
     }
 
     @Override
@@ -48,13 +57,17 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        return toVO(room);
+        MeetingRoomVO vo = toVO(room);
+        fillCurrentAvailable(List.of(vo));
+        return vo;
     }
 
     @Override
     public IPage<MeetingRoomVO> listRooms(RoomPageQuery query) {
         Page<MeetingRoom> page = new Page<>(query.getPage(), query.getSize());
-        return meetingRoomRepository.selectRoomPage(page, query).convert(this::toVO);
+        IPage<MeetingRoomVO> voPage = meetingRoomRepository.selectRoomPage(page, query).convert(this::toVO);
+        fillCurrentAvailable(voPage.getRecords());
+        return voPage;
     }
 
     @Override
@@ -119,6 +132,34 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
         removeById(id);
+    }
+
+    /**
+     * 批量填充会议室的当前空闲状态
+     * 查询当前时间段内有未取消预约的会议室ID集合
+     */
+    private void fillCurrentAvailable(List<MeetingRoomVO> voList) {
+        if (voList == null || voList.isEmpty()) {
+            return;
+        }
+        Set<Long> roomIds = voList.stream().map(MeetingRoomVO::getId).collect(Collectors.toSet());
+        LocalDateTime now = LocalDateTime.now();
+        List<MeetingRoomReservation> activeReservations = reservationRepository.selectList(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .in(MeetingRoomReservation::getRoomId, roomIds)
+                        .ne(MeetingRoomReservation::getStatus, ReservationStatusEnum.CANCELLED.getCode())
+                        .le(MeetingRoomReservation::getStartTime, now)
+                        .gt(MeetingRoomReservation::getEndTime, now)
+        );
+        Set<Long> busyRoomIds = activeReservations.stream()
+                .map(MeetingRoomReservation::getRoomId)
+                .collect(Collectors.toSet());
+        for (MeetingRoomVO vo : voList) {
+            // 禁用会议室不算空闲
+            vo.setCurrentAvailable(vo.getStatus() != null
+                    && vo.getStatus().equals(EnableStatusEnum.ENABLED.getCode())
+                    && !busyRoomIds.contains(vo.getId()));
+        }
     }
 
     private MeetingRoomVO toVO(MeetingRoom room) {
