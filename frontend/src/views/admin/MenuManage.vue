@@ -165,7 +165,18 @@ function showCreateDialog(parentId?: number) {
 
 function showEditDialog(row: MenuItem) {
   isEdit.value = true
-  Object.assign(form, { id: row.id, name: row.name, path: row.path || '', icon: row.icon || '', parentId: row.parentId === 0 ? undefined : row.parentId, sortOrder: row.sortOrder, status: row.status, visible: row.visible })
+  // parentId 由后端 Long→String 序列化为字符串，需统一比较与转换
+  const pidNum = Number(row.parentId)
+  Object.assign(form, {
+    id: row.id,
+    name: row.name,
+    path: row.path || '',
+    icon: row.icon || '',
+    parentId: !row.parentId || pidNum === 0 ? undefined : row.parentId,
+    sortOrder: row.sortOrder ?? 0,
+    status: row.status ?? 1,
+    visible: row.visible ?? 1
+  })
   dialogVisible.value = true
 }
 
@@ -174,9 +185,18 @@ async function handleSubmit() {
   if (!valid) return
   submitting.value = true
   try {
-    
-    if (isEdit.value) { await updateMenu({ id: form.id!, name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('更新成功') }
-    else { await createMenu({ name: form.name, path: form.path, icon: form.icon, parentId: form.parentId || 0, sortOrder: form.sortOrder, visible: form.visible }); ElMessage.success('创建成功') }
+    // status/visible 显式 Number 转换 + 默认值，避免 undefined 被 JSON.stringify 忽略
+    const payload = {
+      name: form.name,
+      path: form.path,
+      icon: form.icon,
+      parentId: form.parentId || 0,
+      sortOrder: form.sortOrder,
+      status: Number(form.status ?? 1),
+      visible: Number(form.visible ?? 1)
+    }
+    if (isEdit.value) { await updateMenu({ id: form.id!, ...payload }); ElMessage.success('更新成功') }
+    else { await createMenu(payload); ElMessage.success('创建成功') }
     dialogVisible.value = false
     loadData()
   } catch { /* */ } finally { submitting.value = false }
