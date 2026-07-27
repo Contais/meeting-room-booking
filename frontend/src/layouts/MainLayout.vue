@@ -39,7 +39,11 @@
           <el-button class="collapse-btn" @click="toggleCollapse">
             <el-icon><component :is="isCollapsed ? 'Expand' : 'Fold'" /></el-icon>
           </el-button>
-          <h2 class="page-title">{{ currentTitle }}</h2>
+          <h2 class="page-title">
+            <span v-if="parentMeta" class="parent-link" @click="goParent">{{ parentMeta.title }}</span>
+            <span v-if="parentMeta" class="title-separator">/</span>
+            <span class="current-title">{{ currentTitle }}</span>
+          </h2>
         </div>
         <div class="header-right">
           <div class="header-action-group">
@@ -116,6 +120,12 @@ const iconComponents = Object.fromEntries(
 const currentTitle = computed(() => {
   return (route.meta.title as string) || ''
 })
+
+// 父级面包屑（详情页可点击跳转父级列表）
+const parentMeta = computed(() => (route.meta.parent as { path: string; title: string } | undefined))
+function goParent() {
+  if (parentMeta.value) router.push(parentMeta.value.path)
+}
 
 // 头像渐变色
 const avatarGradients = [
@@ -317,6 +327,29 @@ onMounted(loadMenus)
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.parent-link {
+  color: var(--text-secondary, #909399);
+  font-weight: 400;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.parent-link:hover {
+  color: var(--primary, #409eff);
+}
+
+.title-separator {
+  color: var(--text-secondary, #c0c4cc);
+  font-weight: 400;
+}
+
+.current-title {
+  color: var(--text-primary);
 }
 
 .header-right {

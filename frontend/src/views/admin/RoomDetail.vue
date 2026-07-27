@@ -6,7 +6,6 @@
           <el-icon><ArrowLeft /></el-icon>
           <span>返回</span>
         </el-button>
-        <h2 class="page-title">会议室详情</h2>
       </div>
       <div v-if="room" class="header-actions">
         <el-button type="danger" plain @click="handleDelete">

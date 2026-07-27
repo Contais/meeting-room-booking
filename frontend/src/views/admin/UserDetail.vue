@@ -6,7 +6,6 @@
           <el-icon><ArrowLeft /></el-icon>
           <span>返回</span>
         </el-button>
-        <h2 class="page-title">用户详情</h2>
       </div>
       <div v-if="user" class="header-actions">
         <el-button :type="user.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">

@@ -6,7 +6,6 @@
           <el-icon><ArrowLeft /></el-icon>
           <span>返回</span>
         </el-button>
-        <h2 class="page-title">预约详情</h2>
       </div>
       <div v-if="reservation" class="header-actions">
         <el-button v-if="reservation.status === 2" type="danger" plain @click="handleDelete">
