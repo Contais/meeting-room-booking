@@ -12,7 +12,7 @@
     </div>
 
     <div class="stat-row">
-      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx">
+      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx" @click="$router.push(item.path)">
         <div class="stat-icon" :style="{ background: item.bg }"><el-icon :size="20"><component :is="item.icon" /></el-icon></div>
         <div class="stat-info"><div class="stat-value">{{ item.value }}</div><div class="stat-label">{{ item.label }}</div></div>
       </div>
@@ -65,11 +65,11 @@ const usageChartOption = ref({})
 const peakChartOption = ref({})
 
 const statItems = computed(() => [
-  { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)' },
-  { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #f093fb, #f5576c)' },
-  { label: '本周预约', value: stats.weekReservations, icon: Clock, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
-  { label: '总预约数', value: stats.totalReservations, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)' },
-  ...(userStore.isAdmin() ? [{ label: '待审批', value: stats.pendingApproval, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' }] : []),
+  { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)', path: '/meeting/rooms' },
+  { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #f093fb, #f5576c)', path: '/reservation/my' },
+  { label: '本周预约', value: stats.weekReservations, icon: Clock, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)', path: '/reservation/my' },
+  { label: '总预约数', value: stats.totalReservations, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)', path: '/reservation/my' },
+  ...(userStore.isAdmin() ? [{ label: '待审批', value: stats.pendingApproval, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', path: '/admin/reservations' }] : []),
 ])
 
 const actionItems = computed(() => [
@@ -154,6 +154,14 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .stat-icon {
