@@ -32,5 +32,6 @@ backend/mrb-*/src/main/resources/bootstrap-local.yml
 backend/.env
 backend/.env.example
 backend/config/
+backend/restart.sh
 backend/start.sh
 backend/stop.sh
