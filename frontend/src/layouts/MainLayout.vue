@@ -40,7 +40,7 @@
         </div>
         <div class="header-right">
           <el-tooltip content="AI 助手" placement="bottom">
-            <el-button class="icon-btn" @click="toggleChat">
+            <el-button class="icon-btn chat-btn" @click="toggleChat">
               <el-icon><ChatDotRound /></el-icon>
             </el-button>
           </el-tooltip>
@@ -148,6 +148,7 @@ onMounted(loadMenus)
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.3s ease;
@@ -258,7 +259,7 @@ onMounted(loadMenus)
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .icon-btn {
@@ -279,6 +280,29 @@ onMounted(loadMenus)
 .icon-btn:hover {
   background: var(--border-light);
   color: var(--primary);
+}
+
+/* 聊天入口：在线状态圆点 */
+.chat-btn {
+  position: relative;
+}
+
+.chat-btn::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--bg-card);
+  animation: online-pulse 2s ease-in-out infinite;
+}
+
+@keyframes online-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
 }
 
 .avatar-btn {

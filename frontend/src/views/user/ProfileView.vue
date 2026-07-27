@@ -1,8 +1,21 @@
 <template>
   <div class="profile-container">
+    <div class="profile-banner page-card">
+      <div class="banner-avatar">{{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}</div>
+      <div class="banner-info">
+        <h2 class="banner-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</h2>
+        <div class="banner-meta">
+          <span class="banner-username">@{{ userStore.userInfo?.username }}</span>
+          <el-tag :type="userStore.isAdmin() ? 'danger' : 'info'" effect="dark" round size="small">
+            {{ userStore.isAdmin() ? '管理员' : '普通用户' }}
+          </el-tag>
+        </div>
+      </div>
+    </div>
     <div class="profile-grid">
       <div class="profile-card page-card">
         <div class="card-header">
+          <el-icon class="card-header-icon"><User /></el-icon>
           <h3>个人信息</h3>
         </div>
         <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="80px">
@@ -30,6 +43,7 @@
 
       <div class="profile-card page-card">
         <div class="card-header">
+          <el-icon class="card-header-icon"><Lock /></el-icon>
           <h3>修改密码</h3>
         </div>
         <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px">
@@ -57,6 +71,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, changePassword } from '@/api/user'
 
@@ -126,7 +141,71 @@ async function handleChangePassword() {
 
 <style scoped>
 .profile-container { display: flex; flex-direction: column; gap: 20px; }
+
 .profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-.profile-card .card-header { margin-bottom: 24px; }
-.profile-card .card-header h3 { font-size: 16px; font-weight: 600; color: #1a1a2e; margin: 0; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+
+/* 横幅 */
+.profile-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08)), var(--bg-card);
+}
+
+.banner-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.banner-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-username {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 表单卡片 */
+.profile-card { padding: 24px; }
+
+.profile-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.profile-card .card-header-icon {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.profile-card .card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
 </style>

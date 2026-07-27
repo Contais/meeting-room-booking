@@ -123,6 +123,22 @@ html.dark .el-sub-menu__title:hover {
   background: rgba(102, 126, 234, 0.15) !important;
 }
 
+/* 亮色模式：折叠侧栏二级菜单弹出层 — 与深色侧栏背景一致 */
+.el-menu--popup {
+  background: #302b63;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.el-menu--popup .el-menu-item {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.el-menu--popup .el-menu-item:hover,
+.el-menu--popup .el-menu-item.is-active {
+  background: rgba(102, 126, 234, 0.25) !important;
+  color: #ffffff;
+}
+
 html.dark .el-menu--popup {
   background: var(--bg-card);
   border-color: var(--border);
