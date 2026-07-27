@@ -23,13 +23,13 @@ public class ReservationAttendeeController {
     private final ReservationAttendeeService attendeeService;
 
     /**
-     * 邀请参会人（按用户 ID 列表）
+     * 邀请参会人（按用户 ID 列表），返回实际新增数量
      */
     @PostMapping("/{reservationId}/invite")
-    public Result<Void> inviteAttendees(@PathVariable Long reservationId,
-                                         @RequestBody InviteRequest req) {
-        attendeeService.inviteAttendees(reservationId, UserContext.getCurrentUserId(), req.getUserIds());
-        return Result.ok();
+    public Result<Integer> inviteAttendees(@PathVariable Long reservationId,
+                                            @RequestBody InviteRequest req) {
+        int count = attendeeService.inviteAttendees(reservationId, UserContext.getCurrentUserId(), req.getUserIds());
+        return Result.ok(count);
     }
 
     /**

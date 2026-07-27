@@ -19,6 +19,7 @@ import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +30,6 @@ import com.meetinghub.meeting.model.vo.ScheduleReservationVO;
 import com.meetinghub.meeting.model.vo.ScheduleRoomVO;
 import com.meetinghub.meeting.model.vo.ScheduleVO;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 /**
  * 预约服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, MeetingRoomReservation> implements ReservationService {
@@ -91,6 +92,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         String reservationCode = generateReservationCode(reservation.getId());
         reservation.setReservationCode(reservationCode);
         updateById(reservation);
+        log.info("预约创建成功, userId={}, roomId={}, code={}, status={}", userId, dto.getRoomId(), reservationCode, initialStatus);
         return reservationCode;
     }
 
@@ -164,6 +166,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         }
         reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
         updateById(reservation);
+        log.info("预约取消, userId={}, reservationId={}", userId, reservationId);
     }
 
     @Override
@@ -180,6 +183,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消或已拒绝的预约");
         }
         removeById(reservationId);
+        log.info("预约删除, userId={}, reservationId={}", userId, reservationId);
     }
 
     @Override
@@ -200,7 +204,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .eq(MeetingRoomReservation::getRoomId, roomId)
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
@@ -225,7 +229,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                     emptyPage.setTotal(0);
                     return emptyPage;
                 }
-            } catch (Exception e) { /* 降级：不按 username 过滤 */ }
+            } catch (Exception e) {
+                log.warn("Feign 查询用户失败, username={}, 降级为不按用户名过滤", query.getUsername(), e);
+            }
         }
         // 复杂多条件 + JOIN 会议室名称，下沉到 ReservationRepository.xml
         Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
@@ -255,7 +261,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             if (result != null && result.getData() != null) {
                 userNameMap = result.getData();
             }
-        } catch (Exception e) { /* 跨服务降级：用户名留空 */ }
+        } catch (Exception e) {
+            log.warn("Feign 批量查询用户名失败, userIds={}, 降级为用户名留空", userIds, e);
+        }
         for (ReservationVO vo : records) {
             vo.setUsername(userNameMap.getOrDefault(vo.getUserId(), ""));
         }
@@ -281,6 +289,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (!ok) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
         }
+        log.info("预约审批通过, reservationId={}", reservationId);
     }
 
     @Override
@@ -304,6 +313,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (!ok) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
         }
+        log.info("预约拒绝, reservationId={}, reason={}", reservationId, reason);
     }
 
     /**
@@ -320,7 +330,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 且不依赖 DATETIME 小数秒精度（原 minusNanos/plusNanos 会被 MySQL 截断导致边界误判）
         LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
                 .eq(MeetingRoomReservation::getRoomId, roomId)
-                .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                 .lt(MeetingRoomReservation::getStartTime, endTime)
                 .gt(MeetingRoomReservation::getEndTime, startTime);
         if (excludeId != null) {
@@ -353,7 +363,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
 
         List<MeetingRoomReservation> reservations = list(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .lt(MeetingRoomReservation::getStartTime, rangeEnd)
                         .gt(MeetingRoomReservation::getEndTime, rangeStart)
         );
@@ -361,17 +371,19 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         Map<Long, String> roomNameMap = rooms.stream()
                 .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
 
-        // 查询预约人姓名
+        // 查询预约人姓名（批量 Feign 调用，消除 N+1）
         List<Long> userIds = reservations.stream()
                 .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
         Map<Long, String> userNameMap = new java.util.HashMap<>();
-        for (Long uid : userIds) {
+        if (!userIds.isEmpty()) {
             try {
-                var userResult = userFeignClient.getUserForAuth(String.valueOf(uid));
-                if (userResult != null && userResult.getData() != null) {
-                    userNameMap.put(uid, userResult.getData().getUsername());
+                var result = userFeignClient.batchUsernames(userIds);
+                if (result != null && result.getData() != null) {
+                    userNameMap = result.getData();
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.warn("Feign 批量查询用户名失败(getSchedule), userIds={}, 降级为用户名留空", userIds, e);
+            }
         }
 
         ScheduleVO vo = new ScheduleVO();
@@ -437,16 +449,20 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             if (room != null) {
                 roomName = room.getName();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("查询会议室名称失败, roomId={}", r.getRoomId(), e);
+        }
 
-        // 查询用户名（使用内部接口）
+        // 查询用户名（使用批量内部接口，与列表查询保持一致）
         String userName = "";
         try {
-            var userResult = userFeignClient.getUserForAuth(String.valueOf(r.getUserId()));
+            var userResult = userFeignClient.batchUsernames(List.of(r.getUserId()));
             if (userResult != null && userResult.getData() != null) {
-                userName = userResult.getData().getUsername();
+                userName = userResult.getData().getOrDefault(r.getUserId(), "");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("Feign 查询用户名失败, userId={}", r.getUserId(), e);
+        }
 
         return toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
     }
@@ -462,5 +478,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "只能删除已取消或已拒绝的预约");
         }
         removeById(reservationId);
+        log.info("管理员删除预约, reservationId={}", reservationId);
     }
 }

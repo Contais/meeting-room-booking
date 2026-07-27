@@ -13,8 +13,6 @@ import com.meetinghub.meeting.service.HomeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -48,7 +46,7 @@ public class HomeServiceImpl implements HomeService {
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
         long todayReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
         );
         stats.put("todayReservations", todayReservations);
@@ -62,7 +60,7 @@ public class HomeServiceImpl implements HomeService {
         LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         long weekReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .ge(MeetingRoomReservation::getStartTime, weekStart.atStartOfDay())
                         .le(MeetingRoomReservation::getStartTime, today.atTime(LocalTime.MAX))
         );
@@ -70,7 +68,7 @@ public class HomeServiceImpl implements HomeService {
 
         long totalReservations = reservationRepository.selectCount(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
         );
         stats.put("totalReservations", totalReservations);
 
@@ -92,7 +90,7 @@ public class HomeServiceImpl implements HomeService {
             List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                     new LambdaQueryWrapper<MeetingRoomReservation>()
                             .eq(MeetingRoomReservation::getRoomId, room.getId())
-                            .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                            .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                             .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
             );
             int usedMinutes = 0;
@@ -118,7 +116,7 @@ public class HomeServiceImpl implements HomeService {
 
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
         );
 

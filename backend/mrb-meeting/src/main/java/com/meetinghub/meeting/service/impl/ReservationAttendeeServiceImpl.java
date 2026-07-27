@@ -2,6 +2,7 @@ package com.meetinghub.meeting.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.meetinghub.common.enums.AttendeeStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.feign.UserFeignClient;
@@ -39,17 +40,14 @@ public class ReservationAttendeeServiceImpl
     private final ReservationRepository reservationRepository;
     private final UserFeignClient userFeignClient;
 
-    /** 参会状态：0-待响应 */
-    private static final int STATUS_PENDING = 0;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void inviteAttendees(Long reservationId, Long inviterId, List<Long> userIds) {
+    public int inviteAttendees(Long reservationId, Long inviterId, List<Long> userIds) {
         if (reservationId == null || inviterId == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约ID或邀请人ID不能为空");
         }
         if (CollectionUtils.isEmpty(userIds)) {
-            return;
+            return 0;
         }
 
         // 校验预约存在且归属邀请人
@@ -72,21 +70,21 @@ public class ReservationAttendeeServiceImpl
                 .distinct()
                 .collect(Collectors.toList());
         if (toAdd.isEmpty()) {
-            return;
+            return 0;
         }
 
         List<ReservationAttendee> records = toAdd.stream().map(uid -> {
             ReservationAttendee a = new ReservationAttendee();
             a.setReservationId(reservationId);
             a.setUserId(uid);
-            a.setStatus(STATUS_PENDING);
+            a.setStatus(AttendeeStatusEnum.PENDING.getCode());
             return a;
         }).collect(Collectors.toList());
 
-        // MyBatis-Plus BaseMapper 不支持 List 批量插入，循环单条插入
-        for (ReservationAttendee r : records) {
-            attendeeRepository.insert(r);
-        }
+        // 批量插入（IService.saveBatch 默认 1000 条一批）
+        saveBatch(records);
+        log.info("邀请参会人, reservationId={}, inviterId={}, added={}", reservationId, inviterId, records.size());
+        return records.size();
     }
 
     @Override
@@ -114,14 +112,7 @@ public class ReservationAttendeeServiceImpl
                 .map(UserBriefDTO::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        inviteAttendees(reservationId, inviterId, userIds);
-        // 返回实际新增数量（去重后的）
-        List<ReservationAttendee> all = attendeeRepository.selectList(
-                new LambdaQueryWrapper<ReservationAttendee>()
-                        .eq(ReservationAttendee::getReservationId, reservationId)
-                        .in(ReservationAttendee::getUserId, userIds)
-        );
-        return all.size();
+        return inviteAttendees(reservationId, inviterId, userIds);
     }
 
     @Override

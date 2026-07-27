@@ -13,8 +13,10 @@ public interface ReservationAttendeeService extends IService<ReservationAttendee
 
     /**
      * 邀请参会人（覆盖式：旧 invitee 保留，新 userIds 追加；已存在的跳过）
+     *
+     * @return 实际新增的参会人数量
      */
-    void inviteAttendees(Long reservationId, Long inviterId, List<Long> userIds);
+    int inviteAttendees(Long reservationId, Long inviterId, List<Long> userIds);
 
     /**
      * 按部门邀请：将部门所有成员加入参会人列表

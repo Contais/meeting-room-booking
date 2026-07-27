@@ -19,12 +19,14 @@ import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.MeetingRoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.beans.PropertyDescriptor;
 import java.time.LocalDateTime;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,6 +73,12 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         return voPage;
     }
 
+    /** 会议室默认配置常量 */
+    private static final String DEFAULT_BOOKABLE_START = "08:00";
+    private static final String DEFAULT_BOOKABLE_END = "20:00";
+    private static final Integer DEFAULT_MAX_DURATION = 480;
+    private static final Integer DEFAULT_ADVANCE_DAYS = 7;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createRoom(RoomCreateDTO dto) {
@@ -81,10 +89,10 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         room.setEquipment(dto.getEquipment());
         room.setImageUrl(dto.getImageUrl());
         room.setDescription(dto.getDescription());
-        room.setBookableStart(dto.getBookableStart() != null ? dto.getBookableStart() : "08:00");
-        room.setBookableEnd(dto.getBookableEnd() != null ? dto.getBookableEnd() : "20:00");
-        room.setMaxDuration(dto.getMaxDuration() != null ? dto.getMaxDuration() : 480);
-        room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : 7);
+        room.setBookableStart(dto.getBookableStart() != null ? dto.getBookableStart() : DEFAULT_BOOKABLE_START);
+        room.setBookableEnd(dto.getBookableEnd() != null ? dto.getBookableEnd() : DEFAULT_BOOKABLE_END);
+        room.setMaxDuration(dto.getMaxDuration() != null ? dto.getMaxDuration() : DEFAULT_MAX_DURATION);
+        room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : DEFAULT_ADVANCE_DAYS);
         room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : ApprovalModeEnum.FREE_APPROVAL.getCode());
         room.setStatus(EnableStatusEnum.ENABLED.getCode());
         save(room);
@@ -97,18 +105,30 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        if (StringUtils.hasText(dto.getName())) room.setName(dto.getName());
-        if (dto.getLocation() != null) room.setLocation(dto.getLocation());
-        if (dto.getCapacity() != null) room.setCapacity(dto.getCapacity());
-        if (dto.getEquipment() != null) room.setEquipment(dto.getEquipment());
-        if (dto.getImageUrl() != null) room.setImageUrl(dto.getImageUrl());
-        if (dto.getDescription() != null) room.setDescription(dto.getDescription());
-        if (dto.getBookableStart() != null) room.setBookableStart(dto.getBookableStart());
-        if (dto.getBookableEnd() != null) room.setBookableEnd(dto.getBookableEnd());
-        if (dto.getMaxDuration() != null) room.setMaxDuration(dto.getMaxDuration());
-        if (dto.getAdvanceDays() != null) room.setAdvanceDays(dto.getAdvanceDays());
-        if (dto.getNeedApproval() != null) room.setNeedApproval(dto.getNeedApproval());
+        // 自动复制 DTO 中非 null 字段到实体，避免 11 个 if 判断
+        BeanUtils.copyProperties(dto, room, getNullPropertyNames(dto));
         updateById(room);
+    }
+
+    /**
+     * 获取对象中值为 null 的属性名数组，供 BeanUtils.copyProperties 忽略
+     */
+    private String[] getNullPropertyNames(Object source) {
+        java.beans.BeanInfo beanInfo;
+        try {
+            beanInfo = java.beans.Introspector.getBeanInfo(source.getClass());
+        } catch (Exception e) {
+            return new String[0];
+        }
+        Set<String> nullNames = new HashSet<>();
+        for (PropertyDescriptor pd : beanInfo.getPropertyDescriptors()) {
+            try {
+                if (pd.getReadMethod() != null && pd.getReadMethod().invoke(source) == null) {
+                    nullNames.add(pd.getName());
+                }
+            } catch (Exception ignored) { /* 跳过不可读属性 */ }
+        }
+        return nullNames.toArray(new String[0]);
     }
 
     @Override
@@ -148,7 +168,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         List<MeetingRoomReservation> activeReservations = reservationRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoomReservation>()
                         .in(MeetingRoomReservation::getRoomId, roomIds)
-                        .notIn(MeetingRoomReservation::getStatus, Arrays.asList(ReservationStatusEnum.CANCELLED.getCode(), ReservationStatusEnum.REJECTED.getCode()))
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
                         .le(MeetingRoomReservation::getStartTime, now)
                         .gt(MeetingRoomReservation::getEndTime, now)
         );

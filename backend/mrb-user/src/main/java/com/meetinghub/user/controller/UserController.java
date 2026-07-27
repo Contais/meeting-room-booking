@@ -26,9 +26,11 @@ public class UserController {
 
     @GetMapping("/{id}")
     public Result<UserVO> getUser(@PathVariable Long id) {
+        // 普通用户仅能查自己，管理员可查任意；业务层在 service 中校验
         return Result.ok(userService.getUserDetail(id));
     }
 
+    @RequiresRole("admin")
     @GetMapping("/info/username/{username}")
     public Result<UserVO> getUserByUsername(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
@@ -89,7 +91,7 @@ public class UserController {
     }
 
     @PutMapping("/me/profile")
-    public Result<Void> updateProfile(@RequestBody UserProfileDTO dto) {
+    public Result<Void> updateProfile(@Valid @RequestBody UserProfileDTO dto) {
         userService.updateProfile(UserContext.getCurrentUserId(), dto);
         return Result.ok();
     }

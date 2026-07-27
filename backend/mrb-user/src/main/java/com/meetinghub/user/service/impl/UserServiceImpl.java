@@ -18,19 +18,24 @@ import com.meetinghub.user.repository.DepartmentRepository;
 import com.meetinghub.user.repository.UserRepository;
 import com.meetinghub.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * 用户服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserRepository, User> implements UserService {
@@ -42,7 +47,6 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public User getUserById(Long id) {
         User user = getById(id);
         if (user == null) {
@@ -61,7 +65,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     @Override
     public Map<Long, String> getUsernamesByIds(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            return java.util.Collections.emptyMap();
+            return Collections.emptyMap();
         }
         List<User> users = listByIds(ids);
         return users.stream().collect(
@@ -77,26 +81,59 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         );
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void register(String username, String password, String phone, String email) {
+    /**
+     * 校验用户名格式
+     */
+    private void validateUsername(String username) {
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             throw new BusinessException(ErrorCode.USERNAME_FORMAT_ERROR);
         }
-        if (phone != null && !phone.isEmpty() && !PHONE_PATTERN.matcher(phone).matches()) {
+    }
+
+    /**
+     * 校验手机号格式（仅在非空时校验）
+     */
+    private void validatePhoneFormat(String phone) {
+        if (StringUtils.hasText(phone) && !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
+    }
+
+    /**
+     * 校验用户名未被占用（新建场景）
+     */
+    private void checkUsernameNotExists(String username) {
         if (getActiveUserByUsername(username) != null) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
-        if (StringUtils.hasText(phone)) {
-            Long count = count(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
-            );
-            if (count > 0) {
-                throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
-            }
+    }
+
+    /**
+     * 校验手机号未被占用（排除指定用户 ID，新建传 null）
+     */
+    private void checkPhoneNotExists(String phone, Long excludeUserId) {
+        if (!StringUtils.hasText(phone)) {
+            return;
         }
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
+                .eq(User::getPhone, phone)
+                .eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode());
+        if (excludeUserId != null) {
+            wrapper.ne(User::getId, excludeUserId);
+        }
+        if (count(wrapper) > 0) {
+            throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void register(String username, String password, String phone, String email) {
+        validateUsername(username);
+        validatePhoneFormat(phone);
+        checkUsernameNotExists(username);
+        checkPhoneNotExists(phone, null);
+
         User user = new User();
         user.setUsername(username);
         user.setPassword(BCrypt.hashpw(password));
@@ -105,6 +142,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         user.setRole(RoleEnum.USER.getCode());
         user.setStatus(EnableStatusEnum.ENABLED.getCode());
         save(user);
+        log.info("用户注册成功, userId={}, username={}", user.getId(), username);
     }
 
     @Override
@@ -121,23 +159,11 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createUser(UserCreateDTO dto) {
-        if (!USERNAME_PATTERN.matcher(dto.getUsername()).matches()) {
-            throw new BusinessException(ErrorCode.USERNAME_FORMAT_ERROR);
-        }
-        if (StringUtils.hasText(dto.getPhone()) && !PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
-            throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
-        }
-        if (getActiveUserByUsername(dto.getUsername()) != null) {
-            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
-        }
-        if (StringUtils.hasText(dto.getPhone())) {
-            Long count = count(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
-            );
-            if (count > 0) {
-                throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
-            }
-        }
+        validateUsername(dto.getUsername());
+        validatePhoneFormat(dto.getPhone());
+        checkUsernameNotExists(dto.getUsername());
+        checkPhoneNotExists(dto.getPhone(), null);
+
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(BCrypt.hashpw(dto.getPassword()));
@@ -148,22 +174,17 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         user.setDepartmentId(dto.getDepartmentId());
         user.setStatus(EnableStatusEnum.ENABLED.getCode());
         save(user);
+        log.info("管理员创建用户, userId={}, username={}", user.getId(), dto.getUsername());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUser(UserUpdateDTO dto) {
         User user = getUserById(dto.getId());
+        // 手机号变更时校验格式与唯一性
         if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
-            if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
-                throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
-            }
-            Long count = count(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, dto.getId())
-            );
-            if (count > 0) {
-                throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
-            }
+            validatePhoneFormat(dto.getPhone());
+            checkPhoneNotExists(dto.getPhone(), dto.getId());
         }
         user.setPhone(dto.getPhone());
         user.setEmail(dto.getEmail());
@@ -173,6 +194,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         }
         user.setDepartmentId(dto.getDepartmentId());
         updateById(user);
+        log.info("管理员更新用户, userId={}", dto.getId());
     }
 
     @Override
@@ -184,6 +206,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
                 : EnableStatusEnum.ENABLED.getCode();
         user.setStatus(newStatus);
         updateById(user);
+        log.info("用户状态切换, userId={}, newStatus={}", id, newStatus);
     }
 
     @Override
@@ -194,6 +217,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "不允许删除管理员账号");
         }
         removeById(id);
+        log.info("用户删除, userId={}, username={}", id, user.getUsername());
     }
 
     @Override
@@ -201,15 +225,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     public void updateProfile(Long userId, UserProfileDTO dto) {
         User user = getUserById(userId);
         if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
-            if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
-                throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
-            }
-            Long count = count(
-                    new LambdaQueryWrapper<User>().eq(User::getPhone, dto.getPhone()).eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode()).ne(User::getId, userId)
-            );
-            if (count > 0) {
-                throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
-            }
+            validatePhoneFormat(dto.getPhone());
+            checkPhoneNotExists(dto.getPhone(), userId);
         }
         user.setPhone(dto.getPhone());
         user.setEmail(dto.getEmail());
@@ -218,6 +235,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             user.setAvatar(dto.getAvatar());
         }
         updateById(user);
+        log.info("用户更新个人资料, userId={}", userId);
     }
 
     @Override
@@ -225,10 +243,12 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     public void changePassword(Long userId, ChangePasswordDTO dto) {
         User user = getUserById(userId);
         if (user.getPassword() == null || !BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
+            log.warn("修改密码失败：旧密码错误, userId={}", userId);
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "旧密码错误");
         }
         user.setPassword(BCrypt.hashpw(dto.getNewPassword()));
         updateById(user);
+        log.info("用户修改密码, userId={}", userId);
     }
 
     @Override
@@ -237,22 +257,63 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         User user = getUserById(userId);
         user.setPassword(BCrypt.hashpw(newPassword));
         updateById(user);
+        log.info("管理员重置用户密码, userId={}", userId);
     }
 
     @Override
     public List<UserVO> listContacts(String keyword, Long departmentId) {
-        return userRepository.selectContacts(keyword, departmentId).stream().map(this::toVO).collect(Collectors.toList());
+        List<User> users = userRepository.selectContacts(keyword, departmentId);
+        return toVOList(users);
     }
 
     @Override
     public List<UserVO> listByIdsDetailed(Collection<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
-        return listByIds(ids).stream().map(this::toVO).collect(Collectors.toList());
+        return toVOList(listByIds(ids));
     }
 
+    /**
+     * 批量转换 User -> UserVO，一次性查询部门信息消除 N+1
+     */
+    private List<UserVO> toVOList(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<Long> deptIds = users.stream()
+                .map(User::getDepartmentId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> deptNameMap = batchQueryDeptNames(deptIds);
+        return users.stream().map(u -> toVO(u, deptNameMap)).collect(Collectors.toList());
+    }
+
+    /**
+     * 批量查询部门名称
+     */
+    private Map<Long, String> batchQueryDeptNames(Collection<Long> deptIds) {
+        if (deptIds == null || deptIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Department> depts = departmentRepository.selectBatchIds(deptIds);
+        return depts.stream().collect(Collectors.toMap(Department::getId, Department::getName, (a, b) -> a));
+    }
+
+    /**
+     * 单个 User 转 VO（详情场景使用，内部批量查询部门）
+     */
     private UserVO toVO(User user) {
+        Map<Long, String> deptNameMap = batchQueryDeptNames(
+                user.getDepartmentId() != null ? List.of(user.getDepartmentId()) : List.of()
+        );
+        return toVO(user, deptNameMap);
+    }
+
+    /**
+     * User 转 VO，使用预先批量查询的部门名称映射
+     */
+    private UserVO toVO(User user, Map<Long, String> deptNameMap) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
@@ -265,10 +326,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         vo.setCreateTime(user.getCreateTime());
         vo.setDepartmentId(user.getDepartmentId());
         if (user.getDepartmentId() != null) {
-            Department dept = departmentRepository.selectById(user.getDepartmentId());
-            if (dept != null) {
-                vo.setDepartmentName(dept.getName());
-            }
+            vo.setDepartmentName(deptNameMap.getOrDefault(user.getDepartmentId(), ""));
         }
         return vo;
     }

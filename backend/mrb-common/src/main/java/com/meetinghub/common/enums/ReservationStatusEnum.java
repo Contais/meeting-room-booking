@@ -3,6 +3,8 @@ package com.meetinghub.common.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 /**
  * 预约状态枚举
  */
@@ -14,6 +16,12 @@ public enum ReservationStatusEnum {
     CONFIRMED(1, "已确认"),
     CANCELLED(2, "已取消"),
     REJECTED(3, "已拒绝");
+
+    /**
+     * 查询时需排除的状态码集合（已取消 + 已拒绝，表示时段已释放）
+     * 统一引用此常量，避免散落各处的 Arrays.asList(CANCELLED, REJECTED) 重复代码
+     */
+    public static final List<Integer> EXCLUDED_CODES = List.of(CANCELLED.getCode(), REJECTED.getCode());
 
     private final Integer code;
     private final String desc;

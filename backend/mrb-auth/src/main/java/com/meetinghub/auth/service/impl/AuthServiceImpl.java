@@ -34,16 +34,19 @@ public class AuthServiceImpl implements AuthService {
     public LoginVO login(String username, String password) {
         var result = userFeignClient.getUserForAuth(username);
         if (result == null || result.getData() == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            log.warn("登录失败：用户不存在, username={}", username);
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "用户名或密码错误");
         }
 
         AuthUserDTO user = result.getData();
 
         if (user.getStatus() == null || EnableStatusEnum.DISABLED.getCode().equals(user.getStatus())) {
+            log.warn("登录失败：账号已被禁用, username={}", username);
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号已被禁用");
         }
 
         if (user.getPassword() == null || !BCrypt.checkpw(password, user.getPassword())) {
+            log.warn("登录失败：密码错误, username={}", username);
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "用户名或密码错误");
         }
 
