@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meetinghub.meeting.repository.RoomEquipmentRepository">
+
+    <!-- 查询设备关联的会议室列表（含会议室名称、位置、数量） -->
+    <select id="selectRoomListByEquipmentId" resultType="com.meetinghub.meeting.model.vo.EquipmentVO$RoomBriefVO">
+        SELECT re.room_id AS id,
+               mr.name AS name,
+               mr.location AS location,
+               re.quantity AS quantity
+        FROM room_equipment re
+        LEFT JOIN meeting_room mr ON mr.id = re.room_id AND mr.deleted = 0
+        WHERE re.deleted = 0
+          AND re.equipment_id = #{equipmentId}
+        ORDER BY re.create_time DESC
+    </select>
+
+    <!-- 查询会议室关联的设备列表（含设备信息） -->
+    <select id="selectEquipmentListByRoomId" resultType="com.meetinghub.meeting.model.vo.EquipmentVO">
+        SELECT e.id AS id,
+               e.code AS code,
+               e.name AS name,
+               e.category AS category,
+               e.brand AS brand,
+               e.model AS model,
+               e.status AS status,
+               e.purchase_date AS purchaseDate,
+               e.description AS description,
+               e.create_time AS createTime,
+               re.quantity AS quantity
+        FROM room_equipment re
+        LEFT JOIN equipment e ON e.id = re.equipment_id AND e.deleted = 0
+        WHERE re.deleted = 0
+          AND re.room_id = #{roomId}
+        ORDER BY re.create_time DESC
+    </select>
+
+</mapper>

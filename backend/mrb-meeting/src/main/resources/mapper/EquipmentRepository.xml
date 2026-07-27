@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meetinghub.meeting.repository.EquipmentRepository">
+
+    <!--
+        设备列表分页查询：关键字 OR + 名称 + 分类 + 品牌 + 状态 + 创建时间范围
+    -->
+    <select id="selectEquipmentPage" resultType="com.meetinghub.meeting.model.entity.Equipment">
+        SELECT * FROM equipment
+        WHERE deleted = 0
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (name LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR code LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR brand LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.name != null and query.name != ''">
+            AND name LIKE CONCAT('%', #{query.name}, '%')
+        </if>
+        <if test="query.category != null and query.category != ''">
+            AND category = #{query.category}
+        </if>
+        <if test="query.brand != null and query.brand != ''">
+            AND brand LIKE CONCAT('%', #{query.brand}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        <if test="query.createTimeStart != null and query.createTimeStart != ''">
+            AND create_time &gt;= #{query.createTimeStart}
+        </if>
+        <if test="query.createTimeEnd != null and query.createTimeEnd != ''">
+            AND create_time &lt;= #{query.createTimeEnd}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

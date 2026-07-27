@@ -33,6 +33,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'admin/reservations/:id', name: 'AdminReservationDetail', component: () => import('@/views/admin/ReservationDetail.vue'), meta: { title: '预约详情', requiresAuth: true, requiresAdmin: true, parent: { path: '/admin/reservations', title: '预约管理' } } },
       { path: 'admin/rooms', name: 'AdminRooms', component: () => import('@/views/admin/RoomManage.vue'), meta: { title: '会议室管理', requiresAuth: true, requiresAdmin: true } },
       { path: 'admin/rooms/:id', name: 'AdminRoomDetail', component: () => import('@/views/admin/RoomDetail.vue'), meta: { title: '会议室详情', requiresAuth: true, requiresAdmin: true, parent: { path: '/admin/rooms', title: '会议室管理' } } },
+      { path: 'admin/equipments', name: 'AdminEquipments', component: () => import('@/views/admin/EquipmentManage.vue'), meta: { title: '设备管理', requiresAuth: true, requiresAdmin: true } },
+      { path: 'admin/equipments/:id', name: 'AdminEquipmentDetail', component: () => import('@/views/admin/EquipmentDetail.vue'), meta: { title: '设备详情', requiresAuth: true, requiresAdmin: true, parent: { path: '/admin/equipments', title: '设备管理' } } },
     ],
   },
 ]

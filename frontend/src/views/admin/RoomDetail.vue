@@ -72,6 +72,39 @@
       <el-empty v-else description="暂无数据" />
     </div>
 
+    <!-- 关联设备 -->
+    <div v-if="room" class="detail-card">
+      <div class="section-header">
+        <h4 class="section-title">关联设备</h4>
+        <el-button class="btn-outline" size="small" @click="openEquipmentDialog">
+          <el-icon><Plus /></el-icon>管理设备
+        </el-button>
+      </div>
+      <div v-if="equipments.length" class="equipment-list">
+        <div v-for="eq in equipments" :key="eq.id" class="equipment-item" @click="router.push(`/admin/equipments/${eq.id}`)">
+          <div class="equipment-item-icon"><el-icon><Box /></el-icon></div>
+          <div class="equipment-item-info">
+            <span class="equipment-item-name">{{ eq.name }}</span>
+            <span class="equipment-item-meta">{{ [eq.category, eq.brand, eq.model].filter(Boolean).join(' / ') || '无品牌型号' }}</span>
+          </div>
+          <el-tag type="success" size="small" effect="light" round>×{{ eq.quantity || 1 }}</el-tag>
+        </div>
+      </div>
+      <el-empty v-else description="暂未关联任何设备" :image-size="80" />
+    </div>
+
+    <!-- 管理关联设备 -->
+    <el-dialog v-model="equipmentDialogVisible" title="管理关联设备" width="540px" :close-on-click-modal="false">
+      <div class="assign-tip">勾选要关联的设备，取消勾选可解除关联。</div>
+      <el-select v-model="selectedEquipmentIds" multiple placeholder="选择设备" filterable style="width:100%">
+        <el-option v-for="e in equipmentOptions" :key="e.id" :label="e.name + (e.code ? ` (${e.code})` : '')" :value="e.id" />
+      </el-select>
+      <template #footer>
+        <el-button @click="equipmentDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="assigning" @click="handleEquipmentSubmit">保存</el-button>
+      </template>
+    </el-dialog>
+
     <FormDrawer v-model:visible="editDialogVisible" title="编辑会议室" :loading="submitting" @submit="handleSubmit">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-divider content-position="left">基础信息</el-divider>
@@ -95,11 +128,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Edit, Delete, OfficeBuilding } from '@element-plus/icons-vue'
+import { ArrowLeft, Edit, Delete, OfficeBuilding, Plus, Box } from '@element-plus/icons-vue'
 import { getRoomDetailAdmin, updateRoom, toggleRoomStatus, deleteRoom } from '@/api/meeting'
+import { listEquipmentsByRoom, listActiveEquipments, assignEquipments } from '@/api/equipment'
 import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
+import type { Equipment } from '@/types/equipment'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,6 +142,13 @@ const router = useRouter()
 const loading = ref(false)
 const room = ref<MeetingRoom | null>(null)
 const id = Number(route.params.id)
+
+// 关联设备
+const equipments = ref<Equipment[]>([])
+const equipmentDialogVisible = ref(false)
+const equipmentOptions = ref<Equipment[]>([])
+const selectedEquipmentIds = ref<number[]>([])
+const assigning = ref(false)
 
 // 编辑弹窗
 const editDialogVisible = ref(false)
@@ -120,10 +162,40 @@ async function loadDetail() {
   try {
     const res = await getRoomDetailAdmin(id)
     room.value = res.data
+    // 并行加载关联设备
+    loadEquipments()
   } catch (error) {
     ElMessage.error('加载失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadEquipments() {
+  try {
+    const res = await listEquipmentsByRoom(id)
+    equipments.value = res.data || []
+  } catch { /* */ }
+}
+
+async function openEquipmentDialog() {
+  try {
+    const res = await listActiveEquipments()
+    equipmentOptions.value = res.data || []
+  } catch { /* */ }
+  selectedEquipmentIds.value = equipments.value.map(e => e.id)
+  equipmentDialogVisible.value = true
+}
+
+async function handleEquipmentSubmit() {
+  assigning.value = true
+  try {
+    await assignEquipments(id, selectedEquipmentIds.value)
+    ElMessage.success('设备关联更新成功')
+    equipmentDialogVisible.value = false
+    loadEquipments()
+  } catch { /* */ } finally {
+    assigning.value = false
   }
 }
 
@@ -267,4 +339,17 @@ onMounted(loadDetail)
 .mt-20 {
   margin-top: 20px;
 }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0; }
+
+.equipment-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.equipment-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.equipment-item:hover { border-color: var(--primary); background: var(--primary-light, #f5f7ff); }
+.equipment-item-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--primary-light, #eef0ff); color: var(--primary, #667eea); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.equipment-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.equipment-item-name { font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.equipment-item-meta { font-size: 12px; color: var(--text-muted); }
+
+.assign-tip { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; padding: 8px 12px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border-light); }
 </style>

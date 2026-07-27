@@ -43,7 +43,11 @@ public enum ErrorCode {
 
     // 菜单相关
     MENU_NOT_FOUND(1017, "菜单不存在"),
-    MENU_HAS_CHILDREN(1018, "存在子菜单，不允许删除");
+    MENU_HAS_CHILDREN(1018, "存在子菜单，不允许删除"),
+
+    // 设备相关
+    EQUIPMENT_NOT_FOUND(1019, "设备不存在"),
+    EQUIPMENT_CODE_DUPLICATE(1020, "设备编码已存在");
 
     private final Integer code;
     private final String message;
