@@ -1,16 +1,19 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <el-button class="back-btn" @click="router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-        <span>返回</span>
-      </el-button>
+      <div class="header-left">
+        <el-button class="back-btn" @click="router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>返回</span>
+        </el-button>
+        <h2 class="page-title">用户详情</h2>
+      </div>
       <div v-if="user" class="header-actions">
-        <el-button class="action-btn action-secondary" @click="handleToggleStatus">
+        <el-button :type="user.status === 1 ? 'warning' : 'success'" plain @click="handleToggleStatus">
           <el-icon><component :is="user.status === 1 ? 'Warning' : 'CircleCheck'" /></el-icon>
           <span>{{ user.status === 1 ? '禁用' : '启用' }}</span>
         </el-button>
-        <el-button class="action-btn action-primary" @click="openEditDialog">
+        <el-button type="primary" plain @click="openEditDialog">
           <el-icon><Edit /></el-icon>
           <span>编辑</span>
         </el-button>
@@ -171,74 +174,44 @@ onMounted(() => { loadDetail(); loadDeptTree() })
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
 }
 
 .back-btn {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 10px;
-  border: 1px solid var(--border-light);
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  transition: all 0.25s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-}
-.back-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--bg-card);
-  transform: translateX(-2px);
+  /* 完全使用 Element Plus 默认样式 */
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 2px;
 }
 
-.action-btn {
-  height: 38px;
-  padding: 0 20px;
-  border-radius: 10px;
+.header-actions .el-button {
   font-weight: 500;
-  transition: all 0.25s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.action-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-.action-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
-  color: #fff;
-}
-.action-secondary {
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-light);
-}
-.action-secondary:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(102, 126, 234, 0.05);
-  transform: translateY(-2px);
+.header-actions .el-button:hover {
+  transform: translateY(-1px);
 }
 
 .detail-card {
   background: var(--bg-card);
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border-light);
-  padding: 28px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 24px;
 }
 
 .user-header {

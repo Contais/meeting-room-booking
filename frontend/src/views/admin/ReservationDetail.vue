@@ -1,27 +1,30 @@
 <template>
   <div class="page-view">
     <div class="page-header">
-      <el-button class="back-btn" @click="router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-        <span>返回</span>
-      </el-button>
+      <div class="header-left">
+        <el-button class="back-btn" @click="router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>返回</span>
+        </el-button>
+        <h2 class="page-title">预约详情</h2>
+      </div>
       <div v-if="reservation" class="header-actions">
-        <el-button v-if="reservation.status === 2" class="action-btn action-danger-outline" @click="handleDelete">
+        <el-button v-if="reservation.status === 2" type="danger" plain @click="handleDelete">
           <el-icon><Delete /></el-icon>
           <span>删除</span>
         </el-button>
         <template v-if="reservation.status === 0">
-          <el-button class="action-btn action-danger-outline" @click="handleReject">
+          <el-button type="danger" plain @click="handleReject">
             <el-icon><Close /></el-icon>
             <span>拒绝</span>
           </el-button>
-          <el-button class="action-btn action-primary" @click="handleApprove">
+          <el-button type="primary" plain @click="handleApprove">
             <el-icon><Check /></el-icon>
             <span>通过</span>
           </el-button>
         </template>
         <template v-else-if="canCancel">
-          <el-button class="action-btn action-danger-outline" @click="handleCancel">
+          <el-button type="danger" plain @click="handleCancel">
             <el-icon><Close /></el-icon>
             <span>取消预约</span>
           </el-button>
@@ -169,74 +172,33 @@ onMounted(loadDetail)
   margin-bottom: 16px;
 }
 
-.back-btn {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-light);
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-  display: inline-flex;
+.header-left {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 500;
+  gap: 16px;
 }
-.back-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--bg-card);
-  transform: translateX(-2px);
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.back-btn {
+  /* 完全使用 Element Plus 默认样式 */
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 2px;
 }
 
-.action-btn {
-  height: 36px;
-  padding: 0 18px;
-  border-radius: 8px;
+.header-actions .el-button {
   font-weight: 500;
-  font-size: 14px;
   transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
 }
-.action-primary {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-.action-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
-}
-.action-secondary {
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-light);
-}
-.action-secondary:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(102, 126, 234, 0.04);
-  transform: translateY(-1px);
-}
-.action-danger-outline {
-  background: var(--bg-card);
-  color: #f56c6c;
-  border: 1px solid #fbc4c4;
-}
-.action-danger-outline:hover {
-  background: rgba(245, 108, 108, 0.05);
-  border-color: #f56c6c;
+.header-actions .el-button:hover {
   transform: translateY(-1px);
 }
 

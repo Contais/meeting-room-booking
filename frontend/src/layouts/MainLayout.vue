@@ -21,7 +21,10 @@
         <template v-for="item in menuItems" :key="item.id">
           <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path || String(item.id)">
             <template #title><el-icon><component :is="iconComponents[item.icon || 'Document']" /></el-icon><span>{{ item.name }}</span></template>
-            <el-menu-item v-for="child in item.children" :key="child.id" :index="child.path">{{ child.name }}</el-menu-item>
+            <el-menu-item v-for="child in item.children" :key="child.id" :index="child.path">
+              <el-icon><component :is="iconComponents[child.icon || 'Document']" /></el-icon>
+              <span>{{ child.name }}</span>
+            </el-menu-item>
           </el-sub-menu>
           <el-menu-item v-else :index="item.path">
             <el-icon><component :is="iconComponents[item.icon || 'Document']" /></el-icon>
@@ -250,6 +253,16 @@ onMounted(loadMenus)
   padding: 0 !important;
   width: 44px;
   min-width: 44px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.side-menu.el-menu--collapse > .el-menu-item .el-icon,
+.side-menu.el-menu--collapse > .el-sub-menu :deep(.el-sub-menu__title .el-icon) {
+  margin: 0 !important;
+  font-size: 18px;
 }
 
 .side-menu .el-menu-item:hover {
