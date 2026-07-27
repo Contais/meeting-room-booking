@@ -10,6 +10,7 @@ export interface UserInfo {
   departmentId?: number
   departmentName?: string
   email?: string
+  avatar?: string
 }
 
 export interface UserPageQuery {

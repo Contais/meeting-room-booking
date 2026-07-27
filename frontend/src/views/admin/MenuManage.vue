@@ -77,7 +77,16 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="菜单名称" prop="name"><el-input v-model="form.name" placeholder="搜索菜单名称" /></el-form-item>
         <el-form-item label="路由路径"><el-input v-model="form.path" placeholder="如: /admin/users（留空则为目录）" /></el-form-item>
-        <el-form-item label="图标"><el-input v-model="form.icon" placeholder="如: HomeFilled" /></el-form-item>
+        <el-form-item label="图标">
+          <el-select v-model="form.icon" placeholder="请选择图标" style="width: 100%" filterable>
+            <el-option v-for="icon in iconOptions" :key="icon" :value="icon" :label="icon">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-icon><component :is="iconMap[icon]" /></el-icon>
+                <span>{{ icon }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="上级菜单"><el-tree-select v-model="form.parentId" :data="treeData" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="留空则为顶级菜单" style="width:100%" /></el-form-item>
         <el-form-item label="排序号"><el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width:180px" /></el-form-item>
         <el-form-item label="是否启用"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">禁用</el-radio></el-radio-group></el-form-item>
@@ -88,10 +97,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive, markRaw } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting } from '@element-plus/icons-vue'
+import {
+  Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting,
+  HomeFilled, User, UserFilled, OfficeBuilding, Calendar,
+  Menu, Grid, List, Picture, Camera, Bell, Message,
+  Avatar, Coin, Goods, DataLine, Location, Phone,
+  Lock, Key, Tools, Box, Folder, Files, Document,
+  Reading, Tickets, School, Medal, Trophy,
+  Star, Warning, InfoFilled, SuccessFilled,
+  CircleCheck, CircleClose, SwitchButton, Connection,
+  Platform, Histogram, DataBoard, PieChart, TrendCharts,
+  Share, Promotion, ChatLineRound, ChatDotRound,
+  IceCreamRound, IceTea, Coffee, Food, Goblet,
+  Basketball, Football, Soccer,
+  Monitor, Iphone, PhoneFilled, Microphone, Headset,
+  MagicStick, Brush, Guide, PictureFilled, CameraFilled
+} from '@element-plus/icons-vue'
 import { getMenuTree, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
@@ -115,7 +139,24 @@ function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTim
 const form = reactive({ id: undefined as number | undefined, name: '', path: '', icon: '', parentId: undefined as number | undefined, sortOrder: 0, status: 1, visible: 1 })
 const rules: FormRules = { name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }] }
 
-import { reactive } from 'vue'
+const iconMap: Record<string, any> = markRaw({
+  HomeFilled, User, UserFilled, OfficeBuilding, Calendar,
+  Menu, Grid, List, Picture, Camera, Bell, Message,
+  Avatar, Coin, Goods, DataLine, Location, Phone,
+  Lock, Key, Tools, Box, Folder, Files, Document,
+  Reading, Tickets, School, Medal, Trophy,
+  Star, Warning, InfoFilled, SuccessFilled,
+  CircleCheck, CircleClose, SwitchButton, Connection,
+  Platform, Histogram, DataBoard, PieChart, TrendCharts,
+  Share, Promotion, ChatLineRound, ChatDotRound,
+  IceCreamRound, IceTea, Coffee, Food, Goblet,
+  Basketball, Football, Soccer,
+  Monitor, Iphone, PhoneFilled, Microphone, Headset,
+  MagicStick, Brush, Guide, PictureFilled, CameraFilled,
+  Plus, Edit, Delete, Refresh, Sort, FullScreen, Setting
+})
+
+const iconOptions = Object.keys(iconMap)
 
 async function loadData() {
   loading.value = true

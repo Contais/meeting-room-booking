@@ -19,10 +19,18 @@
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="用户名" min-width="200">
-          <template #default="{ row }"><div class="user-cell"><div class="user-avatar">{{ (row.username || 'U').charAt(0).toUpperCase() }}</div><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.phone || '-' }}</span></div></div></template>
+          <template #default="{ row }"><div class="user-cell"><div class="user-avatar">{{ (row.username || 'U').charAt(0).toUpperCase() }}</div><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.email || row.phone || '-' }}</span></div></div></template>
         </el-table-column>
         <el-table-column prop="realName" label="姓名" min-width="90" />
         <el-table-column prop="phone" label="手机号" min-width="130" />
+        <el-table-column prop="email" label="邮箱" min-width="180" />
+        <el-table-column label="角色" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.role === 'admin' ? 'danger' : 'info'" size="small" effect="light" round>
+              {{ getRoleName(row.role) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="140" fixed="right" align="center">
@@ -44,7 +52,12 @@
         <el-form-item v-if="!isEdit" label="密码" prop="password"><el-input v-model="form.password" type="password" placeholder="请输入密码" show-password /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
-        <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
+        <el-form-item label="邮箱"><el-input v-model="form.email" placeholder="请输入邮箱" /></el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable>
+            <el-option v-for="r in roleList" :key="r.roleCode" :label="r.roleName" :value="r.roleCode" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
       </el-form>
     </FormDrawer>
@@ -59,6 +72,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Refresh, Key, View } from '@element-plus/icons-vue'
 import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
+import { listAllRoles } from '@/api/role'
 import SearchBar from '@/components/SearchBar.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import { formatDateTime } from '@/utils/datetime'
@@ -69,9 +83,10 @@ const loading = ref(false); const submitting = ref(false)
 const tableData = ref<any[]>([]); const total = ref(0)
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const deptTree = ref<Department[]>([])
+const roleList = ref<Array<{ roleCode: string; roleName: string }>>([])
 const query = reactive({ page: 1, size: 10, keyword: '', username: '', phone: '', status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
 const createTimeRange = ref<string[]>([])
-const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined as number | undefined })
+const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined as number | undefined })
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 function onSizeChange() { query.page = 1; loadData() }
@@ -98,8 +113,8 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
 function resetQuery() { query.keyword = ''; query.username = ''; query.phone = ''; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.page = 1; createTimeRange.value = []; loadData() }
-function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
-function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
+function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
+function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', email: row.email || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateUser(form); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' }); await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
 async function handleResetPassword(row: any) {
@@ -116,7 +131,12 @@ async function handleResetPassword(row: any) {
   } catch { /* */ }
 }
 async function loadDeptTree() { try { const res = await getDepartmentTree(); deptTree.value = res.data } catch { /* */ } }
-onMounted(() => { loadData(); loadDeptTree() })
+async function loadRoleList() { try { const res = await listAllRoles(); roleList.value = res.data } catch { /* */ } }
+function getRoleName(roleCode: string): string {
+  const role = roleList.value.find(r => r.roleCode === roleCode)
+  return role ? role.roleName : roleCode
+}
+onMounted(() => { loadData(); loadDeptTree(); loadRoleList() })
 </script>
 
 <style scoped>

@@ -10,12 +10,17 @@ export function getCurrentUser(): Promise<Result<UserInfo>> {
   return request.get('/api/uc/user/me')
 }
 
-export function updateProfile(data: { phone?: string; realName?: string }): Promise<Result<void>> {
+export function updateProfile(data: { phone?: string; realName?: string; email?: string; avatar?: string }): Promise<Result<void>> {
   return request.put('/api/uc/user/me/profile', data)
 }
 
 export function changePassword(data: { oldPassword: string; newPassword: string }): Promise<Result<void>> {
   return request.put('/api/uc/user/me/password', data)
+}
+
+// 通讯录
+export function listContacts(params?: { keyword?: string; departmentId?: number }): Promise<Result<UserInfo[]>> {
+  return request.get('/api/uc/user/contacts', { params })
 }
 
 // 管理接口
