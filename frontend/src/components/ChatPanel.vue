@@ -206,6 +206,7 @@ defineExpose({
 .markdown-content :deep(th), .markdown-content :deep(td) { border: 1px solid #d2d2d7; padding: 0.35rem 0.6rem; text-align: left; }
 .markdown-content :deep(th) { background: rgba(0,0,0,0.03); font-weight: 600; }
 .markdown-content :deep(blockquote) { margin: 0.4rem 0; padding-left: 0.75rem; border-left: 2px solid #d2d2d7; color: #86868b; }
+.markdown-content :deep(hr) { border: none; border-top: 1px solid #d2d2d7; margin: 0.5rem 0; }
 
 /* 打字动画 */
 .typing-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
@@ -230,4 +231,5 @@ html.dark .markdown-content :deep(code) { background: rgba(255,255,255,0.1); }
 html.dark .markdown-content :deep(th), html.dark .markdown-content :deep(td) { border-color: var(--border); }
 html.dark .markdown-content :deep(th) { background: rgba(255,255,255,0.05); }
 html.dark .markdown-content :deep(blockquote) { border-left-color: var(--border); color: var(--text-muted); }
+html.dark .markdown-content :deep(hr) { border-top-color: var(--border); }
 </style>
