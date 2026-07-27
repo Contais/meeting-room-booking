@@ -55,7 +55,7 @@
             <el-option v-for="r in roleList" :key="r.roleCode" :label="r.roleName" :value="r.roleCode" />
           </el-select>
         </el-form-item>
-        <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
+        <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
       </el-form>
     </FormDrawer>
   </div>

@@ -57,7 +57,7 @@
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑部门' : '新增部门'" :loading="submitting" @submit="handleSubmit">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="部门名称" prop="name"><el-input v-model="form.name" placeholder="请输入部门名称" /></el-form-item>
-        <el-form-item label="上级部门"><el-tree-select v-model="form.parentId" :data="treeData" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="留空则为顶级部门" style="width:100%" /></el-form-item>
+        <el-form-item label="上级部门"><el-tree-select v-model="form.parentId" :data="treeData" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="留空则为顶级部门" style="width:100%" /></el-form-item>
         <el-form-item label="排序号"><el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width:180px" /></el-form-item>
       </el-form>
     </FormDrawer>

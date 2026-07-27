@@ -87,7 +87,7 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="上级菜单"><el-tree-select v-model="form.parentId" :data="treeData" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="留空则为顶级菜单" style="width:100%" /></el-form-item>
+        <el-form-item label="上级菜单"><el-tree-select v-model="form.parentId" :data="treeData" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="留空则为顶级菜单" style="width:100%" /></el-form-item>
         <el-form-item label="排序号"><el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width:180px" /></el-form-item>
         <el-form-item label="是否启用"><el-radio-group v-model="form.status"><el-radio :value="1">启用</el-radio><el-radio :value="0">禁用</el-radio></el-radio-group></el-form-item>
         <el-form-item label="是否显示"><el-radio-group v-model="form.visible"><el-radio :value="1">显示</el-radio><el-radio :value="0">隐藏</el-radio></el-radio-group></el-form-item>

@@ -72,7 +72,7 @@
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="form.email" placeholder="请输入邮箱" /></el-form-item>
         <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
-        <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" :props="{ label: 'name', value: 'id', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
+        <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
       </el-form>
     </FormDrawer>
   </div>
