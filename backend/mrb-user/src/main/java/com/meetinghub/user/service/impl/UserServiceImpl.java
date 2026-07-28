@@ -68,8 +68,12 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             return Collections.emptyMap();
         }
         List<User> users = listByIds(ids);
+        // 展示名优先取真实姓名，为空时回退到用户名
         return users.stream().collect(
-                Collectors.toMap(User::getId, u -> u.getUsername() != null ? u.getUsername() : "")
+                Collectors.toMap(User::getId, u -> {
+                    String name = StringUtils.hasText(u.getRealName()) ? u.getRealName() : u.getUsername();
+                    return name != null ? name : "";
+                })
         );
     }
 
@@ -97,6 +101,13 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         if (StringUtils.hasText(phone) && !PHONE_PATTERN.matcher(phone).matches()) {
             throw new BusinessException(ErrorCode.PHONE_FORMAT_ERROR);
         }
+    }
+
+    /**
+     * 将空白字符串归一化为 null，避免唯一索引将空串视为相同值而冲突
+     */
+    private String normalizeBlank(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     /**
@@ -137,8 +148,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         User user = new User();
         user.setUsername(username);
         user.setPassword(BCrypt.hashpw(password));
-        user.setPhone(phone);
-        user.setEmail(email);
+        user.setPhone(normalizeBlank(phone));
+        user.setEmail(normalizeBlank(email));
         user.setRole(RoleEnum.USER.getCode());
         user.setStatus(EnableStatusEnum.ENABLED.getCode());
         save(user);
@@ -167,8 +178,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(BCrypt.hashpw(dto.getPassword()));
-        user.setPhone(dto.getPhone());
-        user.setEmail(dto.getEmail());
+        user.setPhone(normalizeBlank(dto.getPhone()));
+        user.setEmail(normalizeBlank(dto.getEmail()));
         user.setRealName(dto.getRealName());
         user.setRole(StringUtils.hasText(dto.getRole()) ? dto.getRole() : RoleEnum.USER.getCode());
         user.setDepartmentId(dto.getDepartmentId());
@@ -186,8 +197,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             validatePhoneFormat(dto.getPhone());
             checkPhoneNotExists(dto.getPhone(), dto.getId());
         }
-        user.setPhone(dto.getPhone());
-        user.setEmail(dto.getEmail());
+        user.setPhone(normalizeBlank(dto.getPhone()));
+        user.setEmail(normalizeBlank(dto.getEmail()));
         user.setRealName(dto.getRealName());
         if (StringUtils.hasText(dto.getRole())) {
             user.setRole(dto.getRole());
@@ -228,8 +239,8 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
             validatePhoneFormat(dto.getPhone());
             checkPhoneNotExists(dto.getPhone(), userId);
         }
-        user.setPhone(dto.getPhone());
-        user.setEmail(dto.getEmail());
+        user.setPhone(normalizeBlank(dto.getPhone()));
+        user.setEmail(normalizeBlank(dto.getEmail()));
         user.setRealName(dto.getRealName());
         if (dto.getAvatar() != null) {
             user.setAvatar(dto.getAvatar());

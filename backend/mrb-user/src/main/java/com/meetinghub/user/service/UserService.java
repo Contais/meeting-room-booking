@@ -25,7 +25,7 @@ public interface UserService extends IService<User> {
     User getUserByUsername(String username);
 
     /**
-     * 批量查询用户名（id -> username），用于跨服务回填展示名
+     * 批量查询用户展示名（id -> 真实姓名，为空时回退用户名），用于跨服务回填展示名
      */
     Map<Long, String> getUsernamesByIds(Collection<Long> ids);
 
