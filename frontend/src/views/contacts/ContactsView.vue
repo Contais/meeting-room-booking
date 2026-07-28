@@ -44,17 +44,31 @@
       <div class="contacts-content">
         <div class="content-header">
           <h2 class="page-title">{{ pageTitle }}</h2>
-          <div class="search-bar">
-            <el-input
-              v-model="keyword"
-              placeholder="搜索姓名、用户名、手机号、邮箱"
-              clearable
-              style="width: 320px"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
+          <div class="header-actions">
+            <div class="search-bar">
+              <el-input
+                v-model="keyword"
+                placeholder="搜索姓名、用户名、手机号、邮箱"
+                clearable
+                style="width: 320px"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+            <div class="view-toggle">
+              <el-tooltip content="卡片视图" placement="bottom">
+                <button class="view-btn" :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'">
+                  <el-icon><Grid /></el-icon>
+                </button>
+              </el-tooltip>
+              <el-tooltip content="列表视图" placement="bottom">
+                <button class="view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
+                  <el-icon><List /></el-icon>
+                </button>
+              </el-tooltip>
+            </div>
           </div>
         </div>
 
@@ -66,12 +80,15 @@
 
           <template v-else>
             <div v-for="group in groupedUsers" :key="group.deptId" class="contact-group">
-              <div class="group-title">
+              <div class="group-title" @click="toggleGroup(group.deptId)">
+                <el-icon class="collapse-arrow" :class="{ collapsed: isGroupCollapsed(group.deptId) }"><ArrowRight /></el-icon>
                 <el-icon><OfficeBuilding /></el-icon>
                 <span>{{ group.deptName }}</span>
                 <el-tag size="small" type="info" effect="light" round>{{ group.users.length }}人</el-tag>
               </div>
-              <div class="user-grid">
+
+              <!-- 卡片视图 -->
+              <div v-show="!isGroupCollapsed(group.deptId) && viewMode === 'card'" class="user-grid">
                 <div
                   v-for="user in group.users"
                   :key="user.id"
@@ -102,6 +119,35 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 列表视图 -->
+              <div v-show="!isGroupCollapsed(group.deptId) && viewMode === 'list'" class="user-list">
+                <div
+                  v-for="user in group.users"
+                  :key="user.id"
+                  class="user-row"
+                  @click="showUserDetail(user)"
+                >
+                  <div class="user-avatar user-avatar-sm" :style="getAvatarStyle(user)">
+                    <template v-if="getAvatarIcon(user)">
+                      <el-icon :size="16"><component :is="getAvatarIcon(user)" /></el-icon>
+                    </template>
+                    <template v-else>
+                      {{ getInitial(user) }}
+                    </template>
+                  </div>
+                  <span class="row-name">{{ user.realName || user.username }}</span>
+                  <span class="row-dept">{{ user.departmentName || '未分配' }}</span>
+                  <span class="row-phone">
+                    <el-icon v-if="user.phone"><Phone /></el-icon>
+                    {{ user.phone || '-' }}
+                  </span>
+                  <span class="row-email">
+                    <el-icon v-if="user.email"><Message /></el-icon>
+                    {{ user.email || '-' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </template>
         </div>
@@ -114,7 +160,7 @@
 import { ref, computed, onMounted, markRaw } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { ElTree } from 'element-plus'
-import { OfficeBuilding, User, Search, Phone, Message } from '@element-plus/icons-vue'
+import { OfficeBuilding, User, Search, Phone, Message, Grid, List, ArrowRight } from '@element-plus/icons-vue'
 import { listContacts } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import type { UserInfo } from '@/types/user'
@@ -132,6 +178,10 @@ const keyword = ref('')
 /** null=全部；UNASSIGNED(-1)=未分配人员；number=指定部门(含子部门) */
 const selectedDeptId = ref<number | null>(null)
 const currentDeptName = ref('')
+/** 视图模式：card-卡片 / list-列表 */
+const viewMode = ref<'card' | 'list'>('card')
+/** 已折叠的分组 deptId 集合 */
+const collapsedGroups = ref<Set<number>>(new Set())
 
 const avatarGradients = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -308,6 +358,21 @@ const groupedUsers = computed(() => {
   })
 })
 
+/** 折叠/展开分组 */
+function toggleGroup(deptId: number) {
+  if (collapsedGroups.value.has(deptId)) {
+    collapsedGroups.value.delete(deptId)
+  } else {
+    collapsedGroups.value.add(deptId)
+  }
+  // 触发响应式更新
+  collapsedGroups.value = new Set(collapsedGroups.value)
+}
+
+function isGroupCollapsed(deptId: number): boolean {
+  return collapsedGroups.value.has(deptId)
+}
+
 /** 加载全部启用用户（仅一次，后续过滤在前端完成） */
 async function loadContacts() {
   loading.value = true
@@ -472,6 +537,122 @@ onMounted(() => {
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+.group-title:hover {
+  color: var(--primary);
+}
+
+.collapse-arrow {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+.collapse-arrow.collapsed {
+  transform: rotate(0deg);
+}
+.collapse-arrow:not(.collapsed) {
+  transform: rotate(90deg);
+}
+
+/* 视图切换按钮 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-page);
+  border-radius: 8px;
+}
+
+.view-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+.view-btn:hover {
+  background: var(--border-light);
+  color: var(--primary);
+}
+.view-btn.active {
+  background: var(--bg-card);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* 列表视图 */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 13px;
+}
+.user-row:hover {
+  background: var(--bg-page);
+}
+
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.row-name {
+  min-width: 80px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-dept {
+  flex: 1;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-phone,
+.row-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  min-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-grid {
