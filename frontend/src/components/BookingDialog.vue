@@ -548,7 +548,7 @@ function collectDeptIds(id: number): number[] {
 
 /** 按部门筛选后的联系人列表（含子部门） */
 const filteredContacts = computed(() => {
-  if (filterDeptId.value === null) return contacts.value
+  if (filterDeptId.value == null) return contacts.value
   const deptIds = new Set(collectDeptIds(filterDeptId.value))
   return contacts.value.filter(u => u.departmentId != null && deptIds.has(u.departmentId))
 })
