@@ -407,7 +407,7 @@ watch(() => notificationStore.latestNotification, (n) => {
 .header-action-group {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 4px;
   padding: 2px;
   background: var(--bg-page);
   border-radius: 10px;

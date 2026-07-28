@@ -144,12 +144,14 @@ function formatTime(time: string): string {
   color: #fff;
   font-size: 10px;
   font-weight: 600;
-  line-height: 16px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
   border: 1.5px solid var(--bg-card, #fff);
   z-index: 2;
   pointer-events: none;
+  box-sizing: border-box;
 }
 
 .panel-header {
