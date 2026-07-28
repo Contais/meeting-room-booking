@@ -776,19 +776,6 @@ onMounted(() => {
 :global(html.dark) .contacts-list {
   background: transparent;
 }
-/* el-tree 暗黑适配 */
-:global(html.dark) :deep(.el-tree) {
-  --el-tree-node-hover-bg-color: #252542;
-  --el-tree-text-color: var(--text-primary);
-  --el-tree-expand-icon-color: var(--text-secondary);
-  background: transparent;
-}
-:global(html.dark) :deep(.el-tree-node__content:hover) {
-  background: #252542;
-}
-:global(html.dark) :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background: var(--primary-light);
-}
 :global(html.dark) :deep(.el-tag--info) {
   background: #252542;
   border-color: var(--border);

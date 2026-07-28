@@ -413,40 +413,21 @@ watch(() => notificationStore.latestNotification, (n) => {
   border-radius: 10px;
 }
 
-.header-action-group .icon-btn {
+/* 使用 :deep() 确保 NotificationBell 子组件内的按钮也能匹配 */
+.header-action-group :deep(.icon-btn) {
   width: 32px;
   height: 32px;
 }
 
-.header-action-group .icon-btn .el-icon {
+.header-action-group :deep(.icon-btn) .el-icon {
   font-size: 18px;
 }
 
-.header-action-group .chat-btn::after {
+.header-action-group :deep(.chat-btn)::after {
   top: 4px;
   right: 4px;
   width: 7px;
   height: 7px;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.icon-btn:hover {
-  background: var(--border-light);
-  color: var(--primary);
 }
 
 /* 聊天入口：在线状态圆点 */
@@ -465,6 +446,11 @@ watch(() => notificationStore.latestNotification, (n) => {
   background: var(--success);
   border: 2px solid var(--bg-card);
   animation: online-pulse 2s ease-in-out infinite;
+}
+
+/* 暗黑模式：导航栏图标组背景改用 #161628，避免 --bg-page(#0f0f1a) 过暗 */
+:global(html.dark) .header-action-group {
+  background: #161628;
 }
 
 @keyframes online-pulse {

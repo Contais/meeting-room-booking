@@ -242,4 +242,18 @@ function formatTime(time: string): string {
 .panel-footer:hover {
   background: var(--bg-page);
 }
+
+/* 暗黑模式适配 */
+:global(html.dark) .notification-item:hover {
+  background: #252542;
+}
+:global(html.dark) .notification-item.unread {
+  background: rgba(102, 126, 234, 0.12);
+}
+:global(html.dark) .panel-footer:hover {
+  background: #252542;
+}
+:global(html.dark) .notification-count {
+  border-color: var(--bg-card, #1c1c2e);
+}
 </style>
