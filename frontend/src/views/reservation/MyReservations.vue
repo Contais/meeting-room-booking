@@ -19,6 +19,7 @@
             <el-option label="待确认" :value="0" />
             <el-option label="已确认" :value="1" />
             <el-option label="已取消" :value="2" />
+            <el-option label="已拒绝" :value="3" />
           </el-select>
         </div>
         <div class="search-item is-wide">

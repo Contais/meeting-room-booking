@@ -40,8 +40,8 @@
             {{ user.id }}
           </el-descriptions-item>
           <el-descriptions-item label="角色">
-            <el-tag :type="user.role === 'admin' ? 'danger' : 'info'" size="small">
-              {{ user.role === 'admin' ? '管理员' : '普通用户' }}
+            <el-tag :type="user.role === 'ROLE_ADMIN' ? 'danger' : 'info'" size="small">
+              {{ user.role === 'ROLE_ADMIN' ? '超级管理员' : '普通用户' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="姓名">
@@ -74,7 +74,7 @@
         <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="form.email" placeholder="请输入邮箱" /></el-form-item>
-        <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="user" /><el-option label="管理员" value="admin" /></el-select></el-form-item>
+        <el-form-item label="角色" prop="role"><el-select v-model="form.role" placeholder="请选择角色" style="width:100%" filterable><el-option label="普通用户" value="ROLE_USER" /><el-option label="超级管理员" value="ROLE_ADMIN" /></el-select></el-form-item>
         <el-form-item label="所属部门"><el-tree-select v-model="form.departmentId" :data="deptTree" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="请选择部门" style="width:100%" /></el-form-item>
       </el-form>
     </FormDrawer>
@@ -106,7 +106,7 @@ const editDialogVisible = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const deptTree = ref<Department[]>([])
-const form = reactive({ id: undefined as number | undefined, username: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined as number | undefined })
+const form = reactive({ id: undefined as number | undefined, username: '', realName: '', phone: '', email: '', role: 'ROLE_USER', departmentId: undefined as number | undefined })
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }]
@@ -132,7 +132,7 @@ function openEditDialog() {
     realName: user.value.realName || '',
     phone: user.value.phone || '',
     email: user.value.email || '',
-    role: user.value.role || 'user',
+    role: user.value.role || 'ROLE_USER',
     departmentId: user.value.departmentId || undefined
   })
   editDialogVisible.value = true

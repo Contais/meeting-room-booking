@@ -69,20 +69,20 @@ public class ReservationController {
 
     // === 管理接口 ===
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/list")
     public Result<IPage<ReservationVO>> listAllReservations(ReservationPageQuery query) {
         return Result.ok(reservationService.listAllReservations(query));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/approve/{id}")
     public Result<Void> approveReservation(@PathVariable Long id) {
         reservationService.approveReservation(id);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/reject/{id}")
     public Result<Void> rejectReservation(@PathVariable Long id, @RequestBody(required = false) RejectDTO dto) {
         String reason = dto != null ? dto.getReason() : null;
@@ -90,13 +90,13 @@ public class ReservationController {
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/detail/{id}")
     public Result<ReservationVO> getReservationDetail(@PathVariable Long id) {
         return Result.ok(reservationService.getReservationDetail(id));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @DeleteMapping("/admin/{id}")
     public Result<Void> adminDeleteReservation(@PathVariable Long id) {
         reservationService.adminDeleteReservation(id);

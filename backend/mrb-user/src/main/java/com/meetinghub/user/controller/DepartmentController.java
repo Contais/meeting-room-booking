@@ -32,21 +32,21 @@ public class DepartmentController {
         return Result.ok(departmentService.listFlat());
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PostMapping("/admin/create")
     public Result<Void> create(@Valid @RequestBody DepartmentCreateDTO dto) {
         departmentService.create(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/update")
     public Result<Void> update(@Valid @RequestBody DepartmentUpdateDTO dto) {
         departmentService.update(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @DeleteMapping("/admin/delete/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         departmentService.delete(id);

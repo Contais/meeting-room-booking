@@ -30,7 +30,7 @@ public class UserController {
         return Result.ok(userService.getUserDetail(id));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/info/username/{username}")
     public Result<UserVO> getUserByUsername(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
@@ -111,40 +111,40 @@ public class UserController {
         return Result.ok(userService.listContacts(keyword, departmentId));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/list")
     public Result<IPage<UserVO>> listUsers(UserPageQuery query) {
         return Result.ok(userService.listUsers(query));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/detail/{id}")
     public Result<UserVO> getUserDetail(@PathVariable Long id) {
         return Result.ok(userService.getUserDetail(id));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PostMapping("/admin/create")
     public Result<Void> createUser(@Valid @RequestBody UserCreateDTO dto) {
         userService.createUser(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/update")
     public Result<Void> updateUser(@Valid @RequestBody UserUpdateDTO dto) {
         userService.updateUser(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/toggle-status/{id}")
     public Result<Void> toggleStatus(@PathVariable Long id) {
         userService.toggleStatus(id);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/reset-password/{id}")
     public Result<Void> resetPassword(@PathVariable Long id,
                                        @Valid @RequestBody ResetPasswordDTO dto) {
@@ -152,7 +152,7 @@ public class UserController {
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @DeleteMapping("/admin/delete/{id}")
     public Result<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `email` VARCHAR(128) DEFAULT NULL COMMENT '邮箱',
     `real_name` VARCHAR(64) DEFAULT NULL COMMENT '真实姓名',
     `department_id` BIGINT DEFAULT NULL COMMENT '所属部门ID',
-    `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT '角色: admin-管理员, user-普通用户',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER' COMMENT '角色: ROLE_ADMIN-超级管理员, ROLE_USER-普通用户',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS `department` (
 
 
 INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '系统管理员', 'admin', 1),
-('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'user', 1);
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '超级管理员', 'ROLE_ADMIN', 1),
+('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'ROLE_USER', 1);
 
 -- ============================================================
 -- 鉴权中心 (mrb_auth)
@@ -85,8 +85,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     `room_id` BIGINT NOT NULL COMMENT '会议室ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
-    `attendee_count` INT DEFAULT NULL COMMENT '参会人数',
-    `contact_phone` VARCHAR(20) DEFAULT NULL COMMENT '联系人手机号',
+    `attendee_count` INT DEFAULT NULL COMMENT '参会人数（由参会人列表自动派生）',
     `remark` VARCHAR(512) DEFAULT NULL COMMENT '备注',
     `start_time` DATETIME NOT NULL COMMENT '开始时间',
     `end_time` DATETIME NOT NULL COMMENT '结束时间',
@@ -139,8 +138,8 @@ CREATE TABLE IF NOT EXISTS `role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
 
 INSERT INTO `role` (`role_code`, `role_name`, `description`, `status`, `is_system`, `sort`) VALUES
-('admin', '超级管理员', '拥有系统所有权限', 1, 1, 1),
-('user', '普通用户', '基础功能权限', 1, 1, 2);
+('ROLE_ADMIN', '超级管理员', '拥有系统所有权限', 1, 1, 1),
+('ROLE_USER', '普通用户', '基础功能权限', 1, 1, 2);
 
 CREATE TABLE IF NOT EXISTS `role_menu` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -167,8 +166,8 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 (16, '角色管理', '/admin/roles', 'Lock', 10, 16, 1, 1);
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('admin', 1), ('admin', 2), ('admin', 3), ('admin', 4), ('admin', 5),
-('admin', 10), ('admin', 11), ('admin', 12), ('admin', 13), ('admin', 14), ('admin', 15), ('admin', 16);
+('ROLE_ADMIN', 1), ('ROLE_ADMIN', 2), ('ROLE_ADMIN', 3), ('ROLE_ADMIN', 4), ('ROLE_ADMIN', 5),
+('ROLE_ADMIN', 10), ('ROLE_ADMIN', 11), ('ROLE_ADMIN', 12), ('ROLE_ADMIN', 13), ('ROLE_ADMIN', 14), ('ROLE_ADMIN', 15), ('ROLE_ADMIN', 16);
 
 INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('user', 1), ('user', 2), ('user', 3), ('user', 4), ('user', 5);
+('ROLE_USER', 1), ('ROLE_USER', 2), ('ROLE_USER', 3), ('ROLE_USER', 4), ('ROLE_USER', 5);

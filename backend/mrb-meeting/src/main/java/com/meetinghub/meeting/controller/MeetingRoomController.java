@@ -38,40 +38,40 @@ public class MeetingRoomController {
 
     // === 管理接口 ===
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/list")
     public Result<IPage<MeetingRoomVO>> listRooms(RoomPageQuery query) {
         return Result.ok(meetingRoomService.listRooms(query));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @GetMapping("/admin/detail/{id}")
     public Result<MeetingRoomVO> getRoomDetail(@PathVariable Long id) {
         return Result.ok(meetingRoomService.getRoomDetail(id));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PostMapping("/admin/create")
     public Result<Void> createRoom(@Valid @RequestBody RoomCreateDTO dto) {
         meetingRoomService.createRoom(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/update")
     public Result<Void> updateRoom(@Valid @RequestBody RoomUpdateDTO dto) {
         meetingRoomService.updateRoom(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/toggle-status/{id}")
     public Result<Void> toggleStatus(@PathVariable Long id) {
         meetingRoomService.toggleStatus(id);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @DeleteMapping("/admin/delete/{id}")
     public Result<Void> deleteRoom(@PathVariable Long id) {
         meetingRoomService.deleteRoom(id);

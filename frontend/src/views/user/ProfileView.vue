@@ -19,7 +19,7 @@
         <div class="banner-meta">
           <span class="banner-username">@{{ userStore.userInfo?.username }}</span>
           <el-tag :type="userStore.isAdmin() ? 'danger' : 'info'" effect="dark" round size="small">
-            {{ userStore.isAdmin() ? '管理员' : '普通用户' }}
+            {{ userStore.isAdmin() ? '超级管理员' : '普通用户' }}
           </el-tag>
         </div>
       </div>
@@ -37,7 +37,7 @@
           </el-form-item>
           <el-form-item label="角色">
             <el-tag :type="userStore.isAdmin() ? 'danger' : 'info'" effect="dark" round>
-              {{ userStore.isAdmin() ? '管理员' : '普通用户' }}
+              {{ userStore.isAdmin() ? '超级管理员' : '普通用户' }}
             </el-tag>
           </el-form-item>
           <el-form-item label="真实姓名" prop="realName">

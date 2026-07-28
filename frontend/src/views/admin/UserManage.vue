@@ -24,7 +24,7 @@
         <!-- <el-table-column prop="email" label="邮箱" min-width="180" /> -->
         <el-table-column label="角色" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.role === 'admin' ? 'danger' : 'info'" size="small" effect="light" round>
+            <el-tag :type="row.role === 'ROLE_ADMIN' ? 'danger' : 'info'" size="small" effect="light" round>
               {{ getRoleName(row.role) }}
             </el-tag>
           </template>
@@ -92,7 +92,7 @@ const deptTree = ref<Department[]>([])
 const roleList = ref<Array<{ roleCode: string; roleName: string }>>([])
 const query = reactive({ page: 1, size: 10, keyword: '', username: '', phone: '', status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '' })
 const createTimeRange = ref<string[]>([])
-const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined as number | undefined })
+const form = reactive({ id: undefined as number | undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'ROLE_USER', departmentId: undefined as number | undefined })
 const rules: FormRules = { username: [{ required: true, message: '请输入用户名', trigger: 'blur' }], password: [{ required: true, message: '请输入密码', trigger: 'blur' }], role: [{ required: true, message: '请选择角色', trigger: 'change' }] }
 
 function onSizeChange() { query.page = 1; loadData() }
@@ -119,7 +119,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300) }
 
 function resetQuery() { query.keyword = ''; query.username = ''; query.phone = ''; query.status = undefined; query.createTimeStart = ''; query.createTimeEnd = ''; query.page = 1; createTimeRange.value = []; loadData() }
-function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'user', departmentId: undefined }); dialogVisible.value = true }
+function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: undefined, username: '', password: '', realName: '', phone: '', email: '', role: 'ROLE_USER', departmentId: undefined }); dialogVisible.value = true }
 function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', email: row.email || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { const { id, phone, email, realName, role, departmentId } = form; await updateUser({ id, phone, email, realName, role, departmentId }); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' }); await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }

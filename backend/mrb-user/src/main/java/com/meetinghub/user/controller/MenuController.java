@@ -31,28 +31,28 @@ public class MenuController {
         return Result.ok(menuService.listByRole(UserContext.getCurrentRole()));
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PostMapping("/admin/create")
     public Result<Void> create(@Valid @RequestBody MenuCreateDTO dto) {
         menuService.create(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/update")
     public Result<Void> update(@Valid @RequestBody MenuUpdateDTO dto) {
         menuService.update(dto);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @DeleteMapping("/admin/delete/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         menuService.delete(id);
         return Result.ok();
     }
 
-    @RequiresRole("admin")
+    @RequiresRole("ROLE_ADMIN")
     @PutMapping("/admin/role-menus")
     public Result<Void> saveRoleMenus(@RequestBody Map<String, Object> body) {
         String role = (String) body.get("role");

@@ -19,7 +19,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function isAdmin(): boolean {
-    return userInfo.value?.role === 'admin'
+    return userInfo.value?.role === 'ROLE_ADMIN'
   }
 
   async function fetchUserInfo() {

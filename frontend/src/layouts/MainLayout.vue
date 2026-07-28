@@ -70,7 +70,7 @@
               </div>
               <div v-if="!isCollapsed" class="user-info-brief">
                 <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
-                <span class="user-role-tag" v-if="userStore.isAdmin()">管理员</span>
+                <span class="user-role-tag" v-if="userStore.isAdmin()">超级管理员</span>
               </div>
               <el-icon class="arrow"><ArrowDown /></el-icon>
             </div>
@@ -89,7 +89,7 @@
                     <div class="dropdown-username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</div>
                     <div class="dropdown-account">@{{ userStore.userInfo?.username || 'unknown' }}</div>
                   </div>
-                  <span class="dropdown-role" v-if="userStore.isAdmin()">管理员</span>
+                  <span class="dropdown-role" v-if="userStore.isAdmin()">超级管理员</span>
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-menu-list">

@@ -48,7 +48,7 @@ class AuthServiceImplTest {
         mockAuthUser.setId(1L);
         mockAuthUser.setUsername("testuser");
         mockAuthUser.setPassword(BCrypt.hashpw("password123"));
-        mockAuthUser.setRole("user");
+        mockAuthUser.setRole("ROLE_USER");
         mockAuthUser.setStatus(1);
     }
 
@@ -56,13 +56,13 @@ class AuthServiceImplTest {
     void should_returnLoginVO_when_loginWithCorrectCredentials() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(userFeignClient.getUserForAuth("testuser")).thenReturn(Result.ok(mockAuthUser));
-        when(jwtUtils.generateToken(1L, "testuser", "user")).thenReturn(VALID_TOKEN);
+        when(jwtUtils.generateToken(1L, "testuser", "ROLE_USER")).thenReturn(VALID_TOKEN);
 
         LoginVO result = authService.login("testuser", "password123");
 
         assertThat(result.getToken()).isEqualTo(VALID_TOKEN);
         assertThat(result.getUsername()).isEqualTo("testuser");
-        assertThat(result.getRole()).isEqualTo("user");
+        assertThat(result.getRole()).isEqualTo("ROLE_USER");
         verify(valueOperations).set(eq("mrb:user:token:1"), eq(VALID_TOKEN), eq(24L), eq(TimeUnit.HOURS));
     }
 
@@ -92,7 +92,7 @@ class AuthServiceImplTest {
         disabledUser.setId(2L);
         disabledUser.setUsername("disabled");
         disabledUser.setPassword(BCrypt.hashpw("pass"));
-        disabledUser.setRole("user");
+        disabledUser.setRole("ROLE_USER");
         disabledUser.setStatus(0);
 
         when(userFeignClient.getUserForAuth("disabled")).thenReturn(Result.ok(disabledUser));
@@ -109,8 +109,8 @@ class AuthServiceImplTest {
         when(jwtUtils.validateToken(VALID_TOKEN)).thenReturn(true);
         when(jwtUtils.getUserIdFromToken(VALID_TOKEN)).thenReturn(1L);
         when(jwtUtils.getUsernameFromToken(VALID_TOKEN)).thenReturn("testuser");
-        when(jwtUtils.getRoleFromToken(VALID_TOKEN)).thenReturn("user");
-        when(jwtUtils.generateToken(1L, "testuser", "user")).thenReturn("new.jwt.token");
+        when(jwtUtils.getRoleFromToken(VALID_TOKEN)).thenReturn("ROLE_USER");
+        when(jwtUtils.generateToken(1L, "testuser", "ROLE_USER")).thenReturn("new.jwt.token");
 
         String newToken = authService.refreshToken(VALID_TOKEN);
 
