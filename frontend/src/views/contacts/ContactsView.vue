@@ -741,4 +741,57 @@ onMounted(() => {
   margin-top: 12px;
   font-size: 14px;
 }
+
+/* 暗黑模式适配：--bg-page 在暗黑下比 --bg-card 更暗，需改用更协调的色值 */
+:global(html.dark) .user-card {
+  background: #161628;
+  border-color: var(--border);
+}
+:global(html.dark) .user-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+:global(html.dark) .user-row:hover {
+  background: #252542;
+}
+:global(html.dark) .dept-special-node:hover {
+  background: #252542;
+}
+:global(html.dark) .view-toggle {
+  background: #161628;
+}
+:global(html.dark) .view-btn:hover {
+  background: #252542;
+}
+:global(html.dark) .view-btn.active {
+  background: #252542;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+:global(html.dark) .group-title {
+  border-bottom-color: var(--border);
+}
+:global(html.dark) .content-header,
+:global(html.dark) .sidebar-header {
+  border-bottom-color: var(--border);
+}
+:global(html.dark) .contacts-list {
+  background: transparent;
+}
+/* el-tree 暗黑适配 */
+:global(html.dark) :deep(.el-tree) {
+  --el-tree-node-hover-bg-color: #252542;
+  --el-tree-text-color: var(--text-primary);
+  --el-tree-expand-icon-color: var(--text-secondary);
+  background: transparent;
+}
+:global(html.dark) :deep(.el-tree-node__content:hover) {
+  background: #252542;
+}
+:global(html.dark) :deep(.el-tree-node.is-current > .el-tree-node__content) {
+  background: var(--primary-light);
+}
+:global(html.dark) :deep(.el-tag--info) {
+  background: #252542;
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
 </style>
