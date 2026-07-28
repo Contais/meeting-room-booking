@@ -119,8 +119,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { ArrowDown, ChatDotRound, User, SwitchButton, Right } from '@element-plus/icons-vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -228,6 +229,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   notificationStore.stop()
+})
+
+// WebSocket 实时通知到达时弹出 toast
+watch(() => notificationStore.latestNotification, (n) => {
+  if (n) {
+    ElMessage({ message: n.title, type: 'info', duration: 4000, showClose: true })
+  }
 })
 </script>
 

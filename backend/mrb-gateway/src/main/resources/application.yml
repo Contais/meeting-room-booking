@@ -25,3 +25,7 @@ spring:
             - Path=/api/meeting/**
           filters:
             - StripPrefix=1
+        - id: ws-user-service
+          uri: lb:ws://mrb-user
+          predicates:
+            - Path=/ws/**

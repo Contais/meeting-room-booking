@@ -12,6 +12,8 @@ import com.meetinghub.user.model.entity.Notification;
 import com.meetinghub.user.model.vo.NotificationVO;
 import com.meetinghub.user.repository.NotificationRepository;
 import com.meetinghub.user.service.NotificationService;
+import com.meetinghub.user.websocket.NotificationWebSocketHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationServiceImpl extends ServiceImpl<NotificationRepository, Notification> implements NotificationService {
 
+    private final NotificationWebSocketHandler webSocketHandler;
+    private final ObjectMapper objectMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void send(NotificationSendDTO dto) {
@@ -40,6 +45,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationRepository,
         n.setIsRead(0);
         save(n);
         log.info("通知已发送, userId={}, type={}, title={}", dto.getUserId(), dto.getType(), dto.getTitle());
+        pushWebSocket(n);
     }
 
     @Override
@@ -61,6 +67,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationRepository,
         }).toList();
         saveBatch(notifications);
         log.info("批量通知已发送, userCount={}, type={}", userIds.size(), template.getType());
+        notifications.forEach(this::pushWebSocket);
     }
 
     @Override
@@ -129,5 +136,17 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationRepository,
         vo.setIsRead(n.getIsRead());
         vo.setCreateTime(n.getCreateTime());
         return vo;
+    }
+
+    /**
+     * 通过 WebSocket 实时推送通知给在线用户（不在线则跳过，下次拉取时可见）
+     */
+    private void pushWebSocket(Notification n) {
+        try {
+            String json = objectMapper.writeValueAsString(toVO(n));
+            webSocketHandler.sendToUser(n.getUserId(), json);
+        } catch (Exception e) {
+            log.warn("WebSocket 推送失败, userId={}, notificationId={}", n.getUserId(), n.getId(), e);
+        }
     }
 }

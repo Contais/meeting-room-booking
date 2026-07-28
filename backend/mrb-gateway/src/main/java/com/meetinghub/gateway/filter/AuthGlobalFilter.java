@@ -41,6 +41,14 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
         String token = exchange.getRequest().getHeaders().getFirst(TOKEN_HEADER);
         if (!StringUtils.hasText(token) || !token.startsWith(TOKEN_PREFIX)) {
+            // WebSocket 连接无法设置 Authorization 头，从 query param 降级提取
+            String query = exchange.getRequest().getURI().getQuery();
+            if (query != null && query.contains("token=")) {
+                String wsToken = query.split("token=")[1].split("&")[0];
+                token = TOKEN_PREFIX + wsToken;
+            }
+        }
+        if (!StringUtils.hasText(token) || !token.startsWith(TOKEN_PREFIX)) {
             log.warn("请求缺少有效Token: path={}", path);
             exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
