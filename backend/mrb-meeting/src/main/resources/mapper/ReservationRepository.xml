@@ -83,4 +83,21 @@
         ORDER BY r.start_time DESC
     </select>
 
+    <!--
+        我的会议分页查询：JOIN reservation_attendee 查询用户参加的会议
+        排除已取消(2)和已拒绝(3)的预约，仅显示待确认(0)和已确认(1)的会议
+    -->
+    <select id="selectMyMeetingsPage" resultMap="ReservationVOMap">
+        SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
+               r.remark, r.start_time, r.end_time,
+               r.status, r.create_time, mr.name AS room_name
+        FROM meeting_room_reservation r
+        INNER JOIN reservation_attendee ra ON ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
+        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
+        WHERE r.deleted = 0
+          AND r.status IN (0, 1)
+          <include refid="commonFilters"/>
+        ORDER BY r.start_time DESC
+    </select>
+
 </mapper>

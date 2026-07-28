@@ -51,6 +51,11 @@ public class ReservationController {
         return Result.ok(reservationService.listMyReservations(UserContext.getCurrentUserId(), query));
     }
 
+    @GetMapping("/my-meetings")
+    public Result<IPage<ReservationVO>> listMyMeetings(ReservationPageQuery query) {
+        return Result.ok(reservationService.listMyMeetings(UserContext.getCurrentUserId(), query));
+    }
+
     @GetMapping("/room/{roomId}/date/{date}")
     public Result<List<ReservationVO>> listByRoomAndDate(@PathVariable Long roomId,
                                                          @PathVariable String date) {

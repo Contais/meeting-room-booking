@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted, ref } from 'vue'
-import { OfficeBuilding, Calendar, Clock, User, Setting, Bell, DataLine } from '@element-plus/icons-vue'
+import { OfficeBuilding, Calendar, Clock, User, Setting, Bell, DataLine, Tickets } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getHomeStats, getRoomUsage, getPeakHours } from '@/api/home'
 import VChart from 'vue-echarts'
@@ -59,24 +59,25 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
 
 const userStore = useUserStore()
-const stats = reactive({ roomCount: 0, todayReservations: 0, pendingApproval: 0, weekReservations: 0, totalReservations: 0 })
+const stats = reactive({ roomCount: 0, todayReservations: 0, pendingApproval: 0, weekReservations: 0, totalReservations: 0, myUpcomingMeetings: 0, myPendingMeetings: 0 })
 
 const usageChartOption = ref({})
 const peakChartOption = ref({})
 
 const statItems = computed(() => [
   { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)', path: '/meeting/rooms' },
-  { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #f093fb, #f5576c)', path: '/reservation/my' },
-  { label: '本周预约', value: stats.weekReservations, icon: Clock, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)', path: '/reservation/my' },
-  { label: '总预约数', value: stats.totalReservations, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)', path: '/reservation/my' },
-  ...(userStore.isAdmin() ? [{ label: '待审批', value: stats.pendingApproval, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', path: '/admin/reservations' }] : []),
+  { label: '即将到来的会议', value: stats.myUpcomingMeetings, icon: Tickets, bg: 'linear-gradient(135deg, #f093fb, #f5576c)', path: '/my-meetings' },
+  { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)', path: '/reservation/my' },
+  { label: '待响应邀请', value: stats.myPendingMeetings, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', path: '/my-meetings' },
+  ...(userStore.isAdmin() ? [{ label: '待审批', value: stats.pendingApproval, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)', path: '/admin/reservations' }] : []),
 ])
 
 const actionItems = computed(() => [
   { label: '预约会议室', path: '/meeting/rooms', icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)' },
+  { label: '我的会议', path: '/my-meetings', icon: Tickets, bg: 'linear-gradient(135deg, #f093fb, #f5576c)' },
   { label: '我的预约', path: '/reservation/my', icon: Calendar, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
   ...(userStore.isAdmin() ? [
-    { label: '会议室管理', path: '/admin/rooms', icon: Setting, bg: 'linear-gradient(135deg, #f093fb, #f5576c)' },
+    { label: '会议室管理', path: '/admin/rooms', icon: Setting, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' },
     { label: '用户管理', path: '/admin/users', icon: User, bg: 'linear-gradient(135deg, #10b981, #059669)' },
     { label: '预约审批', path: '/admin/reservations', icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' },
   ] : []),

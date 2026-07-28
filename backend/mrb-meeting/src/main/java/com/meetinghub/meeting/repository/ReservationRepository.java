@@ -33,4 +33,15 @@ public interface ReservationRepository extends BaseMapper<MeetingRoomReservation
      */
     IPage<ReservationVO> selectAllPage(IPage<ReservationVO> page,
                                        @Param("query") ReservationPageQuery query);
+
+    /**
+     * 我的会议分页查询（作为参会人参加的会议，排除已取消/已拒绝）
+     *
+     * @param page   分页参数
+     * @param query  过滤条件
+     * @param userId 当前用户ID
+     */
+    IPage<ReservationVO> selectMyMeetingsPage(IPage<ReservationVO> page,
+                                               @Param("query") ReservationPageQuery query,
+                                               @Param("userId") Long userId);
 }

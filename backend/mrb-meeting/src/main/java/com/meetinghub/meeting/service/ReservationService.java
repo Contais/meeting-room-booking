@@ -40,6 +40,11 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
     IPage<ReservationVO> listMyReservations(Long userId, ReservationPageQuery query);
 
     /**
+     * 查询我的会议列表（作为参会人参加的会议）
+     */
+    IPage<ReservationVO> listMyMeetings(Long userId, ReservationPageQuery query);
+
+    /**
      * 按会议室+日期查询预约（详情页今日预约）
      */
     List<ReservationVO> listByRoomAndDate(Long roomId, String date);

@@ -11,9 +11,9 @@ import java.util.Map;
 public interface HomeService {
 
     /**
-     * 获取首页统计数据（会议室总数、今日预约数、待审批数）
+     * 获取首页统计数据（会议室总数、今日预约数、待审批数、我的会议数）
      */
-    Map<String, Object> getStats();
+    Map<String, Object> getStats(Long userId);
 
     /**
      * 会议室使用率

@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.controller;
 
+import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.meeting.service.HomeService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class HomeController {
      */
     @GetMapping("/stats")
     public Result<Map<String, Object>> getStats() {
-        return Result.ok(homeService.getStats());
+        return Result.ok(homeService.getStats(UserContext.getCurrentUserId()));
     }
 
     /**

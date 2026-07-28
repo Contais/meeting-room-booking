@@ -23,6 +23,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'schedule', name: 'Schedule', component: () => import('@/views/schedule/ScheduleView.vue'), meta: { title: '日程视图', requiresAuth: true } },
       { path: 'reservation/my', name: 'MyReservations', component: () => import('@/views/reservation/MyReservations.vue'), meta: { title: '我的预约', requiresAuth: true } },
       { path: 'reservation/my/:id', name: 'MyReservationDetail', component: () => import('@/views/reservation/MyReservationDetail.vue'), meta: { title: '预约详情', requiresAuth: true, parent: { path: '/reservation/my', title: '我的预约' } } },
+      { path: 'my-meetings', name: 'MyMeetings', component: () => import('@/views/meeting/MyMeetingsView.vue'), meta: { title: '我的会议', requiresAuth: true } },
       { path: 'contacts', name: 'Contacts', component: () => import('@/views/contacts/ContactsView.vue'), meta: { title: '通讯录', requiresAuth: true } },
       { path: 'notifications', name: 'Notifications', component: () => import('@/views/notification/NotificationView.vue'), meta: { title: '消息通知', requiresAuth: true } },
       { path: 'admin/menus', name: 'AdminMenus', component: () => import('@/views/admin/MenuManage.vue'), meta: { title: '菜单管理', requiresAuth: true, requiresAdmin: true } },

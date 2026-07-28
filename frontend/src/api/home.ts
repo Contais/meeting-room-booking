@@ -7,6 +7,8 @@ export interface HomeStats {
   pendingApproval: number
   weekReservations: number
   totalReservations: number
+  myUpcomingMeetings?: number
+  myPendingMeetings?: number
 }
 
 export function getRoomUsage() {

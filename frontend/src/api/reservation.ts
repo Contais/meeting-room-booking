@@ -18,6 +18,10 @@ export function listMyReservations(params: ReservationPageQuery): Promise<Result
   return request.get('/api/meeting/reservation/my', { params })
 }
 
+export function listMyMeetings(params: ReservationPageQuery): Promise<Result<ReservationPageResult>> {
+  return request.get('/api/meeting/reservation/my-meetings', { params })
+}
+
 export function listByRoomAndDate(roomId: number, date: string): Promise<Result<Reservation[]>> {
   return request.get(`/api/meeting/reservation/room/${roomId}/date/${date}`)
 }

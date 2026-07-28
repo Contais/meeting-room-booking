@@ -5,9 +5,11 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
+import com.meetinghub.meeting.model.entity.ReservationAttendee;
 import com.meetinghub.meeting.model.vo.PeakHourVO;
 import com.meetinghub.meeting.model.vo.RoomUsageVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
+import com.meetinghub.meeting.repository.ReservationAttendeeRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.HomeService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +34,10 @@ public class HomeServiceImpl implements HomeService {
 
     private final MeetingRoomRepository meetingRoomRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationAttendeeRepository attendeeRepository;
 
     @Override
-    public Map<String, Object> getStats() {
+    public Map<String, Object> getStats(Long userId) {
         Map<String, Object> stats = new HashMap<>();
 
         long roomCount = meetingRoomRepository.selectCount(
@@ -71,6 +75,40 @@ public class HomeServiceImpl implements HomeService {
                         .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
         );
         stats.put("totalReservations", totalReservations);
+
+        // 我的会议统计：作为参会人参加的会议数量
+        if (userId != null) {
+            // 查询用户参加的所有预约 ID
+            List<ReservationAttendee> myAttendees = attendeeRepository.selectList(
+                    new LambdaQueryWrapper<ReservationAttendee>()
+                            .eq(ReservationAttendee::getUserId, userId)
+                            .select(ReservationAttendee::getReservationId)
+            );
+            if (!myAttendees.isEmpty()) {
+                List<Long> reservationIds = myAttendees.stream()
+                        .map(ReservationAttendee::getReservationId)
+                        .distinct()
+                        .collect(Collectors.toList());
+                // 即将到来的会议数（已确认 + 开始时间在未来）
+                long myUpcomingMeetings = reservationRepository.selectCount(
+                        new LambdaQueryWrapper<MeetingRoomReservation>()
+                                .in(MeetingRoomReservation::getId, reservationIds)
+                                .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.CONFIRMED.getCode())
+                                .gt(MeetingRoomReservation::getStartTime, LocalDateTime.now())
+                );
+                stats.put("myUpcomingMeetings", myUpcomingMeetings);
+                // 待响应的会议邀请数
+                long myPendingMeetings = reservationRepository.selectCount(
+                        new LambdaQueryWrapper<MeetingRoomReservation>()
+                                .in(MeetingRoomReservation::getId, reservationIds)
+                                .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode())
+                );
+                stats.put("myPendingMeetings", myPendingMeetings);
+            } else {
+                stats.put("myUpcomingMeetings", 0L);
+                stats.put("myPendingMeetings", 0L);
+            }
+        }
 
         return stats;
     }
