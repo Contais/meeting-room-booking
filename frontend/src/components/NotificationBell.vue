@@ -8,14 +8,16 @@
     @show="onPopoverShow"
   >
     <template #reference>
-      <el-tooltip content="消息通知" placement="bottom">
-        <el-button class="icon-btn notification-btn">
-          <el-icon><Bell /></el-icon>
-          <span v-if="unreadCount > 0" class="notification-count">
-            {{ unreadCount > 99 ? '99+' : unreadCount }}
-          </span>
-        </el-button>
-      </el-tooltip>
+      <div class="notification-trigger">
+        <el-tooltip content="消息通知" placement="bottom">
+          <el-button class="icon-btn notification-btn">
+            <el-icon><Bell /></el-icon>
+            <span v-if="unreadCount > 0" class="notification-count">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </el-button>
+        </el-tooltip>
+      </div>
     </template>
 
     <div class="notification-panel">
@@ -122,6 +124,11 @@ function formatTime(time: string): string {
 </script>
 
 <style scoped>
+.notification-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+
 .notification-btn {
   position: relative;
 }
