@@ -606,7 +606,8 @@ onMounted(() => {
 }
 
 .user-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px 100px 1fr 160px 200px;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
@@ -627,7 +628,6 @@ onMounted(() => {
 }
 
 .row-name {
-  min-width: 80px;
   font-weight: 500;
   color: var(--text-primary);
   overflow: hidden;
@@ -636,7 +636,6 @@ onMounted(() => {
 }
 
 .row-dept {
-  flex: 1;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -649,7 +648,6 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   color: var(--text-secondary);
-  min-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

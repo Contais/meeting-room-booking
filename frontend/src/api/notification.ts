@@ -25,21 +25,21 @@ export function getNotifications(params: {
   type?: string
   isRead?: number
 }): Promise<Result<NotificationPageResult>> {
-  return request.get('/api/user/notification/page', { params })
+  return request.get('/api/uc/user/notification/page', { params })
 }
 
 export function getUnreadCount(): Promise<Result<number>> {
-  return request.get('/api/user/notification/unread-count')
+  return request.get('/api/uc/user/notification/unread-count')
 }
 
 export function markAsRead(id: number): Promise<Result<void>> {
-  return request.post(`/api/user/notification/read/${id}`)
+  return request.post(`/api/uc/user/notification/read/${id}`)
 }
 
 export function markAllAsRead(): Promise<Result<void>> {
-  return request.post('/api/user/notification/read-all')
+  return request.post('/api/uc/user/notification/read-all')
 }
 
 export function deleteNotification(id: number): Promise<Result<void>> {
-  return request.delete(`/api/user/notification/${id}`)
+  return request.delete(`/api/uc/user/notification/${id}`)
 }

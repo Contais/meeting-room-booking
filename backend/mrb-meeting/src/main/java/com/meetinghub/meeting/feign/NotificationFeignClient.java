@@ -16,7 +16,7 @@ import java.util.List;
  * 调用失败时降级为仅记录日志，不影响主业务流程。
  * </p>
  */
-@FeignClient(name = "mrb-user")
+@FeignClient(name = "mrb-user", contextId = "notificationFeignClient")
 public interface NotificationFeignClient {
 
     @PostMapping("/user/internal/notification/send")
