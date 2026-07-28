@@ -620,13 +620,6 @@ onMounted(() => {
   background: var(--bg-page);
 }
 
-.user-avatar-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
 .row-name {
   font-weight: 500;
   color: var(--text-primary);
@@ -686,6 +679,14 @@ onMounted(() => {
   color: #fff;
   font-size: 18px;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 列表视图小头像：必须置于 .user-avatar 之后以确保覆盖 */
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
