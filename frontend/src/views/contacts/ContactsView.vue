@@ -7,6 +7,11 @@
           <h3>组织架构</h3>
         </div>
         <div class="dept-tree-wrapper">
+          <div class="dept-special-node" :class="{ active: selectedDeptId === null }" @click="selectAllDepts">
+            <el-icon class="dept-icon"><User /></el-icon>
+            <span class="dept-name">全部部门</span>
+            <el-tag size="small" type="info" effect="light" round>{{ allUsers.length }}</el-tag>
+          </div>
           <el-tree
             ref="deptTreeRef"
             :data="deptTree"
@@ -27,21 +32,24 @@
               </div>
             </template>
           </el-tree>
+          <div class="dept-special-node" :class="{ active: selectedDeptId === UNASSIGNED }" @click="selectUnassigned">
+            <el-icon class="dept-icon"><User /></el-icon>
+            <span class="dept-name">未分配人员</span>
+            <el-tag v-if="unassignedCount > 0" size="small" type="info" effect="light" round>{{ unassignedCount }}</el-tag>
+          </div>
         </div>
       </div>
 
       <!-- 右侧用户列表 -->
       <div class="contacts-content">
         <div class="content-header">
-          <h2 class="page-title">{{ currentDeptName || '全部人员' }}</h2>
+          <h2 class="page-title">{{ pageTitle }}</h2>
           <div class="search-bar">
             <el-input
               v-model="keyword"
               placeholder="搜索姓名、用户名、手机号、邮箱"
               clearable
               style="width: 320px"
-              @input="onSearchInput"
-              @keyup.enter="loadContacts"
             >
               <template #prefix>
                 <el-icon><Search /></el-icon>
@@ -109,19 +117,25 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, markRaw } from 'vue'
 import { ElMessage } from 'element-plus'
+import type { ElTree } from 'element-plus'
 import { OfficeBuilding, User, Search, Phone, Message } from '@element-plus/icons-vue'
 import { listContacts } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import type { UserInfo } from '@/types/user'
 import type { Department } from '@/types/department'
 
+/** 未分配人员的特殊标识 */
+const UNASSIGNED = -1
+
 const loading = ref(false)
-const contacts = ref<UserInfo[]>([])
+/** 全部启用用户，仅在挂载时加载一次，用于部门人数统计与前端过滤 */
+const allUsers = ref<UserInfo[]>([])
 const deptTree = ref<Department[]>([])
+const deptTreeRef = ref<InstanceType<typeof ElTree>>()
 const keyword = ref('')
+/** null=全部；UNASSIGNED(-1)=未分配人员；number=指定部门(含子部门) */
 const selectedDeptId = ref<number | null>(null)
 const currentDeptName = ref('')
-let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const avatarGradients = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -168,53 +182,125 @@ function getInitial(user: UserInfo): string {
   return (user.realName || user.username || 'U').charAt(0).toUpperCase()
 }
 
-function onSearchInput() {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(loadContacts, 300)
+/** 在部门树中查找指定节点 */
+function findDeptNode(nodes: Department[], id: number): Department | null {
+  for (const node of nodes) {
+    if (node.id === id) return node
+    if (node.children) {
+      const found = findDeptNode(node.children, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+/** 收集指定部门及其所有子部门的 ID（点击父级包含所有子级） */
+function collectDeptIds(id: number): number[] {
+  const node = findDeptNode(deptTree.value, id)
+  if (!node) return [id]
+  const ids: number[] = [node.id]
+  const walk = (n: Department) => {
+    if (n.children) {
+      for (const child of n.children) {
+        ids.push(child.id)
+        walk(child)
+      }
+    }
+  }
+  walk(node)
+  return ids
 }
 
 function handleDeptClick(data: any) {
   selectedDeptId.value = data.id
   currentDeptName.value = data.name
-  loadContacts()
 }
+
+/** 重置为全部部门 */
+function selectAllDepts() {
+  selectedDeptId.value = null
+  currentDeptName.value = ''
+  deptTreeRef.value?.setCurrentKey(null)
+}
+
+/** 筛选未分配人员 */
+function selectUnassigned() {
+  selectedDeptId.value = UNASSIGNED
+  currentDeptName.value = '未分配人员'
+  deptTreeRef.value?.setCurrentKey(null)
+}
+
+/** 部门人数统计映射（基于全部用户，不受搜索/筛选影响，始终稳定显示） */
+const deptUserCountMap = computed(() => {
+  const map = new Map<number, number>()
+  for (const u of allUsers.value) {
+    if (u.departmentId != null) {
+      map.set(u.departmentId, (map.get(u.departmentId) || 0) + 1)
+    }
+  }
+  return map
+})
 
 function getDeptUserCount(deptId: number): number {
-  return contacts.value.filter(u => u.departmentId === deptId).length
+  return deptUserCountMap.value.get(deptId) || 0
 }
 
+/** 未分配人员数量 */
+const unassignedCount = computed(() =>
+  allUsers.value.filter(u => u.departmentId == null).length
+)
+
+const pageTitle = computed(() => {
+  if (selectedDeptId.value === null) return '全部人员'
+  if (selectedDeptId.value === UNASSIGNED) return '未分配人员'
+  return currentDeptName.value || '全部人员'
+})
+
+/** 关键字 + 部门(含子部门) 前端过滤 */
 const filteredContacts = computed(() => {
-  let list = contacts.value
-  if (selectedDeptId.value) {
-    list = list.filter(u => u.departmentId === selectedDeptId.value)
+  let list = allUsers.value
+  const kw = keyword.value.trim().toLowerCase()
+  if (kw) {
+    list = list.filter(u =>
+      (u.username || '').toLowerCase().includes(kw) ||
+      (u.realName || '').toLowerCase().includes(kw) ||
+      (u.phone || '').toLowerCase().includes(kw) ||
+      (u.email || '').toLowerCase().includes(kw)
+    )
+  }
+  if (selectedDeptId.value === UNASSIGNED) {
+    list = list.filter(u => u.departmentId == null)
+  } else if (selectedDeptId.value != null) {
+    const deptIds = new Set(collectDeptIds(selectedDeptId.value))
+    list = list.filter(u => u.departmentId != null && deptIds.has(u.departmentId))
   }
   return list
 })
 
 const groupedUsers = computed(() => {
   const groups: Map<number, { deptId: number; deptName: string; users: UserInfo[] }> = new Map()
-  const allUsers = filteredContacts.value
-
-  for (const user of allUsers) {
+  for (const user of filteredContacts.value) {
     const deptId = user.departmentId || 0
-    const deptName = user.departmentName || '未分配部门'
+    const deptName = user.departmentId ? (user.departmentName || '未知部门') : '未分配人员'
     if (!groups.has(deptId)) {
       groups.set(deptId, { deptId, deptName, users: [] })
     }
     groups.get(deptId)!.users.push(user)
   }
-
-  return Array.from(groups.values()).sort((a, b) => a.deptId - b.deptId)
+  // 未分配人员分组排在最后
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.deptId === 0) return 1
+    if (b.deptId === 0) return -1
+    return a.deptId - b.deptId
+  })
 })
 
+/** 加载全部启用用户（仅一次，后续过滤在前端完成） */
 async function loadContacts() {
   loading.value = true
   try {
-    const res = await listContacts({
-      keyword: keyword.value || undefined,
-      departmentId: selectedDeptId.value || undefined,
-    })
-    contacts.value = res.data || []
+    const res = await listContacts({})
+    allUsers.value = res.data || []
   } catch { /* */ } finally {
     loading.value = false
   }
@@ -277,6 +363,34 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
+}
+
+/* 特殊节点：全部部门 / 未分配人员 */
+.dept-special-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dept-special-node:hover {
+  background: var(--bg-page);
+}
+.dept-special-node.active {
+  background: var(--primary);
+  color: #fff;
+}
+.dept-special-node.active .dept-icon {
+  color: #fff;
+}
+.dept-special-node.active :deep(.el-tag) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: transparent;
 }
 
 .dept-node {
