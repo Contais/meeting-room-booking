@@ -207,4 +207,35 @@ public class ReservationAttendeeServiceImpl
             return Collections.emptyMap();
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addCreatorAsAttendee(Long reservationId, Long userId) {
+        // 检查是否已存在（避免重复加入）
+        Long existCount = attendeeRepository.selectCount(
+                new LambdaQueryWrapper<ReservationAttendee>()
+                        .eq(ReservationAttendee::getReservationId, reservationId)
+                        .eq(ReservationAttendee::getUserId, userId)
+        );
+        if (existCount > 0) {
+            return;
+        }
+        ReservationAttendee attendee = new ReservationAttendee();
+        attendee.setReservationId(reservationId);
+        attendee.setUserId(userId);
+        attendee.setStatus(1); // 已接受
+        attendeeRepository.insert(attendee);
+    }
+
+    @Override
+    public boolean isAttendee(Long reservationId, Long userId) {
+        if (reservationId == null || userId == null) {
+            return false;
+        }
+        return attendeeRepository.selectCount(
+                new LambdaQueryWrapper<ReservationAttendee>()
+                        .eq(ReservationAttendee::getReservationId, reservationId)
+                        .eq(ReservationAttendee::getUserId, userId)
+        ) > 0;
+    }
 }

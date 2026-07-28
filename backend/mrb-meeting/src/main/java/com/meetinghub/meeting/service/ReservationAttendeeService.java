@@ -32,4 +32,14 @@ public interface ReservationAttendeeService extends IService<ReservationAttendee
      * 移除参会人
      */
     void removeAttendee(Long reservationId, Long userId, Long operatorId);
+
+    /**
+     * 将预约创建者加入参会人列表（状态为已接受）
+     */
+    void addCreatorAsAttendee(Long reservationId, Long userId);
+
+    /**
+     * 判断用户是否为某预约的参会人
+     */
+    boolean isAttendee(Long reservationId, Long userId);
 }

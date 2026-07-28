@@ -83,7 +83,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setRoomId(dto.getRoomId());
         reservation.setUserId(userId);
         reservation.setSubject(dto.getSubject());
-        int attendeeCount = dto.getAttendeeUserIds() != null ? dto.getAttendeeUserIds().size() : 0;
+        // 参会人数 = 邀请的参会人 + 创建者自身
+        int invitedCount = dto.getAttendeeUserIds() != null ? dto.getAttendeeUserIds().size() : 0;
+        int attendeeCount = invitedCount + 1;
         reservation.setAttendeeCount(attendeeCount);
         reservation.setRemark(dto.getRemark());
         reservation.setStartTime(dto.getStartTime());
@@ -100,10 +102,13 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         updateById(reservation);
         log.info("预约创建成功, userId={}, roomId={}, code={}, status={}", userId, dto.getRoomId(), reservationCode, initialStatus);
 
-        // 7. 保存参会人
+        // 7. 预约人默认加入参会人列表（状态为已接受）
+        attendeeService.addCreatorAsAttendee(reservation.getId(), userId);
+
+        // 8. 保存其他参会人
         if (dto.getAttendeeUserIds() != null && !dto.getAttendeeUserIds().isEmpty()) {
             attendeeService.inviteAttendees(reservation.getId(), userId, dto.getAttendeeUserIds());
-            // 8. 通知参会人
+            // 9. 通知参会人
             NotificationSendDTO notify = new NotificationSendDTO();
             notify.setType("RESERVATION_CREATED");
             notify.setTitle("您被邀请参加会议：" + dto.getSubject());
@@ -223,6 +228,14 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 复杂多条件 + JOIN 会议室名称，下沉到 ReservationRepository.xml
         Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
         IPage<ReservationVO> result = reservationRepository.selectMyPage(page, query, userId);
+        fillUsernames(result.getRecords());
+        return result;
+    }
+
+    @Override
+    public IPage<ReservationVO> listMyMeetings(Long userId, ReservationPageQuery query) {
+        Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
+        IPage<ReservationVO> result = reservationRepository.selectMyMeetingsPage(page, query, userId);
         fillUsernames(result.getRecords());
         return result;
     }
@@ -539,7 +552,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         if (r == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
-        if (!r.getUserId().equals(userId)) {
+        // 预约人本人或参会人均可查看详情
+        if (!r.getUserId().equals(userId) && !attendeeService.isAttendee(reservationId, userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权查看他人预约");
         }
         return getReservationDetail(reservationId);
