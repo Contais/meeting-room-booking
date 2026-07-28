@@ -87,8 +87,29 @@
           </div>
         </div>
       </el-form-item>
-      <div class="dialog-form-item"><label>参会人数</label><el-input-number v-model="form.attendeeCount" :min="1" :max="currentRoom?.capacity || 100" style="width: 100%" /></div>
-      <div class="dialog-form-item"><label>联系电话</label><el-input v-model="form.contactPhone" placeholder="请输入联系电话" @input="form.contactPhone = form.contactPhone.replace(/[^0-9]/g, '')" /></div>
+      <div class="dialog-form-item">
+        <label>参会人员<span v-if="form.attendeeUserIds.length" class="attendee-count">已选 {{ form.attendeeUserIds.length }} 人</span></label>
+        <el-select
+          v-model="form.attendeeUserIds"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="从通讯录选择参会人员（选填）"
+          style="width: 100%"
+          :loading="contactsLoading"
+        >
+          <el-option
+            v-for="u in contacts"
+            :key="u.id"
+            :label="u.realName || u.username"
+            :value="u.id"
+          >
+            <span>{{ u.realName || u.username }}</span>
+            <span class="contact-dept">{{ u.departmentName || '未分配部门' }}</span>
+          </el-option>
+        </el-select>
+      </div>
       <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
     </el-form>
     <template #footer>
@@ -107,7 +128,9 @@ import { ElMessage } from 'element-plus'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { createReservation } from '@/api/reservation'
 import { listByRoomAndDate } from '@/api/reservation'
+import { listContacts } from '@/api/user'
 import type { MeetingRoom } from '@/types/meeting'
+import type { UserInfo } from '@/types/user'
 
 const props = defineProps<{
   modelValue: boolean
@@ -135,6 +158,8 @@ const timeStep = ref(30)
 const bookedReservations = ref<any[]>([])
 const selectedRoomId = ref<number | undefined>(props.roomId)
 const timelineRef = ref<HTMLElement | null>(null)
+const contacts = ref<UserInfo[]>([])
+const contactsLoading = ref(false)
 
 // 拖拽状态
 const dragAnchor = ref<string>('')
@@ -154,8 +179,7 @@ const form = reactive({
   selectedDate: '',
   startMinute: '',
   endMinute: '',
-  attendeeCount: 1,
-  contactPhone: '',
+  attendeeUserIds: [] as number[],
   remark: ''
 })
 
@@ -172,8 +196,7 @@ const rules: FormRules = {
       },
       trigger: 'change'
     }
-  ],
-  contactPhone: [{ pattern: /^[0-9]*$/, message: '联系电话只能输入数字', trigger: 'blur' }]
+  ]
 }
 
 function toMinutes(t: string): number {
@@ -420,6 +443,16 @@ async function loadBookedReservations() {
   scrollToWorkHour()
 }
 
+async function loadContacts() {
+  contactsLoading.value = true
+  try {
+    const res = await listContacts()
+    contacts.value = res.data || []
+  } catch { /* */ } finally {
+    contactsLoading.value = false
+  }
+}
+
 // 默认滚动到 09:00 或当前时间
 function scrollToWorkHour() {
   nextTick(() => {
@@ -458,8 +491,7 @@ async function handleSubmit() {
       subject: form.subject,
       startTime: `${dateStr}T${form.startMinute}:00`,
       endTime: `${dateStr}T${form.endMinute}:00`,
-      attendeeCount: form.attendeeCount,
-      contactPhone: form.contactPhone,
+      attendeeUserIds: form.attendeeUserIds,
       remark: form.remark,
     })
     const code = res?.data
@@ -479,8 +511,7 @@ function handleClose() {
   form.selectedDate = ''
   form.startMinute = ''
   form.endMinute = ''
-  form.attendeeCount = 1
-  form.contactPhone = ''
+  form.attendeeUserIds = []
   form.remark = ''
   bookedReservations.value = []
   dragAnchor.value = ''
@@ -503,6 +534,10 @@ watch(visible, async (val) => {
     } else {
       scrollToWorkHour()
     }
+    // 懒加载通讯录人员列表（仅首次打开加载）
+    if (!contacts.value.length) {
+      loadContacts()
+    }
   }
 })
 
@@ -511,7 +546,9 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 <style scoped>
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; }
+.dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
+.attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; }
+.contact-dept { float: right; color: var(--el-text-color-secondary); font-size: 12px; }
 
 .dialog-rules-tip { background: var(--el-color-primary-light-9, #ecf5ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
 

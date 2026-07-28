@@ -25,7 +25,7 @@
         <div class="slot-info">
           <template v-if="slot.status === 'occupied' && slot.reservation">
             <div class="slot-subject">{{ slot.reservation.subject }}</div>
-            <div class="slot-meta">{{ slot.reservation.contactPhone || '' }}</div>
+            <div class="slot-meta">{{ slot.reservation.username || '' }}</div>
           </template>
           <span v-else-if="slot.status === 'past'" class="slot-past">已过</span>
           <span v-else-if="isSelected(slot.time)" class="slot-selected-text">已选择</span>

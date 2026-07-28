@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 /**
@@ -19,9 +20,8 @@ public class ReservationCreateDTO implements Serializable {
     @NotBlank(message = "会议主题不能为空")
     private String subject;
 
-    private Integer attendeeCount;
-
-    private String contactPhone;
+    /** 参会人用户ID列表 */
+    private List<Long> attendeeUserIds;
 
     private String remark;
 

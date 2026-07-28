@@ -38,14 +38,9 @@ public class MeetingRoomReservation {
     private String subject;
 
     /**
-     * 参会人数
+     * 参会人数（由参会人列表 count 自动派生）
      */
     private Integer attendeeCount;
-
-    /**
-     * 联系人手机号
-     */
-    private String contactPhone;
 
     /**
      * 备注

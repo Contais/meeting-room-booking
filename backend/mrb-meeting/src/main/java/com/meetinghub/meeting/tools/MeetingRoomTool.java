@@ -119,15 +119,14 @@ public class MeetingRoomTool {
         return sb.toString();
     }
 
-    @Tool(description = "创建会议室预约。传入会议室名称（支持模糊匹配，但需能唯一确定）、日期、开始/结束时间、会议主题。返回预约结果。")
+    @Tool(description = "创建会议室预约。传入会议室名称（支持模糊匹配，但需能唯一确定）、日期、开始/结束时间、会议主题。创建后可在详情页添加参会人员。返回预约结果。")
     public String createReservation(
             ToolContext toolContext,
             @ToolParam(description = "会议室名称") String roomName,
             @ToolParam(description = "预约日期，格式 yyyy-MM-dd") String date,
             @ToolParam(description = "开始时间，格式 HH:mm") String startTime,
             @ToolParam(description = "结束时间，格式 HH:mm") String endTime,
-            @ToolParam(description = "会议主题") String subject,
-            @ToolParam(description = "参会人数", required = false) Integer attendeeCount) {
+            @ToolParam(description = "会议主题") String subject) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
 
         if (roomName == null || roomName.isBlank()) return "请提供会议室名称";
@@ -164,7 +163,6 @@ public class MeetingRoomTool {
         ReservationCreateDTO dto = new ReservationCreateDTO();
         dto.setRoomId(room.getId());
         dto.setSubject(subject);
-        dto.setAttendeeCount(attendeeCount);
         dto.setStartTime(start);
         dto.setEndTime(end);
 

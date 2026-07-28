@@ -17,6 +17,7 @@ import com.meetinghub.meeting.feign.UserFeignClient;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
+import com.meetinghub.meeting.service.ReservationAttendeeService;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserFeignClient userFeignClient;
+    private final ReservationAttendeeService attendeeService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -77,8 +79,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setRoomId(dto.getRoomId());
         reservation.setUserId(userId);
         reservation.setSubject(dto.getSubject());
-        reservation.setAttendeeCount(dto.getAttendeeCount());
-        reservation.setContactPhone(dto.getContactPhone());
+        int attendeeCount = dto.getAttendeeUserIds() != null ? dto.getAttendeeUserIds().size() : 0;
+        reservation.setAttendeeCount(attendeeCount);
         reservation.setRemark(dto.getRemark());
         reservation.setStartTime(dto.getStartTime());
         reservation.setEndTime(dto.getEndTime());
@@ -93,6 +95,11 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setReservationCode(reservationCode);
         updateById(reservation);
         log.info("预约创建成功, userId={}, roomId={}, code={}, status={}", userId, dto.getRoomId(), reservationCode, initialStatus);
+
+        // 7. 保存参会人
+        if (dto.getAttendeeUserIds() != null && !dto.getAttendeeUserIds().isEmpty()) {
+            attendeeService.inviteAttendees(reservation.getId(), userId, dto.getAttendeeUserIds());
+        }
         return reservationCode;
     }
 
@@ -425,7 +432,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         vo.setUsername(userNameMap != null ? userNameMap.getOrDefault(r.getUserId(), "") : "");
         vo.setSubject(r.getSubject());
         vo.setAttendeeCount(r.getAttendeeCount());
-        vo.setContactPhone(r.getContactPhone());
         vo.setRemark(r.getRemark());
         vo.setStartTime(r.getStartTime());
         vo.setEndTime(r.getEndTime());
@@ -464,7 +470,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             log.warn("Feign 查询用户名失败, userId={}", r.getUserId(), e);
         }
 
-        return toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
+        ReservationVO vo = toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
+        vo.setAttendees(attendeeService.listAttendees(reservationId));
+        return vo;
     }
 
     @Override

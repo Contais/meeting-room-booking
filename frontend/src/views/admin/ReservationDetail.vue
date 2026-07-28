@@ -53,9 +53,6 @@
           <el-descriptions-item label="参会人数">
             {{ reservation.attendeeCount }} 人
           </el-descriptions-item>
-          <el-descriptions-item label="联系电话">
-            {{ reservation.contactPhone || '-' }}
-          </el-descriptions-item>
           <el-descriptions-item label="预约时段" :span="2">
             {{ formatDateTime(reservation.startTime) }} ~ {{ formatDateTime(reservation.endTime) }}
           </el-descriptions-item>
@@ -72,6 +69,33 @@
             <span style="color: var(--el-color-danger)">{{ reservation.rejectReason || '-' }}</span>
           </el-descriptions-item>
         </el-descriptions>
+
+        <!-- 参会人员列表 -->
+        <div v-if="reservation" class="attendee-section">
+          <div class="section-title">参会人员</div>
+          <el-table v-if="reservation.attendees && reservation.attendees.length" :data="reservation.attendees" size="small" border>
+            <el-table-column label="姓名" min-width="120">
+              <template #default="{ row }">{{ row.realName || row.username }}</template>
+            </el-table-column>
+            <el-table-column prop="departmentName" label="部门" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.departmentName || '未分配' }}</template>
+            </el-table-column>
+            <el-table-column label="联系方式" min-width="200">
+              <template #default="{ row }">
+                <span v-if="row.phone">{{ row.phone }}</span>
+                <span v-if="row.phone && row.email"> · </span>
+                <span v-if="row.email">{{ row.email }}</span>
+                <span v-if="!row.phone && !row.email" style="color: var(--el-text-color-secondary)">-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="参会状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="attendeeStatusType(row.status)" size="small">{{ attendeeStatusText(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无参会人员" :image-size="60" />
+        </div>
 
         <el-empty v-else description="暂无数据" />
       </div>
@@ -109,6 +133,14 @@ function statusText(s: number) {
 
 function statusType(s: number) {
   return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info'
+}
+
+function attendeeStatusText(s: number) {
+  return { 0: '待响应', 1: '已接受', 2: '已拒绝' }[s] || '未知'
+}
+
+function attendeeStatusType(s: number) {
+  return { 0: 'info', 1: 'success', 2: 'danger' }[s] as any || 'info'
 }
 
 async function loadDetail() {
@@ -177,4 +209,6 @@ onMounted(loadDetail)
 </script>
 
 <style scoped>
+.attendee-section { margin-top: 20px; }
+.section-title { font-size: 15px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 12px; padding-left: 8px; border-left: 3px solid var(--el-color-primary); }
 </style>

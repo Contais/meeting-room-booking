@@ -3,6 +3,7 @@ package com.meetinghub.meeting.model.vo;
 import lombok.Data;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 /**
@@ -17,7 +18,7 @@ public class ReservationVO implements Serializable {
     private String username;
     private String subject;
     private Integer attendeeCount;
-    private String contactPhone;
+    private List<AttendeeVO> attendees;
     private String remark;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

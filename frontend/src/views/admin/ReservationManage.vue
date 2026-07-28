@@ -14,10 +14,6 @@
           <el-input v-model="query.subject" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
         </div>
         <div class="search-item">
-          <label>联系电话</label>
-          <el-input v-model="query.contactPhone" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
-        </div>
-        <div class="search-item">
           <label>预约人</label>
           <el-input v-model="query.username" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
         </div>
@@ -27,6 +23,7 @@
             <el-option label="待确认" :value="0" />
             <el-option label="已确认" :value="1" />
             <el-option label="已取消" :value="2" />
+            <el-option label="已拒绝" :value="3" />
           </el-select>
         </div>
         <div class="search-item is-wide">
@@ -61,9 +58,8 @@
         </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
         <el-table-column prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="username" label="预约人" min-width="90" />
+        <el-table-column prop="username" label="预约人" min-width="100" />
         <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
-        <el-table-column prop="contactPhone" label="电话" min-width="120" />
         <el-table-column label="预约时段" min-width="110">
           <template #default="{ row }">
             <div class="time-slot-cell">
@@ -126,7 +122,6 @@ const query = reactive({
   size: 10,
   keyword: '',
   subject: '',
-  contactPhone: '',
   username: '',
   startTime: '',
   endTime: '',
@@ -162,7 +157,6 @@ function onCreateTimeRangeChange(val: string[] | null) {
 function resetQuery() {
   query.keyword = ''
   query.subject = ''
-  query.contactPhone = ''
   query.username = ''
   query.startTime = ''
   query.endTime = ''
@@ -182,7 +176,6 @@ async function loadData() {
     const params: Record<string, any> = { page: query.page, size: query.size }
     if (query.keyword) params.keyword = query.keyword
     if (query.subject) params.subject = query.subject
-    if (query.contactPhone) params.contactPhone = query.contactPhone
     if (query.username) params.username = query.username
     if (query.reservationCode) params.reservationCode = query.reservationCode
     if (query.status != null) params.status = query.status

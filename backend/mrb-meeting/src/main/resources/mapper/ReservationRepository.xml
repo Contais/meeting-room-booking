@@ -11,7 +11,6 @@
         <result property="userId" column="user_id"/>
         <result property="subject" column="subject"/>
         <result property="attendeeCount" column="attendee_count"/>
-        <result property="contactPhone" column="contact_phone"/>
         <result property="remark" column="remark"/>
         <result property="startTime" column="start_time"/>
         <result property="endTime" column="end_time"/>
@@ -22,17 +21,13 @@
     <!-- 公共筛选片段：时间范围 + 创建时间范围 + 预约编号 + 关键字 -->
     <sql id="commonFilters">
         <if test="query.keyword != null and query.keyword != ''">
-            AND (r.subject LIKE CONCAT('%', #{query.keyword}, '%')
-                 OR r.contact_phone LIKE CONCAT('%', #{query.keyword}, '%'))
+            AND (r.subject LIKE CONCAT('%', #{query.keyword}, '%'))
         </if>
         <if test="query.subject != null and query.subject != ''">
             AND r.subject LIKE CONCAT('%', #{query.subject}, '%')
         </if>
         <if test="query.status != null">
             AND r.status = #{query.status}
-        </if>
-        <if test="query.contactPhone != null and query.contactPhone != ''">
-            AND r.contact_phone LIKE CONCAT('%', #{query.contactPhone}, '%')
         </if>
         <if test="query.reservationCode != null and query.reservationCode != ''">
             AND r.reservation_code LIKE CONCAT('%', #{query.reservationCode}, '%')
@@ -57,7 +52,7 @@
     -->
     <select id="selectMyPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
-               r.contact_phone, r.remark, r.start_time, r.end_time,
+               r.remark, r.start_time, r.end_time,
                r.status, r.create_time, mr.name AS room_name
         FROM meeting_room_reservation r
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
@@ -73,7 +68,7 @@
     -->
     <select id="selectAllPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
-               r.contact_phone, r.remark, r.start_time, r.end_time,
+               r.remark, r.start_time, r.end_time,
                r.status, r.create_time, mr.name AS room_name
         FROM meeting_room_reservation r
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
