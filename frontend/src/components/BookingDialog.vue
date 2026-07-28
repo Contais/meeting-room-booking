@@ -89,25 +89,55 @@
       </el-form-item>
       <div class="dialog-form-item">
         <label>参会人员<span v-if="form.attendeeUserIds.length" class="attendee-count">已选 {{ form.attendeeUserIds.length }} 人</span></label>
+        <div class="attendee-toolbar">
+          <el-select
+            v-model="filterDeptId"
+            placeholder="按部门筛选"
+            clearable
+            filterable
+            size="small"
+            class="dept-filter"
+          >
+            <el-option
+              v-for="d in flatDepartments"
+              :key="d.id"
+              :label="d.path"
+              :value="d.id"
+            />
+          </el-select>
+          <el-button size="small" link @click="selectAllFiltered">全选</el-button>
+          <el-button size="small" link @click="clearAll">清空</el-button>
+        </div>
         <el-select
           v-model="form.attendeeUserIds"
           multiple
           filterable
           collapse-tags
           collapse-tags-tooltip
+          :max-collapse-tags="5"
           placeholder="从通讯录选择参会人员（选填）"
-          style="width: 100%"
+          class="attendee-select"
           :loading="contactsLoading"
+          popper-class="attendee-select-popper"
         >
-          <el-option
-            v-for="u in contacts"
-            :key="u.id"
-            :label="u.realName || u.username"
-            :value="u.id"
+          <el-option-group
+            v-for="group in groupedContacts"
+            :key="group.deptId"
+            :label="`${group.deptName} (${group.users.length})`"
           >
-            <span>{{ u.realName || u.username }}</span>
-            <span class="contact-dept">{{ u.departmentName || '未分配部门' }}</span>
-          </el-option>
+            <el-option
+              v-for="u in group.users"
+              :key="u.id"
+              :label="u.realName || u.username"
+              :value="u.id"
+            >
+              <span>{{ u.realName || u.username }}</span>
+              <span class="contact-meta">{{ u.phone || u.email || '' }}</span>
+            </el-option>
+          </el-option-group>
+          <template #empty>
+            <div class="select-empty">暂无匹配人员</div>
+          </template>
         </el-select>
       </div>
       <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
@@ -129,8 +159,10 @@ import { InfoFilled } from '@element-plus/icons-vue'
 import { createReservation } from '@/api/reservation'
 import { listByRoomAndDate } from '@/api/reservation'
 import { listContacts } from '@/api/user'
+import { getDepartmentTree } from '@/api/department'
 import type { MeetingRoom } from '@/types/meeting'
 import type { UserInfo } from '@/types/user'
+import type { Department } from '@/types/department'
 
 const props = defineProps<{
   modelValue: boolean
@@ -160,6 +192,8 @@ const selectedRoomId = ref<number | undefined>(props.roomId)
 const timelineRef = ref<HTMLElement | null>(null)
 const contacts = ref<UserInfo[]>([])
 const contactsLoading = ref(false)
+const deptTree = ref<Department[]>([])
+const filterDeptId = ref<number | null>(null)
 
 // 拖拽状态
 const dragAnchor = ref<string>('')
@@ -453,6 +487,108 @@ async function loadContacts() {
   }
 }
 
+async function loadDeptTree() {
+  try {
+    const res = await getDepartmentTree()
+    deptTree.value = res.data || []
+  } catch { /* */ }
+}
+
+/** 扁平化部门列表（含完整路径），用于部门筛选下拉 */
+const flatDepartments = computed(() => {
+  const result: { id: number; path: string }[] = []
+  const walk = (nodes: Department[], ancestors: string[]) => {
+    for (const node of nodes) {
+      result.push({ id: node.id, path: [...ancestors, node.name].join(' / ') })
+      if (node.children) walk(node.children, [...ancestors, node.name])
+    }
+  }
+  walk(deptTree.value, [])
+  return result
+})
+
+/** 部门完整路径映射（id -> "父部门 / 子部门 / ..."） */
+const deptPathMap = computed(() => {
+  const map = new Map<number, string>()
+  const build = (nodes: Department[], ancestors: string[]) => {
+    for (const node of nodes) {
+      map.set(node.id, [...ancestors, node.name].join(' / '))
+      if (node.children) build(node.children, [...ancestors, node.name])
+    }
+  }
+  build(deptTree.value, [])
+  return map
+})
+
+/** 收集指定部门及其所有子部门的 ID */
+function collectDeptIds(id: number): number[] {
+  const result: number[] = []
+  const findAndCollect = (nodes: Department[]): boolean => {
+    for (const node of nodes) {
+      if (node.id === id) {
+        result.push(node.id)
+        const collectChildren = (n: Department) => {
+          if (n.children) {
+            for (const child of n.children) {
+              result.push(child.id)
+              collectChildren(child)
+            }
+          }
+        }
+        collectChildren(node)
+        return true
+      }
+      if (node.children && findAndCollect(node.children)) return true
+    }
+    return false
+  }
+  findAndCollect(deptTree.value)
+  return result
+}
+
+/** 按部门筛选后的联系人列表（含子部门） */
+const filteredContacts = computed(() => {
+  if (filterDeptId.value === null) return contacts.value
+  const deptIds = new Set(collectDeptIds(filterDeptId.value))
+  return contacts.value.filter(u => u.departmentId != null && deptIds.has(u.departmentId))
+})
+
+/** 按部门分组的联系人列表 */
+const groupedContacts = computed(() => {
+  const groups: Map<number, { deptId: number; deptName: string; users: UserInfo[] }> = new Map()
+  for (const user of filteredContacts.value) {
+    const deptId = user.departmentId || 0
+    const deptName = user.departmentId
+      ? (deptPathMap.value.get(user.departmentId) || user.departmentName || '未知部门')
+      : '未分配人员'
+    if (!groups.has(deptId)) {
+      groups.set(deptId, { deptId, deptName, users: [] })
+    }
+    groups.get(deptId)!.users.push(user)
+  }
+  return Array.from(groups.values()).sort((a, b) => {
+    if (a.deptId === 0) return 1
+    if (b.deptId === 0) return -1
+    return a.deptId - b.deptId
+  })
+})
+
+/** 全选当前筛选结果 */
+function selectAllFiltered() {
+  const ids = filteredContacts.value.map(u => u.id)
+  const existing = new Set(form.attendeeUserIds)
+  for (const id of ids) {
+    if (!existing.has(id)) {
+      form.attendeeUserIds.push(id)
+    }
+  }
+}
+
+/** 清空所有选中 */
+function clearAll() {
+  form.attendeeUserIds = []
+}
+
 // 默认滚动到 09:00 或当前时间
 function scrollToWorkHour() {
   nextTick(() => {
@@ -516,6 +652,7 @@ function handleClose() {
   bookedReservations.value = []
   dragAnchor.value = ''
   isDragging.value = false
+  filterDeptId.value = null
   formRef.value?.clearValidate()
   if (!props.roomId) selectedRoomId.value = undefined
 }
@@ -534,9 +671,12 @@ watch(visible, async (val) => {
     } else {
       scrollToWorkHour()
     }
-    // 懒加载通讯录人员列表（仅首次打开加载）
+    // 懒加载通讯录人员列表与部门树（仅首次打开加载）
     if (!contacts.value.length) {
       loadContacts()
+    }
+    if (!deptTree.value.length) {
+      loadDeptTree()
     }
   }
 })
@@ -548,7 +688,11 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
 .attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; }
-.contact-dept { float: right; color: var(--el-text-color-secondary); font-size: 12px; }
+.attendee-toolbar { display: flex; align-items: center; gap: 8px; }
+.dept-filter { flex: 1; }
+.attendee-select { width: 100%; }
+.contact-meta { float: right; color: var(--el-text-color-secondary); font-size: 12px; }
+.select-empty { padding: 16px; text-align: center; color: var(--el-text-color-secondary); font-size: 13px; }
 
 .dialog-rules-tip { background: var(--el-color-primary-light-9, #ecf5ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
 
