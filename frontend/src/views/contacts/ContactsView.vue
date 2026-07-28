@@ -90,18 +90,14 @@
                     <h4 class="user-name">{{ user.realName || user.username }}</h4>
                     <p class="user-dept">{{ user.departmentName || '未分配部门' }}</p>
                     <div class="user-contact">
-                      <el-tooltip v-if="user.phone" :content="user.phone" placement="top">
-                        <span class="contact-item">
-                          <el-icon><Phone /></el-icon>
-                          <span>{{ user.phone }}</span>
-                        </span>
-                      </el-tooltip>
-                      <el-tooltip v-if="user.email" :content="user.email" placement="top">
-                        <span class="contact-item contact-email">
-                          <el-icon><Message /></el-icon>
-                          <span>{{ user.email }}</span>
-                        </span>
-                      </el-tooltip>
+                      <span v-if="user.phone" class="contact-item">
+                        <el-icon><Phone /></el-icon>
+                        <span>{{ user.phone }}</span>
+                      </span>
+                      <span v-if="user.email" class="contact-item contact-email">
+                        <el-icon><Message /></el-icon>
+                        <span>{{ user.email }}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -245,6 +241,21 @@ function getDeptUserCount(deptId: number): number {
   return deptUserCountMap.value.get(deptId) || 0
 }
 
+/** 部门完整路径映射（id -> "父部门 / 子部门 / ..."），用于分组标题展示层级关系 */
+const deptPathMap = computed(() => {
+  const map = new Map<number, string>()
+  const build = (nodes: Department[], ancestors: string[]) => {
+    for (const node of nodes) {
+      map.set(node.id, [...ancestors, node.name].join(' / '))
+      if (node.children) {
+        build(node.children, [...ancestors, node.name])
+      }
+    }
+  }
+  build(deptTree.value, [])
+  return map
+})
+
 /** 未分配人员数量 */
 const unassignedCount = computed(() =>
   allUsers.value.filter(u => u.departmentId == null).length
@@ -281,7 +292,9 @@ const groupedUsers = computed(() => {
   const groups: Map<number, { deptId: number; deptName: string; users: UserInfo[] }> = new Map()
   for (const user of filteredContacts.value) {
     const deptId = user.departmentId || 0
-    const deptName = user.departmentId ? (user.departmentName || '未知部门') : '未分配人员'
+    const deptName = user.departmentId
+      ? (deptPathMap.value.get(user.departmentId) || user.departmentName || '未知部门')
+      : '未分配人员'
     if (!groups.has(deptId)) {
       groups.set(deptId, { deptId, deptName, users: [] })
     }
