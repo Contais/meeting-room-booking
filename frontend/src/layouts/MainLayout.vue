@@ -47,6 +47,7 @@
         </div>
         <div class="header-right">
           <div class="header-action-group">
+            <NotificationBell />
             <el-tooltip content="AI 助手" placement="bottom">
               <el-button class="icon-btn chat-btn" @click="toggleChat">
                 <el-icon><ChatDotRound /></el-icon>
@@ -118,20 +119,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, ChatDotRound, User, SwitchButton, Right } from '@element-plus/icons-vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
+import { useNotificationStore } from '@/stores/notification'
 import { getMyMenus } from '@/api/menu'
 import ChatPanel from '@/components/ChatPanel.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 import type { MenuItem } from '@/types/menu'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
+const notificationStore = useNotificationStore()
 const menuItems = ref<MenuItem[]>([])
 const isCollapsed = ref(false)
 const chatPanelRef = ref<InstanceType<typeof ChatPanel> | null>(null)
@@ -212,11 +216,19 @@ async function loadMenus() {
 }
 
 function handleLogout() {
+  notificationStore.stop()
   userStore.logout()
   router.push('/login')
 }
 
-onMounted(loadMenus)
+onMounted(() => {
+  loadMenus()
+  notificationStore.start()
+})
+
+onUnmounted(() => {
+  notificationStore.stop()
+})
 </script>
 
 <style scoped>

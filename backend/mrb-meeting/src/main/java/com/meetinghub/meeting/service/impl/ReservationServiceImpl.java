@@ -14,7 +14,10 @@ import com.meetinghub.meeting.model.dto.ReservationPageQuery;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.feign.UserFeignClient;
+import com.meetinghub.meeting.feign.NotificationFeignClient;
+import com.meetinghub.common.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.model.vo.ReservationVO;
+import com.meetinghub.meeting.model.vo.AttendeeVO;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationAttendeeService;
@@ -47,6 +50,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserFeignClient userFeignClient;
     private final ReservationAttendeeService attendeeService;
+    private final NotificationFeignClient notificationFeignClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -99,6 +103,15 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 7. 保存参会人
         if (dto.getAttendeeUserIds() != null && !dto.getAttendeeUserIds().isEmpty()) {
             attendeeService.inviteAttendees(reservation.getId(), userId, dto.getAttendeeUserIds());
+            // 8. 通知参会人
+            NotificationSendDTO notify = new NotificationSendDTO();
+            notify.setType("RESERVATION_CREATED");
+            notify.setTitle("您被邀请参加会议：" + dto.getSubject());
+            notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
+                    + "\n时间：" + dto.getStartTime() + " ~ " + dto.getEndTime());
+            notify.setRefType("reservation");
+            notify.setRefId(reservation.getId());
+            sendNotificationSafe(dto.getAttendeeUserIds(), notify);
         }
         return reservationCode;
     }
@@ -174,6 +187,18 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setStatus(ReservationStatusEnum.CANCELLED.getCode());
         updateById(reservation);
         log.info("预约取消, userId={}, reservationId={}", userId, reservationId);
+        // 通知参会人预约已取消
+        List<Long> attendeeIds = attendeeService.listAttendees(reservationId).stream()
+                .map(AttendeeVO::getUserId).collect(Collectors.toList());
+        if (!attendeeIds.isEmpty()) {
+            NotificationSendDTO notify = new NotificationSendDTO();
+            notify.setType("RESERVATION_CANCELLED");
+            notify.setTitle("会议已取消：" + reservation.getSubject());
+            notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode());
+            notify.setRefType("reservation");
+            notify.setRefId(reservationId);
+            sendNotificationSafe(attendeeIds, notify);
+        }
     }
 
     @Override
@@ -297,6 +322,15 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
         }
         log.info("预约审批通过, reservationId={}", reservationId);
+        // 通知预约人审批通过
+        NotificationSendDTO notify = new NotificationSendDTO();
+        notify.setUserId(reservation.getUserId());
+        notify.setType("RESERVATION_APPROVED");
+        notify.setTitle("预约已通过：" + reservation.getSubject());
+        notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode());
+        notify.setRefType("reservation");
+        notify.setRefId(reservationId);
+        sendNotificationSafe(List.of(reservation.getUserId()), notify);
     }
 
     @Override
@@ -321,6 +355,16 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已被处理，请刷新后重试");
         }
         log.info("预约拒绝, reservationId={}, reason={}", reservationId, reason);
+        // 通知预约人审批被拒绝
+        NotificationSendDTO notify = new NotificationSendDTO();
+        notify.setUserId(reservation.getUserId());
+        notify.setType("RESERVATION_REJECTED");
+        notify.setTitle("预约被拒绝：" + reservation.getSubject());
+        notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode()
+                + "\n拒绝原因：" + (reason != null && !reason.isBlank() ? reason : "管理员拒绝"));
+        notify.setRefType("reservation");
+        notify.setRefId(reservationId);
+        sendNotificationSafe(List.of(reservation.getUserId()), notify);
     }
 
     /**
@@ -329,6 +373,20 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     private boolean isDeletableStatus(Integer status) {
         return status != null && (status.equals(ReservationStatusEnum.CANCELLED.getCode())
                 || status.equals(ReservationStatusEnum.REJECTED.getCode()));
+    }
+
+    /**
+     * 发送站内信通知（容错：Feign 调用失败仅记录日志，不影响主业务）
+     */
+    private void sendNotificationSafe(List<Long> userIds, NotificationSendDTO template) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        try {
+            notificationFeignClient.sendBatch(userIds, template);
+        } catch (Exception e) {
+            log.warn("站内信发送失败, userIds={}, type={}, 降级跳过", userIds, template.getType(), e);
+        }
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {

@@ -27,8 +27,6 @@ public class ReservationBriefVO implements Serializable {
     private Integer status;
     /** 参会人数 */
     private Integer attendeeCount;
-    /** 联系电话 */
-    private String contactPhone;
     /** 备注 */
     private String remark;
     /** 创建时间 */

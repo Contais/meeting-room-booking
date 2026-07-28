@@ -86,7 +86,6 @@ public final class ToolResponseFormatter {
         vo.setEndTime(r.getEndTime());
         vo.setStatus(r.getStatus());
         vo.setAttendeeCount(r.getAttendeeCount());
-        vo.setContactPhone(r.getContactPhone());
         vo.setRemark(r.getRemark());
         vo.setCreateTime(r.getCreateTime());
         return vo;
