@@ -534,6 +534,18 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     }
 
     @Override
+    public ReservationVO getMyReservationDetail(Long userId, Long reservationId) {
+        MeetingRoomReservation r = getById(reservationId);
+        if (r == null) {
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+        if (!r.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "无权查看他人预约");
+        }
+        return getReservationDetail(reservationId);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void adminDeleteReservation(Long reservationId) {
         MeetingRoomReservation reservation = getById(reservationId);

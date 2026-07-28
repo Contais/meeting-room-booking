@@ -57,6 +57,11 @@ public class ReservationController {
         return Result.ok(reservationService.listByRoomAndDate(roomId, date));
     }
 
+    @GetMapping("/detail/{id}")
+    public Result<ReservationVO> getMyReservationDetail(@PathVariable Long id) {
+        return Result.ok(reservationService.getMyReservationDetail(UserContext.getCurrentUserId(), id));
+    }
+
     // === 日程视图 ===
 
     @GetMapping("/schedule")

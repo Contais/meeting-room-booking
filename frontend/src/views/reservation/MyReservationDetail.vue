@@ -82,7 +82,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Close, Delete } from '@element-plus/icons-vue'
-import { getReservationDetail, cancelReservation, deleteReservation } from '@/api/reservation'
+import { getMyReservationDetail, cancelReservation, deleteReservation } from '@/api/reservation'
 import { formatDateTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
@@ -119,7 +119,7 @@ function attendeeStatusType(s: number) {
 async function loadDetail() {
   loading.value = true
   try {
-    const res = await getReservationDetail(id)
+    const res = await getMyReservationDetail(id)
     reservation.value = res.data
   } catch (error) {
     ElMessage.error('加载失败')

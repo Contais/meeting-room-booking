@@ -22,6 +22,10 @@ export function listByRoomAndDate(roomId: number, date: string): Promise<Result<
   return request.get(`/api/meeting/reservation/room/${roomId}/date/${date}`)
 }
 
+export function getMyReservationDetail(id: number): Promise<Result<Reservation>> {
+  return request.get(`/api/meeting/reservation/detail/${id}`)
+}
+
 // 管理接口
 export function listAllReservations(params: ReservationPageQuery): Promise<Result<ReservationPageResult>> {
   return request.get('/api/meeting/reservation/admin/list', { params })

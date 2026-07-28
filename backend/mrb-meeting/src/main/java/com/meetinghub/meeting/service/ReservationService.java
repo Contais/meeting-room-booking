@@ -72,6 +72,11 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
     ReservationVO getReservationDetail(Long reservationId);
 
     /**
+     * 查询我的预约详情（用户端，校验归属）
+     */
+    ReservationVO getMyReservationDetail(Long userId, Long reservationId);
+
+    /**
      * 管理端删除预约
      * 只能删除已取消的预约
      */
