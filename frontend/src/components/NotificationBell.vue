@@ -8,13 +8,14 @@
     @show="onPopoverShow"
   >
     <template #reference>
-      <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99" class="notification-badge">
-        <el-tooltip content="消息通知" placement="bottom">
-          <button class="icon-btn notification-btn">
-            <el-icon><Bell /></el-icon>
-          </button>
-        </el-tooltip>
-      </el-badge>
+      <el-tooltip content="消息通知" placement="bottom">
+        <el-button class="icon-btn notification-btn">
+          <el-icon><Bell /></el-icon>
+          <span v-if="unreadCount > 0" class="notification-count">
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
+        </el-button>
+      </el-tooltip>
     </template>
 
     <div class="notification-panel">
@@ -121,12 +122,27 @@ function formatTime(time: string): string {
 </script>
 
 <style scoped>
-.notification-badge :deep(.el-badge__content) {
-  z-index: 1;
-}
-
 .notification-btn {
   position: relative;
+}
+
+.notification-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--el-color-danger, #f56c6c);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  border: 1.5px solid var(--bg-card, #fff);
+  z-index: 2;
+  pointer-events: none;
 }
 
 .panel-header {

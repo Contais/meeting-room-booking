@@ -407,7 +407,7 @@ watch(() => notificationStore.latestNotification, (n) => {
 .header-action-group {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0;
   padding: 2px;
   background: var(--bg-page);
   border-radius: 10px;
@@ -416,6 +416,10 @@ watch(() => notificationStore.latestNotification, (n) => {
 .header-action-group .icon-btn {
   width: 32px;
   height: 32px;
+}
+
+.header-action-group .icon-btn .el-icon {
+  font-size: 18px;
 }
 
 .header-action-group .chat-btn::after {
