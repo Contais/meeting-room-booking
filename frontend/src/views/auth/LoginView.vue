@@ -99,6 +99,7 @@ async function handleLogin() {
   try {
     const res = await login({ username: form.username, password: form.password })
     userStore.setUserToken(res.data.token)
+    // 先用登录返回的基础信息占位，再立即拉取完整资料（含真实姓名、头像）
     userStore.setUserInfo({
       id: res.data.userId,
       username: res.data.username,
@@ -108,6 +109,7 @@ async function handleLogin() {
       status: 1,
       createTime: '',
     })
+    await userStore.fetchUserInfo()
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/home'
     router.push(redirect)
