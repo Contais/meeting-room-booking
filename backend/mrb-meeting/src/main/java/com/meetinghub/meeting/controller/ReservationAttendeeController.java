@@ -60,6 +60,19 @@ public class ReservationAttendeeController {
         return Result.ok();
     }
 
+    /**
+     * 参会人响应邀请（更新自己的参会状态）
+     *
+     * @param reservationId 预约ID
+     * @param req           状态请求体: status=1 已接受, status=2 已拒绝
+     */
+    @PutMapping("/{reservationId}/respond")
+    public Result<Void> respondInvitation(@PathVariable Long reservationId,
+                                          @RequestBody RespondRequest req) {
+        attendeeService.updateAttendeeStatus(reservationId, UserContext.getCurrentUserId(), req.getStatus());
+        return Result.ok();
+    }
+
     /** 邀请参会人请求体 */
     @lombok.Data
     public static class InviteRequest {
@@ -70,5 +83,12 @@ public class ReservationAttendeeController {
     @lombok.Data
     public static class InviteDepartmentRequest {
         private Long departmentId;
+    }
+
+    /** 参会人响应请求体 */
+    @lombok.Data
+    public static class RespondRequest {
+        /** 1-已接受, 2-已拒绝 */
+        private Integer status;
     }
 }

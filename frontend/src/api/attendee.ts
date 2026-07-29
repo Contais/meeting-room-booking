@@ -21,3 +21,8 @@ export function listAttendees(reservationId: number): Promise<Result<Attendee[]>
 export function removeAttendee(reservationId: number, userId: number): Promise<Result<void>> {
   return request.delete(`/api/meeting/reservation/attendee/${reservationId}/${userId}`)
 }
+
+/** 参会人响应邀请（更新自己的参会状态: 1-已接受, 2-已拒绝） */
+export function respondInvitation(reservationId: number, status: number): Promise<Result<void>> {
+  return request.put(`/api/meeting/reservation/attendee/${reservationId}/respond`, { status })
+}

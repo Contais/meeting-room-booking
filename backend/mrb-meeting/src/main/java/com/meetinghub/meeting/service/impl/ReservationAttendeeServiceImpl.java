@@ -238,4 +238,32 @@ public class ReservationAttendeeServiceImpl
                         .eq(ReservationAttendee::getUserId, userId)
         ) > 0;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAttendeeStatus(Long reservationId, Long userId, Integer status) {
+        if (reservationId == null || userId == null || status == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "参数不能为空");
+        }
+        // 仅允许更新为已接受(1)或已拒绝(2)
+        if (!status.equals(AttendeeStatusEnum.ACCEPTED.getCode())
+                && !status.equals(AttendeeStatusEnum.DECLINED.getCode())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "无效的参会状态");
+        }
+        ReservationAttendee attendee = attendeeRepository.selectOne(
+                new LambdaQueryWrapper<ReservationAttendee>()
+                        .eq(ReservationAttendee::getReservationId, reservationId)
+                        .eq(ReservationAttendee::getUserId, userId)
+        );
+        if (attendee == null) {
+            throw new BusinessException(ErrorCode.ATTENDEE_NOT_INVITED);
+        }
+        // 已是目标状态则跳过
+        if (attendee.getStatus() != null && attendee.getStatus().equals(status)) {
+            return;
+        }
+        attendee.setStatus(status);
+        attendeeRepository.updateById(attendee);
+        log.info("参会人状态更新, reservationId={}, userId={}, status={}", reservationId, userId, status);
+    }
 }

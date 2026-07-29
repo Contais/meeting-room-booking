@@ -42,4 +42,13 @@ public interface ReservationAttendeeService extends IService<ReservationAttendee
      * 判断用户是否为某预约的参会人
      */
     boolean isAttendee(Long reservationId, Long userId);
+
+    /**
+     * 更新参会人状态（参会人本人响应邀请）
+     *
+     * @param reservationId 预约ID
+     * @param userId        参会人用户ID
+     * @param status        目标状态: 1-已接受, 2-已拒绝
+     */
+    void updateAttendeeStatus(Long reservationId, Long userId, Integer status);
 }

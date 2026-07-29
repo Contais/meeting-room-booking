@@ -108,15 +108,18 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 8. 保存其他参会人
         if (dto.getAttendeeUserIds() != null && !dto.getAttendeeUserIds().isEmpty()) {
             attendeeService.inviteAttendees(reservation.getId(), userId, dto.getAttendeeUserIds());
-            // 9. 通知参会人
-            NotificationSendDTO notify = new NotificationSendDTO();
-            notify.setType("RESERVATION_CREATED");
-            notify.setTitle("您被邀请参加会议：" + dto.getSubject());
-            notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
-                    + "\n时间：" + dto.getStartTime() + " ~ " + dto.getEndTime());
-            notify.setRefType("reservation");
-            notify.setRefId(reservation.getId());
-            sendNotificationSafe(dto.getAttendeeUserIds(), notify);
+            // 9. 通知参会人：仅当免审批（立即确认）时才在此处通知；
+            //    需审批的预约在 approveReservation 中审批通过后通知参会人
+            if (initialStatus.equals(ReservationStatusEnum.CONFIRMED.getCode())) {
+                NotificationSendDTO notify = new NotificationSendDTO();
+                notify.setType("RESERVATION_CREATED");
+                notify.setTitle("您被邀请参加会议：" + dto.getSubject());
+                notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
+                        + "\n时间：" + dto.getStartTime() + " ~ " + dto.getEndTime());
+                notify.setRefType("reservation");
+                notify.setRefId(reservation.getId());
+                sendNotificationSafe(dto.getAttendeeUserIds(), notify);
+            }
         }
         return reservationCode;
     }
@@ -344,6 +347,23 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         notify.setRefType("reservation");
         notify.setRefId(reservationId);
         sendNotificationSafe(List.of(reservation.getUserId()), notify);
+
+        // 通知参会人：审批通过后向参会人发送会议邀请通知
+        List<AttendeeVO> attendees = attendeeService.listAttendees(reservationId);
+        List<Long> attendeeUserIds = attendees.stream()
+                .map(AttendeeVO::getUserId)
+                .filter(uid -> !uid.equals(reservation.getUserId()))
+                .collect(Collectors.toList());
+        if (!attendeeUserIds.isEmpty()) {
+            NotificationSendDTO attendeeNotify = new NotificationSendDTO();
+            attendeeNotify.setType("RESERVATION_APPROVED");
+            attendeeNotify.setTitle("您被邀请参加会议：" + reservation.getSubject());
+            attendeeNotify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode()
+                    + "\n时间：" + reservation.getStartTime() + " ~ " + reservation.getEndTime());
+            attendeeNotify.setRefType("reservation");
+            attendeeNotify.setRefId(reservationId);
+            sendNotificationSafe(attendeeUserIds, attendeeNotify);
+        }
     }
 
     @Override
