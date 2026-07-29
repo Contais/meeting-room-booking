@@ -12,11 +12,11 @@ import java.util.List;
 /**
  * 站内信通知远程调用客户端
  * <p>
- * 仅供 mrb-meeting 内部调用 mrb-user 的通知发送接口。
+ * 通知域已迁至 mrb-platform，路径前缀保持 {@code /user/internal/notification/**} 不变。
  * 调用失败时降级为仅记录日志，不影响主业务流程。
  * </p>
  */
-@FeignClient(name = "mrb-user", contextId = "notificationFeignClient")
+@FeignClient(name = "mrb-platform", contextId = "notificationFeignClient")
 public interface NotificationFeignClient {
 
     @PostMapping("/user/internal/notification/send")

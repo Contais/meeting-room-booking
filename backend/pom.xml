@@ -17,6 +17,7 @@
         <module>mrb-user</module>
         <module>mrb-auth</module>
         <module>mrb-meeting</module>
+        <module>mrb-platform</module>
     </modules>
 
     <properties>

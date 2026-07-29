@@ -44,12 +44,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
         </dependency>
-        <!-- 腾讯云 COS SDK：optional，仅当服务希望启用 COS 存储时由该服务显式引入 -->
-        <dependency>
-            <groupId>com.qcloud</groupId>
-            <artifactId>cos_api</artifactId>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
 </project>

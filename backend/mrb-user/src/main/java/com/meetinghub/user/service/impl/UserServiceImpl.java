@@ -10,6 +10,8 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.RoleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
+import com.meetinghub.common.result.Result;
+import com.meetinghub.user.feign.FileFeignClient;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
@@ -42,6 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final FileFeignClient fileFeignClient;
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
@@ -286,7 +289,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     }
 
     /**
-     * 批量转换 User -> UserVO，一次性查询部门信息消除 N+1
+     * 批量转换 User -> UserVO，一次性查询部门信息与头像签名消除 N+1
      */
     private List<UserVO> toVOList(List<User> users) {
         if (users == null || users.isEmpty()) {
@@ -297,7 +300,9 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<Long, String> deptNameMap = batchQueryDeptNames(deptIds);
-        return users.stream().map(u -> toVO(u, deptNameMap)).collect(Collectors.toList());
+        Map<String, String> avatarSignMap = batchSignAvatars(
+                users.stream().map(User::getAvatar).collect(Collectors.toList()));
+        return users.stream().map(u -> toVO(u, deptNameMap, avatarSignMap)).collect(Collectors.toList());
     }
 
     /**
@@ -312,25 +317,58 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     }
 
     /**
-     * 单个 User 转 VO（详情场景使用，内部批量查询部门）
+     * 批量将 avatar objectKey 转为预签名 URL
+     * <p>
+     * 兼容策略：以 {@code http} 开头的旧数据（一期公开链接）跳过签名原样返回；
+     * objectKey 调用 mrb-platform 生成签名 URL；调用失败降级保留原值，不影响主流程。
+     * </p>
+     */
+    private Map<String, String> batchSignAvatars(List<String> avatars) {
+        if (avatars == null || avatars.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<String> keys = avatars.stream()
+                .filter(StringUtils::hasText)
+                .filter(a -> !a.startsWith("http"))
+                .distinct()
+                .collect(Collectors.toList());
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            Result<Map<String, String>> result = fileFeignClient.batchPresignedUrls(keys);
+            if (result != null && result.getCode() == 200 && result.getData() != null) {
+                return result.getData();
+            }
+        } catch (Exception e) {
+            log.warn("批量签名用户头像失败，降级保留原值", e);
+        }
+        return Collections.emptyMap();
+    }
+
+    /**
+     * 单个 User 转 VO（详情场景使用，内部批量查询部门与签名头像）
      */
     private UserVO toVO(User user) {
         Map<Long, String> deptNameMap = batchQueryDeptNames(
                 user.getDepartmentId() != null ? List.of(user.getDepartmentId()) : List.of()
         );
-        return toVO(user, deptNameMap);
+        Map<String, String> avatarSignMap = batchSignAvatars(List.of(user.getAvatar()));
+        return toVO(user, deptNameMap, avatarSignMap);
     }
 
     /**
-     * User 转 VO，使用预先批量查询的部门名称映射
+     * User 转 VO，使用预先批量查询的部门名称与头像签名映射
      */
-    private UserVO toVO(User user, Map<Long, String> deptNameMap) {
+    private UserVO toVO(User user, Map<Long, String> deptNameMap, Map<String, String> avatarSignMap) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setPhone(user.getPhone());
         vo.setEmail(user.getEmail());
-        vo.setAvatar(user.getAvatar());
+        // avatar：objectKey 命中签名映射则用签名 URL，否则保留原值（http 旧链接或签名失败）
+        String avatar = user.getAvatar();
+        vo.setAvatar(avatarSignMap.getOrDefault(avatar, avatar));
         vo.setRealName(user.getRealName());
         vo.setRole(user.getRole());
         vo.setStatus(user.getStatus());
