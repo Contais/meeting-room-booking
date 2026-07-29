@@ -3,22 +3,20 @@
     <!-- 控制栏 -->
     <div class="schedule-controls">
       <div class="control-left">
-        <el-button size="small" @click="goToday">今天</el-button>
-        <el-button-group size="small">
-          <el-button @click="goPrev"><el-icon><ArrowLeft /></el-icon></el-button>
-          <el-button @click="goNext"><el-icon><ArrowRight /></el-icon></el-button>
-        </el-button-group>
-        <el-radio-group v-model="viewMode" size="small">
-          <el-radio-button value="day">日</el-radio-button>
-          <el-radio-button value="week">周</el-radio-button>
-          <el-radio-button value="month">月</el-radio-button>
-        </el-radio-group>
+        <button class="ctrl-btn" @click="goToday">今天</button>
+        <button class="ctrl-icon" @click="goPrev"><el-icon><ArrowLeft /></el-icon></button>
+        <button class="ctrl-icon" @click="goNext"><el-icon><ArrowRight /></el-icon></button>
+        <div class="view-segment">
+          <button class="seg-item" :class="{ active: viewMode === 'day' }" @click="viewMode = 'day'">日</button>
+          <button class="seg-item" :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">周</button>
+          <button class="seg-item" :class="{ active: viewMode === 'month' }" @click="viewMode = 'month'">月</button>
+        </div>
         <span class="date-display">{{ dateDisplay }}</span>
       </div>
       <div class="control-right">
-        <el-button type="primary" size="small" @click="openQuickBook">
+        <button class="ctrl-btn primary" @click="openQuickBook">
           <el-icon><Plus /></el-icon> 预约
-        </el-button>
+        </button>
       </div>
     </div>
 
@@ -80,9 +78,9 @@
             <el-tooltip v-for="r in dayReservations" :key="r.id"
               :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
               placement="top" raw-content>
-              <div class="day-event" :class="'s' + r.status"
+              <div class="day-event evt-block" :class="'s' + r.status"
                 :style="dayEventStyle(r)"
-                @click="onDayEventClick(r)">
+                @click.stop="onDayEventClick(r)">
                 <div class="evt-inner">
                   <div class="evt-title">{{ r.subject || '未命名' }}</div>
                   <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -139,9 +137,9 @@
               <el-tooltip v-for="r in weekReservations" :key="r.id"
                 :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                 placement="top" raw-content>
-                <div class="week-event" :class="'s' + r.status"
+                <div class="week-event evt-block" :class="'s' + r.status"
                   :style="weekEventStyle(r)"
-                  @click="onWeekEventClick(r)">
+                  @click.stop="onWeekEventClick(r)">
                   <div class="evt-inner">
                     <div class="evt-title">{{ r.subject || '未命名' }}</div>
                     <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -167,17 +165,29 @@
           <div class="mc-date">{{ day.date }}</div>
           <div class="mc-events">
             <div v-for="r in getDayReservations(day)" :key="r.id"
-              class="mc-event" :class="'s' + r.status"
-              :title="formatTime(r.startTime) + ' ' + (r.subject || '未命名')"
+              class="mc-event evt-block" :class="'s' + r.status"
               @click.stop="showDetail(r)">
-              {{ formatTime(r.startTime) }} {{ r.subject || '未命名' }}
+              <span class="mc-event-time">{{ formatTime(r.startTime) }}</span>
+              <span class="mc-event-title">{{ r.subject || '未命名' }}</span>
             </div>
-            <div v-if="day.reservations.length > 3 && !expandedDays.has(day.dateStr)"
-              class="mc-more" @click.stop="toggleDayExpand(day.dateStr)">
-              +{{ day.reservations.length - 3 }}更多
-            </div>
-            <div v-if="expandedDays.has(day.dateStr) && day.reservations.length > 3"
-              class="mc-more" @click.stop="toggleDayExpand(day.dateStr)">收起</div>
+            <el-popover v-if="day.reservations.length > 3"
+              :visible="morePopoverDay === day.dateStr"
+              trigger="click" placement="top" :width="260"
+              popper-class="mc-more-popover"
+              @update:visible="(v: boolean) => onMorePopoverToggle(day.dateStr, v)">
+              <template #reference>
+                <button class="mc-more" @click.stop="onMorePopoverToggle(day.dateStr, morePopoverDay !== day.dateStr)">+{{ day.reservations.length - 2 }} 更多</button>
+              </template>
+              <div class="mc-pop-list">
+                <div class="mc-pop-head">{{ day.dateStr }} · 共 {{ day.reservations.length }} 场</div>
+                <div v-for="r in day.reservations" :key="r.id"
+                  class="mc-pop-item evt-block" :class="'s' + r.status"
+                  @click="onPopoverEventClick(r)">
+                  <span class="mc-pop-time">{{ formatTime(r.startTime) }}</span>
+                  <span class="mc-pop-title">{{ r.subject || '未命名' }}</span>
+                </div>
+              </div>
+            </el-popover>
           </div>
         </div>
       </div>
@@ -451,7 +461,6 @@ function onDayPointerDown(event: PointerEvent) {
   dayDrag.lastTime = performance.now()
   dayDrag.velocity = 0
   dayDrag.moved = false
-  dayBodyRef.value.setPointerCapture(event.pointerId)
 }
 
 function onDayPointerMove(event: PointerEvent) {
@@ -459,6 +468,7 @@ function onDayPointerMove(event: PointerEvent) {
   const deltaX = event.clientX - dayDrag.startX
   if (!dayDrag.moved && Math.abs(deltaX) > 4) {
     dayDrag.moved = true
+    if (!dayBodyRef.value.hasPointerCapture(event.pointerId)) dayBodyRef.value.setPointerCapture(event.pointerId)
   }
   if (!dayDrag.moved) return
   const now = performance.now()
@@ -497,7 +507,6 @@ function onWeekPointerDown(event: PointerEvent) {
   weekDrag.lastTime = performance.now()
   weekDrag.velocity = 0
   weekDrag.moved = false
-  weekBodyRef.value.setPointerCapture(event.pointerId)
 }
 
 function onWeekPointerMove(event: PointerEvent) {
@@ -505,6 +514,7 @@ function onWeekPointerMove(event: PointerEvent) {
   const deltaY = event.clientY - weekDrag.startY
   if (!weekDrag.moved && Math.abs(deltaY) > 4) {
     weekDrag.moved = true
+    if (!weekBodyRef.value.hasPointerCapture(event.pointerId)) weekBodyRef.value.setPointerCapture(event.pointerId)
   }
   if (!weekDrag.moved) return
   const now = performance.now()
@@ -547,7 +557,7 @@ const weekDays = computed(() => {
 const weekReservations = computed(() => reservations.value.filter(r => weekDays.value.some(d => d.dateStr === r.startTime.split('T')[0])))
 
 const monthDays = ref<any[]>([])
-const expandedDays = ref<Set<string>>(new Set())
+const morePopoverDay = ref<string>('')
 
 const dateDisplay = computed(() => {
   const d = currentDate.value
@@ -569,8 +579,8 @@ async function loadData() {
   else { const ms = new Date(d.getFullYear(), d.getMonth(), 1); ms.setDate(ms.getDate() - ms.getDay()); const me = new Date(ms); me.setDate(me.getDate() + 41); p.startDate = formatDate(ms); p.endDate = formatDate(me) }
   try {
     const r = await getSchedule(p)
-    // 只保留当前会议室的预约
-    reservations.value = (r.data.reservations || []).filter((res: any) => res.roomId === props.roomId)
+    // 只保留当前会议室的预约；仅展示已确认(1)，待确认(0)尚未审批不占用时段
+    reservations.value = (r.data.reservations || []).filter((res: any) => res.roomId === props.roomId && res.status === 1)
     if (viewMode.value === 'month') buildMonthDays()
   } catch { /* */ }
   await nextTick()
@@ -635,8 +645,9 @@ function onWeekEventClick(r: any) {
 }
 
 // ====== 月视图 ======
-function getDayReservations(day: any) { return expandedDays.value.has(day.dateStr) ? day.reservations : day.reservations.slice(0, 3) }
-function toggleDayExpand(ds: string) { expandedDays.value.has(ds) ? expandedDays.value.delete(ds) : expandedDays.value.add(ds) }
+function getDayReservations(day: any) { return day.reservations.length > 3 ? day.reservations.slice(0, 2) : day.reservations }
+function onMorePopoverToggle(ds: string, v: boolean) { morePopoverDay.value = v ? ds : '' }
+function onPopoverEventClick(r: any) { morePopoverDay.value = ''; showDetail(r) }
 function buildMonthDays() {
   const d = currentDate.value, m = d.getMonth(), today = formatDate(new Date())
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
@@ -704,7 +715,18 @@ defineExpose({ loadData })
 .room-schedule { display: flex; flex-direction: column; gap: 0; }
 
 .schedule-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.control-left { display: flex; align-items: center; gap: 12px; }
+.control-left { display: flex; align-items: center; gap: 8px; }
+.control-right { display: flex; align-items: center; gap: 8px; }
+.ctrl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 14px; border: 1px solid #e5e7eb; background: #fff; color: #303133; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.ctrl-btn:hover { border-color: #409eff; color: #409eff; }
+.ctrl-btn.primary { background: #409eff; color: #fff; border-color: #409eff; }
+.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.ctrl-icon:hover { border-color: #409eff; color: #409eff; }
+.view-segment { display: inline-flex; align-items: center; height: 32px; margin: 0 4px; padding: 2px; background: #f3f4f6; border-radius: 8px; }
+.seg-item { height: 28px; min-width: 40px; padding: 0 14px; border: none; background: transparent; color: #6b7280; font-size: 13px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.seg-item:hover { color: #409eff; }
+.seg-item.active { background: #fff; color: #409eff; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .date-display { font-size: 14px; color: #303133; font-weight: 500; margin-left: 8px; }
 
 /* ========== 日视图 ========== */
@@ -968,10 +990,16 @@ defineExpose({ loadData })
 .week-event:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 .week-event { z-index: 2; }
 
-/* ========== 通用预约块 ========== */
-.s0 { background: #fef3cd; border-left: 3px solid #f59e0b; }
-.s1 { background: #d1fae5; border-left: 3px solid #10b981; }
-.s2 { background: #f3f4f6; border-left: 3px solid #9ca3af; }
+/* ========== 通用预约块（飞书实色渐变） ========== */
+.evt-block { color: #fff; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.evt-block .evt-title { color: #fff; }
+.evt-block .evt-time { color: rgba(255,255,255,0.92); }
+.evt-block .evt-user { color: rgba(255,255,255,0.8); }
+.evt-block:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); filter: brightness(1.05); }
+.evt-block.s0 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.evt-block.s1 { background: linear-gradient(135deg, #10b981, #059669); }
+.evt-block.s2 { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+.evt-block.s3 { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .evt-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .evt-title { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .evt-time { font-size: 10px; color: #6b7280; margin-top: 1px; white-space: nowrap; }
@@ -990,10 +1018,14 @@ defineExpose({ loadData })
 .month-cell.today .mc-date { color: #409eff; font-weight: 600; }
 .mc-date { font-size: 12px; padding: 4px; }
 .mc-events { display: flex; flex-direction: column; gap: 2px; }
-.mc-event { font-size: 11px; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 18px; line-height: 14px; }
-.mc-event.s0 { background: #fef3cd; color: #92400e; }
-.mc-event.s1 { background: #d1fae5; color: #065f46; }
-.mc-event.s2 { background: #f3f4f6; color: #6b7280; }
-.mc-more { font-size: 11px; color: #9ca3af; padding: 2px 4px; cursor: pointer; }
-.mc-more:hover { color: #409eff; }
+.mc-event { display: flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-event-time { font-weight: 600; opacity: 0.9; flex-shrink: 0; }
+.mc-event-title { overflow: hidden; text-overflow: ellipsis; }
+.mc-more { font-size: 11px; color: #409eff; padding: 2px 8px; cursor: pointer; border: none; background: transparent; border-radius: 4px; transition: background 0.15s; width: 100%; text-align: left; }
+.mc-more:hover { background: rgba(64,158,255,0.08); }
+.mc-pop-list { display: flex; flex-direction: column; gap: 4px; }
+.mc-pop-head { font-size: 12px; font-weight: 600; color: #6b7280; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; margin-bottom: 4px; }
+.mc-pop-item { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.mc-pop-time { font-weight: 600; flex-shrink: 0; min-width: 40px; }
+.mc-pop-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

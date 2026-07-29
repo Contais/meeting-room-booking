@@ -55,6 +55,7 @@
               <div class="today-next-title">{{ todayNext.subject || '未命名' }}</div>
               <div class="today-next-time">{{ formatTime(todayNext.startTime) }} - {{ formatTime(todayNext.endTime) }}</div>
             </template>
+            <div v-else-if="todayCount > 0" class="today-empty">今日 {{ todayEndedCount }} 场已结束</div>
             <div v-else class="today-empty">今日暂无会议</div>
           </div>
           <div class="today-card-foot">共 {{ todayCount }} 场会议</div>
@@ -177,8 +178,8 @@
                   <el-tooltip v-for="r in getRoomReservations(room.id)" :key="r.id"
                     :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                     placement="top" raw-content>
-                    <div class="day-event" :class="'s' + r.status"
-                      :style="dayEventStyle(r)" @click="onEventClick(r)">
+                    <div class="day-event evt-block" :class="'s' + r.status"
+                      :style="dayEventStyle(r)" @click.stop="onEventClick(r)">
                       <div class="evt-inner">
                         <div class="evt-title">{{ r.subject || '未命名' }}</div>
                         <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -226,8 +227,8 @@
                 <el-tooltip v-for="r in weekReservations" :key="r.id"
                   :content="`${r.roomName || ''} | ${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                   placement="top" raw-content>
-                  <div class="week-event" :class="'s' + r.status"
-                    :style="weekEventStyle(r)" @click="onEventClick(r)">
+                  <div class="week-event evt-block" :class="'s' + r.status"
+                    :style="weekEventStyle(r)" @click.stop="onEventClick(r)">
                     <div class="evt-inner">
                       <div class="evt-title">{{ r.subject || '未命名' }}</div>
                       <div class="evt-time">{{ formatTime(r.startTime) }}-{{ formatTime(r.endTime) }}</div>
@@ -401,6 +402,7 @@ const nowTimestamp = ref(Date.now())
 const rooms = ref<any[]>([])
 const roomReservations = ref<any[]>([]) // 会议室日历 Tab 的预约
 const myReservations = ref<Reservation[]>([]) // 我的日历 Tab 的预约
+const todayReservations = ref<Reservation[]>([]) // 今日数据（独立加载，不受视图范围影响）
 
 // ====== 详情抽屉 ======
 const detailVisible = ref(false)
@@ -509,17 +511,17 @@ const myDayReservations = computed(() => {
   return myReservations.value.filter(r => r.startTime.split('T')[0] === today)
 })
 
-// 今日数据（用于今日卡片）
-const todayCount = computed(() => {
-  const today = formatDate(new Date())
-  return myReservations.value.filter(r => r.startTime.split('T')[0] === today).length
-})
+// 今日数据（独立加载，用于今日卡片，不受当前视图范围影响）
+const todayCount = computed(() => todayReservations.value.length)
 const todayNext = computed(() => {
   const now = nowTimestamp.value
-  const today = formatDate(new Date())
-  return myReservations.value
-    .filter(r => r.startTime.split('T')[0] === today && new Date(r.endTime).getTime() > now)
+  return todayReservations.value
+    .filter(r => new Date(r.endTime).getTime() > now)
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0]
+})
+const todayEndedCount = computed(() => {
+  const now = nowTimestamp.value
+  return todayReservations.value.filter(r => new Date(r.endTime).getTime() <= now).length
 })
 
 // 月视图
@@ -570,6 +572,46 @@ const weekEventLayoutMap = computed(() => {
     for (let i = 0; i < n; i++) { const root = find(i); groupMaxCol.set(root, Math.max(groupMaxCol.get(root) ?? 0, eventColumns[i] + 1)) }
     for (let i = 0; i < n; i++) { layout.set(dayEvents[i].id, { columnIndex: eventColumns[i], totalColumns: groupMaxCol.get(find(i))! }) }
   }
+  return layout
+})
+
+// 我的日历 - 日视图重叠布局（并排分栏，复用周视图并查集算法）
+const myDayLayoutMap = computed(() => {
+  const layout = new Map<number, { columnIndex: number; totalColumns: number }>()
+  const events = [...myDayReservations.value]
+  if (events.length === 0) return layout
+  events.sort((a, b) => {
+    const aStart = new Date(a.startTime).getTime()
+    const bStart = new Date(b.startTime).getTime()
+    if (aStart !== bStart) return aStart - bStart
+    const aDur = new Date(a.endTime).getTime() - aStart
+    const bDur = new Date(b.endTime).getTime() - bStart
+    return bDur - aDur
+  })
+  const eventColumns: number[] = []
+  const columnEnds: number[] = []
+  for (const event of events) {
+    const eStart = new Date(event.startTime).getTime()
+    let placed = false
+    for (let ci = 0; ci < columnEnds.length; ci++) {
+      if (eStart >= columnEnds[ci]) { columnEnds[ci] = new Date(event.endTime).getTime(); eventColumns.push(ci); placed = true; break }
+    }
+    if (!placed) { eventColumns.push(columnEnds.length); columnEnds.push(new Date(event.endTime).getTime()) }
+  }
+  const n = events.length
+  const parent = Array.from({ length: n }, (_, i) => i)
+  function find(i: number): number { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i] } return i }
+  function union(i: number, j: number) { parent[find(i)] = find(j) }
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const iEnd = new Date(events[i].endTime).getTime()
+      const jStart = new Date(events[j].startTime).getTime()
+      if (jStart < iEnd) { union(i, j) } else { break }
+    }
+  }
+  const groupMaxCol = new Map<number, number>()
+  for (let i = 0; i < n; i++) { const root = find(i); groupMaxCol.set(root, Math.max(groupMaxCol.get(root) ?? 0, eventColumns[i] + 1)) }
+  for (let i = 0; i < n; i++) { layout.set(events[i].id, { columnIndex: eventColumns[i], totalColumns: groupMaxCol.get(find(i))! }) }
   return layout
 })
 
@@ -657,17 +699,19 @@ function observeDayBodyResize() {
   dayBodyResizeObserver.observe(dayBodyRef.value)
 }
 
-// 拖拽事件
+// 拖拽事件（仅在真正移动后捕获指针，避免拦截事件块/单元格的 click）
 function onDayPointerDown(e: PointerEvent) {
   if (e.button !== 0 || !dayBodyRef.value) return
   cancelDayInertia()
   Object.assign(dayDrag, { active: true, pointerId: e.pointerId, startX: e.clientX, startScrollLeft: dayBodyRef.value.scrollLeft, lastX: e.clientX, lastTime: performance.now(), velocity: 0, moved: false })
-  dayBodyRef.value.setPointerCapture(e.pointerId)
 }
 function onDayPointerMove(e: PointerEvent) {
   if (!dayDrag.active || dayDrag.pointerId !== e.pointerId || !dayBodyRef.value) return
   const deltaX = e.clientX - dayDrag.startX
-  if (!dayDrag.moved && Math.abs(deltaX) > 4) dayDrag.moved = true
+  if (!dayDrag.moved && Math.abs(deltaX) > 4) {
+    dayDrag.moved = true
+    if (!dayBodyRef.value.hasPointerCapture(e.pointerId)) dayBodyRef.value.setPointerCapture(e.pointerId)
+  }
   if (!dayDrag.moved) return
   const now = performance.now()
   const dt = Math.max(now - dayDrag.lastTime, 1)
@@ -687,12 +731,14 @@ function onWeekPointerDown(e: PointerEvent) {
   if (e.button !== 0 || !weekBodyRef.value) return
   cancelWeekInertia()
   Object.assign(weekDrag, { active: true, pointerId: e.pointerId, startY: e.clientY, startScrollTop: weekBodyRef.value.scrollTop, lastY: e.clientY, lastTime: performance.now(), velocity: 0, moved: false })
-  weekBodyRef.value.setPointerCapture(e.pointerId)
 }
 function onWeekPointerMove(e: PointerEvent) {
   if (!weekDrag.active || weekDrag.pointerId !== e.pointerId || !weekBodyRef.value) return
   const deltaY = e.clientY - weekDrag.startY
-  if (!weekDrag.moved && Math.abs(deltaY) > 4) weekDrag.moved = true
+  if (!weekDrag.moved && Math.abs(deltaY) > 4) {
+    weekDrag.moved = true
+    if (!weekBodyRef.value.hasPointerCapture(e.pointerId)) weekBodyRef.value.setPointerCapture(e.pointerId)
+  }
   if (!weekDrag.moved) return
   const now = performance.now()
   const dt = Math.max(now - weekDrag.lastTime, 1)
@@ -743,7 +789,7 @@ async function loadData() {
       const me = new Date(ms); me.setDate(me.getDate() + 41)
       p.startTime = formatDate(ms); p.endTime = formatDate(me) + ' 23:59:59'
     }
-    try { const r = await listMyReservations(p as any); myReservations.value = r.data.records || [] } catch { myReservations.value = [] }
+    try { const r = await listMyReservations(p as any); myReservations.value = (r.data.records || []).filter((x: any) => x.status === 0 || x.status === 1) } catch { myReservations.value = [] }
   } else {
     const p: Record<string, string> = {}
     if (viewMode.value === 'day') p.date = formatDate(d)
@@ -753,7 +799,8 @@ async function loadData() {
       const me = new Date(ms); me.setDate(me.getDate() + 41)
       p.startDate = formatDate(ms); p.endDate = formatDate(me)
     }
-    try { const r = await getSchedule(p); rooms.value = r.data.rooms || []; roomReservations.value = r.data.reservations || [] } catch { /* */ }
+    // 会议室日历仅展示已确认(1)的预约；待确认(0)尚未审批，不占用会议室时段
+    try { const r = await getSchedule(p); rooms.value = r.data.rooms || []; roomReservations.value = (r.data.reservations || []).filter((x: any) => x.status === 1) } catch { /* */ }
   }
   if (viewMode.value === 'month') buildMonthDays()
   await nextTick()
@@ -777,6 +824,14 @@ function myAgendaEventStyle(r: any) {
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const topPx = (startMinutes / 60) * MY_HOUR_HEIGHT
   const heightPx = Math.max((durationMinutes / 60) * MY_HOUR_HEIGHT, 32)
+  // 重叠事件并排分栏
+  const lay = myDayLayoutMap.value.get(r.id)
+  if (lay && lay.totalColumns > 1) {
+    const gap = 4
+    const totalW = 100
+    const colW = (totalW + gap) / lay.totalColumns
+    return { top: topPx + 'px', height: heightPx + 'px', left: `calc(${lay.columnIndex * colW}% + 8px)`, width: `calc(${colW - gap}% - 12px)` }
+  }
   return { top: topPx + 'px', height: heightPx + 'px', left: '8px', right: '8px' }
 }
 function weekEventStyle(r: any) {
@@ -796,7 +851,7 @@ function weekEventStyle(r: any) {
   const eventLeft = di * dayWidth + col * (eventWidth + gapPct)
   return { left: eventLeft + '%', width: eventWidth + '%', top: topPx + 'px', height: heightPx + 'px' }
 }
-function getDayReservations(day: any) { return day.reservations.slice(0, 3) }
+function getDayReservations(day: any) { return day.reservations.length > 3 ? day.reservations.slice(0, 2) : day.reservations }
 function buildMonthDays() {
   const d = currentDate.value, m = d.getMonth(), today = formatDate(new Date())
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
@@ -850,7 +905,16 @@ function openQuickBook() {
   bookingStartTime.value = `${dateStr}T09:00:00`; bookingEndTime.value = `${dateStr}T10:00:00`
   bookingVisible.value = true
 }
-function onBookingSuccess() { loadData() }
+function onBookingSuccess() { loadData(); fetchTodayData() }
+
+// 独立加载今日数据（用于左侧今日卡片，不受视图范围影响）
+async function fetchTodayData() {
+  const today = formatDate(new Date())
+  try {
+    const r = await listMyReservations({ page: 1, size: 500, startTime: today, endTime: today + ' 23:59:59' })
+    todayReservations.value = (r.data.records || []).filter((x: any) => x.status === 0 || x.status === 1)
+  } catch { todayReservations.value = [] }
+}
 
 async function onEventClick(r: any) {
   detailVisible.value = true
@@ -910,6 +974,7 @@ onMounted(async () => {
   observeDayBodyResize()
   nowTimer = window.setInterval(() => { nowTimestamp.value = Date.now() }, 60000)
   loadData()
+  fetchTodayData()
 })
 
 onBeforeUnmount(() => {

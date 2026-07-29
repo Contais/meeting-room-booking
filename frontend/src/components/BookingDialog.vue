@@ -390,8 +390,17 @@ function getTimeFromEvent(e: PointerEvent): string | null {
   return cell?.dataset.time ?? null
 }
 
+function isBookedRangeStart(t: string): boolean {
+  const tm = toMinutes(t)
+  return bookedRanges.value.some(r => r.start === tm)
+}
+
 function onPointerDown(e: PointerEvent, t: string) {
-  if (isTimeDisabled(t)) return
+  // 选结束时刻时，允许点击「已约区间起点」（结束时刻为预约开始瞬间，不构成冲突）
+  // 例如已有 08:30-08:45，选 08:15-08:30 时可点击 08:30 作为结束
+  const selectingEnd = !!form.startMinute && !form.endMinute
+  const allowed = selectingEnd ? (!isTimeDisabled(t) || isBookedRangeStart(t)) : !isTimeDisabled(t)
+  if (!allowed) return
   e.preventDefault()
   // 注意：这里不立即修改 form.startMinute，否则点击（pointerup 无移动）时
   // handleCellClick 会误判为"再次点击同一槽位"而取消选择。选区由 pointermove（拖拽）
