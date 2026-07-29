@@ -16,6 +16,7 @@
         <result property="endTime" column="end_time"/>
         <result property="status" column="status"/>
         <result property="createTime" column="create_time"/>
+        <result property="myAttendeeStatus" column="my_attendee_status"/>
     </resultMap>
 
     <!-- 公共筛选片段：时间范围 + 创建时间范围 + 预约编号 + 关键字 -->
@@ -91,7 +92,8 @@
     <select id="selectMyMeetingsPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.remark, r.start_time, r.end_time,
-               r.status, r.create_time, mr.name AS room_name
+               r.status, r.create_time, mr.name AS room_name,
+               ra.status AS my_attendee_status
         FROM meeting_room_reservation r
         INNER JOIN reservation_attendee ra ON ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0

@@ -32,6 +32,11 @@
               <span>取消预约</span>
             </el-button>
           </template>
+          <!-- 拒绝邀请：用户模式下，当前用户是参会人且尚未拒绝时可拒绝 -->
+          <el-button v-if="canDecline" type="warning" plain @click="handleDecline">
+            <el-icon><Close /></el-icon>
+            <span>拒绝邀请</span>
+          </el-button>
         </div>
       </div>
 
@@ -168,7 +173,25 @@ const canCancel = computed(() => {
   return new Date(reservation.value.startTime) > new Date()
 })
 
-// 参会人按状态分组（排序：待响应 → 已接受 → 已拒绝）
+/**
+ * 拒绝邀请条件（用户模式）：
+ * - 非管理员模式
+ * - 预约已确认
+ * - 当前用户是参会人但不是创建者
+ * - 用户查阅状态不是「已拒绝」
+ * - 会议尚未结束
+ */
+const canDecline = computed(() => {
+  if (isAdminMode.value || !reservation.value) return false
+  if (reservation.value.status !== 1) return false
+  if (new Date(reservation.value.endTime) <= new Date()) return false
+  const isCreator = reservation.value.userId === userStore.userInfo?.id
+  if (isCreator) return false
+  const me = reservation.value.attendees?.find(a => a.userId === userStore.userInfo?.id)
+  return me != null && me.status !== 2
+})
+
+// 参会人按状态分组（排序：待查阅 → 已查阅 → 已拒绝）
 const attendeeGroups = computed(() => {
   const attendees = reservation.value?.attendees || []
   const groups: { status: number; items: Attendee[] }[] = [
@@ -192,7 +215,7 @@ function statusType(s: number) {
 }
 
 function attendeeStatusText(s: number) {
-  return { 0: '待响应', 1: '已接受', 2: '已拒绝' }[s] || '未知'
+  return { 0: '待查阅', 1: '已查阅', 2: '已拒绝' }[s] || '未知'
 }
 
 function attendeeStatusType(s: number) {
@@ -268,6 +291,17 @@ async function handleCancel() {
     await ElMessageBox.confirm('确定取消该预约？', '提示', { type: 'warning' })
     await cancelReservation(id.value)
     ElMessage.success('已取消')
+    loadDetail()
+  } catch {
+    // 用户取消
+  }
+}
+
+async function handleDecline() {
+  try {
+    await ElMessageBox.confirm('确定拒绝该会议邀请？拒绝后可在详情页重新查阅。', '拒绝邀请', { type: 'warning' })
+    await respondInvitation(id.value, 2)
+    ElMessage.success('已拒绝')
     loadDetail()
   } catch {
     // 用户取消

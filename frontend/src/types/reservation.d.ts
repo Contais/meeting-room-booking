@@ -6,7 +6,7 @@ export interface Attendee {
   email: string
   departmentId?: number
   departmentName?: string
-  /** 参会状态: 0-待响应, 1-已接受, 2-已拒绝 */
+  /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
   status: number
 }
 
@@ -27,6 +27,8 @@ export interface Reservation {
   rejectReason?: string
   createTime: string
   updateTime?: string
+  /** 当前用户对此预约的查阅状态（仅「我的会议」列表返回）: 0-待查阅, 1-已查阅, 2-已拒绝 */
+  myAttendeeStatus?: number
 }
 
 export interface ReservationCreateParams {

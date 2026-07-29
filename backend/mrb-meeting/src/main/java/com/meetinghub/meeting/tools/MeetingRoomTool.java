@@ -462,8 +462,8 @@ public class MeetingRoomTool {
         for (var a : attendees) {
             String statusDesc;
             switch (a.getStatus()) {
-                case 0: statusDesc = "待响应"; break;
-                case 1: statusDesc = "已接受"; break;
+                case 0: statusDesc = "待查阅"; break;
+                case 1: statusDesc = "已查阅"; break;
                 case 2: statusDesc = "已拒绝"; break;
                 default: statusDesc = "未知";
             }

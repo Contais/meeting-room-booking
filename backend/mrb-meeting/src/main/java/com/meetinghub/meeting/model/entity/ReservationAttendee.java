@@ -20,7 +20,7 @@ public class ReservationAttendee {
     /** 参会人用户ID */
     private Long userId;
 
-    /** 参会状态: 0-待响应, 1-已接受, 2-已拒绝 */
+    /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
     private Integer status;
 
     @TableField(fill = FieldFill.INSERT)

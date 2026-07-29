@@ -25,4 +25,6 @@ public class ReservationVO implements Serializable {
     private Integer status;
     private String rejectReason;
     private LocalDateTime createTime;
+    /** 当前用户对该预约的查阅状态（仅「我的会议」列表填充）: 0-待查阅, 1-已查阅, 2-已拒绝 */
+    private Integer myAttendeeStatus;
 }

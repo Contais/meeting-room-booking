@@ -22,6 +22,6 @@ public class AttendeeVO implements Serializable {
     private Long departmentId;
     /** 部门名称 */
     private String departmentName;
-    /** 参会状态: 0-待响应, 1-已接受, 2-已拒绝 */
+    /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
     private Integer status;
 }

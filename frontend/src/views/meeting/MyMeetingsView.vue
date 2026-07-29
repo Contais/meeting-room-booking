@@ -10,10 +10,10 @@
           <el-input v-model="query.subject" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
         </div>
         <div class="search-item">
-          <label>参会状态</label>
+          <label>查阅状态</label>
           <el-select v-model="query.attendeeStatus" placeholder="全部" clearable @change="onFilterChange">
-            <el-option label="待响应" :value="0" />
-            <el-option label="已接受" :value="1" />
+            <el-option label="待查阅" :value="0" />
+            <el-option label="已查阅" :value="1" />
             <el-option label="已拒绝" :value="2" />
           </el-select>
         </div>
@@ -59,6 +59,11 @@
         <el-table-column label="会议状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="meetingStatusType(row)" size="small" effect="light">{{ meetingStatusText(row) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="查阅状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="reviewStatusType(row.myAttendeeStatus)" size="small" effect="light">{{ reviewStatusText(row.myAttendeeStatus) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
@@ -121,6 +126,14 @@ function meetingStatusType(row: Reservation): any {
   if (now < start) return 'success'
   if (now >= start && now <= end) return 'warning'
   return 'info'
+}
+
+/** 查阅状态文本与样式 */
+function reviewStatusText(s?: number): string {
+  return { 0: '待查阅', 1: '已查阅', 2: '已拒绝' }[s ?? -1] || '未知'
+}
+function reviewStatusType(s?: number): any {
+  return { 0: 'info', 1: 'success', 2: 'danger' }[s ?? -1] || 'info'
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
