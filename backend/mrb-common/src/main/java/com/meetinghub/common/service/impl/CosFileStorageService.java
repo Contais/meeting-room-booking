@@ -9,6 +9,7 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.exception.CosClientException;
+import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.region.Region;
@@ -75,8 +76,14 @@ public class CosFileStorageService implements FileStorageService {
                     metadata);
             cosClient.putObject(request);
             return getAccessUrl(objectKey);
+        } catch (CosServiceException e) {
+            // 服务端错误（如 403 AccessDenied / 404 NoSuchBucket）：把 COS 返回的关键诊断字段全部记录
+            log.error("COS 文件存储失败(服务端): objectKey={}, statusCode={}, errorCode={}, errorMessage={}, requestId={}, traceId={}",
+                    objectKey, e.getStatusCode(), e.getErrorCode(), e.getErrorMessage(), e.getRequestId(), e.getTraceId(), e);
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         } catch (CosClientException e) {
-            log.error("COS 文件存储失败: objectKey={}", objectKey, e);
+            // 客户端错误（如网络、IO、凭证格式）
+            log.error("COS 文件存储失败(客户端): objectKey={}", objectKey, e);
             throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
@@ -85,8 +92,11 @@ public class CosFileStorageService implements FileStorageService {
     public void delete(String objectKey) {
         try {
             cosClient.deleteObject(properties.getCos().getBucket(), objectKey);
+        } catch (CosServiceException e) {
+            log.warn("COS 文件删除失败(服务端): objectKey={}, statusCode={}, errorCode={}, requestId={}",
+                    objectKey, e.getStatusCode(), e.getErrorCode(), e.getRequestId());
         } catch (CosClientException e) {
-            log.warn("COS 文件删除失败: objectKey={}", objectKey, e);
+            log.warn("COS 文件删除失败(客户端): objectKey={}", objectKey, e);
         }
     }
 
