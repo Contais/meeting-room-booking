@@ -54,7 +54,15 @@ public enum ErrorCode {
     ATTENDEE_ALREADY_INVITED(1022, "该用户已被邀请"),
 
     // 预约归属
-    RESERVATION_ACCESS_DENIED(1023, "无权操作他人预约");
+    RESERVATION_ACCESS_DENIED(1023, "无权操作他人预约"),
+
+    // 文件相关 110x
+    FILE_EMPTY(1101, "上传文件不能为空"),
+    FILE_TOO_LARGE(1102, "上传文件超过大小限制"),
+    FILE_TYPE_NOT_SUPPORTED(1103, "不支持的文件类型"),
+    FILE_BIZ_TYPE_INVALID(1104, "无效的业务类型"),
+    FILE_UPLOAD_FAILED(1105, "文件上传失败"),
+    FILE_NOT_FOUND(1106, "文件不存在");
 
     private final Integer code;
     private final String message;

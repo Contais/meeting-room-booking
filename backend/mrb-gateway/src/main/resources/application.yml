@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: mrb-gateway
+  # 允许上传请求体在内存中缓冲到 10MB（默认 256KB 会拒绝大文件上传）
+  codec:
+    max-in-memory-size: 10MB
   cloud:
     gateway:
       routes:
@@ -23,6 +26,12 @@ spring:
           uri: lb://mrb-meeting
           predicates:
             - Path=/api/meeting/**
+          filters:
+            - StripPrefix=1
+        - id: file-service
+          uri: lb://mrb-user
+          predicates:
+            - Path=/api/file/**
           filters:
             - StripPrefix=1
         - id: ws-user-service
