@@ -417,6 +417,13 @@ watch(() => notificationStore.latestNotification, (n) => {
 .header-action-group :deep(.icon-btn) {
   width: 32px;
   height: 32px;
+  /* 覆盖 Element Plus 默认 .el-button + .el-button 的 margin-left: 12px，
+     使三个图标按钮间距统一由 flex gap 控制 */
+  margin-left: 0;
+}
+
+.header-action-group :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .header-action-group :deep(.icon-btn) .el-icon {

@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+      <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }">
         <el-table-column prop="name" label="部门名称" min-width="220" />
         <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
@@ -138,7 +138,7 @@ async function loadData() {
   catch { /* */ } finally { loading.value = false }
 }
 function showCreateDialog(parentId?: number) { isEdit.value = false; Object.assign(form, { id: undefined, name: '', parentId: parentId || undefined, sortOrder: 0 }); dialogVisible.value = true }
-function showEditDialog(row: Department) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, parentId: row.parentId === 0 ? undefined : row.parentId, sortOrder: row.sortOrder }); dialogVisible.value = true }
+function showEditDialog(row: Department) { isEdit.value = true; const pidNum = Number(row.parentId); Object.assign(form, { id: row.id, name: row.name, parentId: !row.parentId || pidNum === 0 ? undefined : row.parentId, sortOrder: row.sortOrder }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateDepartment({ id: form.id!, name: form.name, parentId: form.parentId || 0, sortOrder: form.sortOrder }); ElMessage.success('更新成功') } else { await createDepartment({ name: form.name, parentId: form.parentId || 0, sortOrder: form.sortOrder }); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该部门?', '提示', { type: 'warning' }); await deleteDepartment(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
 onMounted(loadData)

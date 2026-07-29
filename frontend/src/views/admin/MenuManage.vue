@@ -32,8 +32,7 @@
       <!-- 树形表格 -->
       <el-table ref="tableRef" :data="filteredData" v-loading="loading"
         row-key="id" :key="expandAll" :default-expand-all="expandAll"
-        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-        :header-cell-style="{ background: '#fafbfc', color: '#606266', fontWeight: 500 }">
+        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }">
         <el-table-column prop="name" label="菜单名称" min-width="200" />
         <el-table-column label="菜单类型" width="100" align="center">
           <template #default="{ row }">

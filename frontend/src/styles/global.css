@@ -14,6 +14,7 @@
   --danger: #ef4444;
   --info: #94a3b8;
   --radius: 12px;
+  --table-header-bg: #fafbfc;
 }
 
 /* 暗色模式 */
@@ -26,6 +27,7 @@ html.dark {
   --border: #2d2d44;
   --border-light: #252540;
   --primary-light: #1e2a4a;
+  --table-header-bg: #161628;
 }
 
 html.dark {
@@ -191,6 +193,77 @@ html.dark .el-divider {
 
 html.dark .el-input-number {
   --el-input-number-text-color: var(--text-primary);
+}
+
+html.dark .el-input-number .el-input__wrapper {
+  background: #161628;
+}
+
+/* 复选框暗黑模式 */
+html.dark .el-checkbox {
+  --el-checkbox-text-color: var(--text-primary);
+  --el-checkbox-bg-color: #161628;
+  --el-checkbox-border-color: var(--border);
+  --el-checkbox-input-border-color-hover: var(--primary);
+}
+
+html.dark .el-checkbox__inner {
+  background: #161628;
+  border-color: var(--border);
+}
+
+html.dark .el-checkbox__input.is-checked .el-checkbox__inner {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* 开关暗黑模式 */
+html.dark .el-switch {
+  --el-switch-off-color: #3a3a5c;
+}
+
+/* 日期选择器暗黑模式 */
+html.dark .el-date-editor .el-input__wrapper,
+html.dark .el-date-editor .el-range-input {
+  background: #161628;
+  color: var(--text-primary);
+}
+
+html.dark .el-date-editor .el-range-separator {
+  color: var(--text-muted);
+}
+
+html.dark .el-date-table th,
+html.dark .el-time-panel {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+html.dark .el-date-table td .el-date-table-cell__text {
+  color: var(--text-primary);
+}
+
+html.dark .el-time-spinner__item {
+  color: var(--text-secondary);
+}
+
+html.dark .el-time-spinner__item.is-active {
+  color: var(--primary);
+}
+
+html.dark .el-popper.is-pure {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* 详情页参会人表格（非 .table-card 内的 el-table）暗黑模式 */
+html.dark .el-table {
+  --el-table-header-bg-color: var(--table-header-bg);
+}
+
+html.dark .el-table th.el-table__cell {
+  background: var(--table-header-bg) !important;
+  color: var(--text-secondary);
 }
 
 html.dark .el-form-item__label {
@@ -364,8 +437,8 @@ a { text-decoration: none; color: var(--primary); }
 
 /* 表格 - 加大行高 */
 .table-card { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light); padding: 0; overflow: hidden; }
-.table-card .el-table { --el-table-border-color: var(--border-light); }
-.table-card .el-table th.el-table__cell { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.table-card .el-table { --el-table-border-color: var(--border-light); --el-table-header-bg-color: var(--table-header-bg); }
+.table-card .el-table th.el-table__cell { font-size: 13px; font-weight: 600; color: var(--text-secondary); background: var(--table-header-bg) !important; }
 .table-card .el-table td.el-table__cell { font-size: 13px; padding: 18px 0; }
 .table-card .el-table .cell { padding: 0 14px; }
 .table-card .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell { background: var(--bg-page); }
