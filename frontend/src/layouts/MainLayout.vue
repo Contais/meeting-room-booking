@@ -62,7 +62,8 @@
           <el-dropdown trigger="hover" popper-class="user-dropdown-popper" placement="bottom-end">
             <div class="avatar-btn">
               <div class="avatar" :style="getAvatarStyle()">
-                <template v-if="avatarIcon">
+                <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="avatar-img" alt="头像" />
+                <template v-else-if="avatarIcon">
                   <el-icon :size="18"><component :is="avatarIcon" /></el-icon>
                 </template>
                 <template v-else>
@@ -79,7 +80,8 @@
               <div class="user-dropdown-panel">
                 <div class="dropdown-header">
                   <div class="dropdown-avatar" :style="getAvatarStyle()">
-                    <template v-if="avatarIcon">
+                    <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="dropdown-avatar-img" alt="头像" />
+                    <template v-else-if="avatarIcon">
                       <el-icon :size="22"><component :is="avatarIcon" /></el-icon>
                     </template>
                     <template v-else>
@@ -130,6 +132,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { getMyMenus } from '@/api/menu'
 import ChatPanel from '@/components/ChatPanel.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
+import { isAvatarUrl } from '@/utils/avatar'
 import type { MenuItem } from '@/types/menu'
 
 const route = useRoute()
@@ -196,6 +199,9 @@ const avatarIcon = computed(() => {
   if (!iconName) return null
   return iconComponents[iconName] || null
 })
+
+// 头像是否为图片 URL（文件上传后的地址），否则为图标 JSON
+const avatarIsUrl = computed(() => isAvatarUrl(userStore.userInfo?.avatar))
 
 function getAvatarStyle(): Record<string, string> {
   const gradient = avatarGradients[avatarData.value.gradient] || avatarGradients[0]
@@ -501,6 +507,13 @@ watch(() => notificationStore.latestNotification, (n) => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .user-info-brief {
   display: flex;
   align-items: center;
@@ -571,6 +584,14 @@ watch(() => notificationStore.latestNotification, (n) => {
   font-weight: 600;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+:global(.user-dropdown-popper .dropdown-avatar-img) {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 :global(.user-dropdown-popper .dropdown-user-info) {

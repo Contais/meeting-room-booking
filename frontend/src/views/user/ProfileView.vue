@@ -3,7 +3,8 @@
     <div class="profile-banner page-card">
       <div class="banner-avatar-wrapper">
         <div class="banner-avatar" :style="getAvatarStyle()">
-          <template v-if="selectedAvatarIcon">
+          <img v-if="currentAvatarIsUrl" :src="userStore.userInfo?.avatar" class="banner-avatar-img" alt="头像" />
+          <template v-else-if="selectedAvatarIcon">
             <el-icon :size="36"><component :is="selectedAvatarIcon" /></el-icon>
           </template>
           <template v-else>
@@ -83,49 +84,66 @@
 
     <!-- 头像选择弹窗 -->
     <el-dialog v-model="showAvatarPicker" title="选择头像" width="480px" class="avatar-picker-dialog">
-      <div class="avatar-picker-content">
-        <div class="picker-section">
-          <h4>选择图标</h4>
-          <div class="icon-grid">
-            <div
-              v-for="icon in avatarIcons"
-              :key="icon.name"
-              class="icon-item"
-              :class="{ active: selectedIconName === icon.name }"
-              @click="selectIcon(icon.name)"
-            >
-              <el-icon :size="24"><component :is="icon.comp" /></el-icon>
+      <el-tabs v-model="avatarTab" class="avatar-tabs">
+        <el-tab-pane label="图标头像" name="icon">
+          <div class="avatar-picker-content">
+            <div class="picker-section">
+              <h4>选择图标</h4>
+              <div class="icon-grid">
+                <div
+                  v-for="icon in avatarIcons"
+                  :key="icon.name"
+                  class="icon-item"
+                  :class="{ active: selectedIconName === icon.name }"
+                  @click="selectIcon(icon.name)"
+                >
+                  <el-icon :size="24"><component :is="icon.comp" /></el-icon>
+                </div>
+              </div>
+            </div>
+            <div class="picker-section">
+              <h4>选择背景</h4>
+              <div class="gradient-grid">
+                <div
+                  v-for="(grad, idx) in avatarGradients"
+                  :key="idx"
+                  class="gradient-item"
+                  :class="{ active: selectedGradientIdx === idx }"
+                  :style="{ background: grad }"
+                  @click="selectGradient(idx)"
+                ></div>
+              </div>
+            </div>
+            <div class="picker-section">
+              <h4>预览</h4>
+              <div class="avatar-preview" :style="getAvatarStyle()">
+                <template v-if="selectedAvatarIcon">
+                  <el-icon :size="32"><component :is="selectedAvatarIcon" /></el-icon>
+                </template>
+                <template v-else>
+                  {{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}
+                </template>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="picker-section">
-          <h4>选择背景</h4>
-          <div class="gradient-grid">
-            <div
-              v-for="(grad, idx) in avatarGradients"
-              :key="idx"
-              class="gradient-item"
-              :class="{ active: selectedGradientIdx === idx }"
-              :style="{ background: grad }"
-              @click="selectGradient(idx)"
-            ></div>
+        </el-tab-pane>
+        <el-tab-pane label="上传图片" name="upload">
+          <div class="avatar-upload-content">
+            <FileUpload
+              :model-value="currentAvatarIsUrl ? (userStore.userInfo?.avatar || '') : ''"
+              biz-type="AVATAR"
+              shape="avatar"
+              hint="支持 jpg / png / webp，不超过 5MB"
+              @change="onAvatarUploaded"
+            />
+            <p v-if="currentAvatarIsUrl" class="avatar-url-tip">当前使用图片头像，可在「图标头像」切换回图标。</p>
           </div>
-        </div>
-        <div class="picker-section">
-          <h4>预览</h4>
-          <div class="avatar-preview" :style="getAvatarStyle()">
-            <template v-if="selectedAvatarIcon">
-              <el-icon :size="32"><component :is="selectedAvatarIcon" /></el-icon>
-            </template>
-            <template v-else>
-              {{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}
-            </template>
-          </div>
-        </div>
-      </div>
+        </el-tab-pane>
+      </el-tabs>
       <template #footer>
-        <el-button @click="resetAvatar">重置</el-button>
-        <el-button type="primary" class="btn-gradient" @click="confirmAvatar">确认</el-button>
+        <el-button v-if="avatarTab === 'icon'" @click="resetAvatar">重置</el-button>
+        <el-button v-if="avatarTab === 'icon'" type="primary" class="btn-gradient" @click="confirmAvatar">确认</el-button>
+        <el-button v-else @click="showAvatarPicker = false">完成</el-button>
       </template>
     </el-dialog>
   </div>
@@ -146,6 +164,9 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, changePassword } from '@/api/user'
+import FileUpload from '@/components/FileUpload.vue'
+import { isAvatarUrl } from '@/utils/avatar'
+import type { FileUploadVO } from '@/types/file'
 
 const userStore = useUserStore()
 const profileFormRef = ref<FormInstance>()
@@ -180,8 +201,12 @@ const passwordRules: FormRules = {
 
 // 头像选择器
 const showAvatarPicker = ref(false)
+const avatarTab = ref<'icon' | 'upload'>('icon')
 const selectedIconName = ref<string>('')
 const selectedGradientIdx = ref<number>(0)
+
+// 当前头像是否为图片 URL
+const currentAvatarIsUrl = computed(() => isAvatarUrl(userStore.userInfo?.avatar))
 
 const avatarIcons = markRaw([
   { name: 'UserFilled', comp: UserFilled },
@@ -280,6 +305,32 @@ async function confirmAvatar() {
     await userStore.fetchUserInfo()
     ElMessage.success('头像更新成功')
     showAvatarPicker.value = false
+  } catch { /* */ } finally {
+    profileLoading.value = false
+  }
+}
+
+/** 图片头像上传成功后立即保存为头像 URL */
+async function onAvatarUploaded(payload: FileUploadVO | null) {
+  if (!payload) {
+    // 移除图片头像，回退为首字母
+    profileLoading.value = true
+    try {
+      await updateProfile({ avatar: '' })
+      profileForm.avatar = ''
+      await userStore.fetchUserInfo()
+      ElMessage.success('已移除图片头像')
+    } catch { /* */ } finally {
+      profileLoading.value = false
+    }
+    return
+  }
+  profileLoading.value = true
+  try {
+    await updateProfile({ avatar: payload.url })
+    profileForm.avatar = payload.url
+    await userStore.fetchUserInfo()
+    ElMessage.success('头像更新成功')
   } catch { /* */ } finally {
     profileLoading.value = false
   }
@@ -499,5 +550,31 @@ async function handleChangePassword() {
   justify-content: center;
   font-size: 24px;
   font-weight: 600;
+}
+
+.banner-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-tabs {
+  margin-top: -8px;
+}
+
+.avatar-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.avatar-url-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
 }
 </style>

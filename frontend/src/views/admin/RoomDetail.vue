@@ -28,7 +28,8 @@
       <div class="detail-card-body">
         <div v-if="room" class="room-header">
           <div class="room-avatar">
-            <el-icon :size="28"><OfficeBuilding /></el-icon>
+            <img v-if="room.imageUrl" :src="room.imageUrl" class="room-avatar-img" alt="会议室图片" />
+            <el-icon v-else :size="28"><OfficeBuilding /></el-icon>
           </div>
           <div class="room-info">
             <h3>{{ room.name }}</h3>
@@ -282,6 +283,13 @@ onMounted(loadDetail)
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.room-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .room-info h3 {

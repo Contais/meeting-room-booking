@@ -61,6 +61,9 @@
         <el-form-item label="容纳人数" prop="capacity"><el-input-number v-model="form.capacity" :min="1" :max="1000" style="width:100%" /></el-form-item>
         <el-form-item label="设备"><el-input v-model="form.equipment" placeholder="投影仪,白板,视频会议系统" /></el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="2" placeholder="详细描述" /></el-form-item>
+        <el-form-item label="会议室图片">
+          <FileUpload v-model="form.imageUrl" biz-type="ROOM_IMAGE" shape="card" hint="支持 jpg / png / webp，不超过 5MB" />
+        </el-form-item>
         <el-divider content-position="left">使用规则</el-divider>
         <el-form-item label="预约时段"><div style="display:flex;align-items:center;gap:8px"><el-time-picker v-model="form.bookableStart" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:130px" /><span>~</span><el-time-picker v-model="form.bookableEnd" format="HH:mm" value-format="HH:mm" placeholder="结束" style="width:130px" /></div></el-form-item>
         <el-form-item label="最大时长"><el-input-number v-model="form.maxDuration" :min="30" :max="1440" :step="30" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">分钟</span></el-form-item>
@@ -81,6 +84,7 @@ import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meetin
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
+import FileUpload from '@/components/FileUpload.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { MeetingRoom } from '@/types/meeting'
 

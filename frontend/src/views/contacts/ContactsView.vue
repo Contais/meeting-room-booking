@@ -96,7 +96,8 @@
                   @click="showUserDetail(user)"
                 >
                   <div class="user-avatar" :style="getAvatarStyle(user)">
-                    <template v-if="getAvatarIcon(user)">
+                    <img v-if="getAvatarUrl(user)" :src="getAvatarUrl(user)" class="user-avatar-img" alt="头像" />
+                    <template v-else-if="getAvatarIcon(user)">
                       <el-icon :size="24"><component :is="getAvatarIcon(user)" /></el-icon>
                     </template>
                     <template v-else>
@@ -129,7 +130,8 @@
                   @click="showUserDetail(user)"
                 >
                   <div class="user-avatar user-avatar-sm" :style="getAvatarStyle(user)">
-                    <template v-if="getAvatarIcon(user)">
+                    <img v-if="getAvatarUrl(user)" :src="getAvatarUrl(user)" class="user-avatar-img" alt="头像" />
+                    <template v-else-if="getAvatarIcon(user)">
                       <el-icon :size="16"><component :is="getAvatarIcon(user)" /></el-icon>
                     </template>
                     <template v-else>
@@ -163,6 +165,7 @@ import type { ElTree } from 'element-plus'
 import { OfficeBuilding, User, Search, Phone, Message, Grid, List, ArrowRight } from '@element-plus/icons-vue'
 import { listContacts } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
+import { isAvatarUrl } from '@/utils/avatar'
 import type { UserInfo } from '@/types/user'
 import type { Department } from '@/types/department'
 
@@ -222,6 +225,11 @@ function getAvatarIcon(user: UserInfo): any {
   if (!icon) return null
   const iconMap: Record<string, any> = markRaw({ User, OfficeBuilding })
   return iconMap[icon] || null
+}
+
+/** 头像为图片 URL 时返回地址，否则返回空（回退到图标/首字母） */
+function getAvatarUrl(user: UserInfo): string {
+  return isAvatarUrl(user.avatar) ? (user.avatar as string) : ''
 }
 
 function getInitial(user: UserInfo): string {
@@ -680,6 +688,14 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* 列表视图小头像：必须置于 .user-avatar 之后以确保覆盖 */
