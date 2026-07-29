@@ -38,7 +38,7 @@
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
-              <el-button type="primary" link @click="router.push(`/meeting/rooms/${row.id}`)">
+              <el-button type="primary" link @click="router.push({ path: `/admin/rooms/${row.id}`, query: { from: '/admin/rooms', fromTitle: '会议室管理', dt: '会议室详情' } })">
                 <el-icon><View /></el-icon>详情
               </el-button>
               <el-button type="primary" link @click="showEditDialog(row)">

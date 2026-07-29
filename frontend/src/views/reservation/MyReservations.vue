@@ -49,7 +49,7 @@
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="预约编号" width="170">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="router.push(`/admin/reservations/${row.id}`)">{{ row.reservationCode }}</el-link>
+            <el-link type="primary" :underline="false" @click="goDetail(row.id)">{{ row.reservationCode }}</el-link>
           </template>
         </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
@@ -68,7 +68,7 @@
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
-              <el-button type="primary" link @click="router.push(`/reservation/my/${row.id}`)">
+              <el-button type="primary" link @click="goDetail(row.id)">
                 <el-icon><View /></el-icon>详情
               </el-button>
               <el-button v-if="canCancel(row)" type="danger" link @click="handleCancel(row)">
@@ -172,6 +172,10 @@ async function loadData() {
     total.value = Number(res.data.total) || 0
   } catch { /* */ } finally { loading.value = false }
 }
+function goDetail(id: number) {
+  router.push({ path: `/reservation/my/${id}`, query: { from: '/reservation/my', fromTitle: '我的预约', dt: '预约详情' } })
+}
+
 function canCancel(row: Reservation): boolean {
   // 已取消(2) / 已拒绝(3) 不可取消
   if (row.status === 2 || row.status === 3) return false

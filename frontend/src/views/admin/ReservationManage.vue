@@ -53,7 +53,7 @@
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="预约编号" width="170">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="router.push(`/admin/reservations/${row.id}`)">{{ row.reservationCode }}</el-link>
+            <el-link type="primary" :underline="false" @click="goDetail(row.id)">{{ row.reservationCode }}</el-link>
           </template>
         </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
@@ -73,7 +73,7 @@
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
-              <el-button type="primary" link @click="router.push(`/admin/reservations/${row.id}`)">
+              <el-button type="primary" link @click="goDetail(row.id)">
                 <el-icon><View /></el-icon>详情
               </el-button>
               <template v-if="row.status === 0">
@@ -136,6 +136,9 @@ const timeRange = ref<string[]>([])
 const createTimeRange = ref<string[]>([])
 
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
+function goDetail(id: number) {
+  router.push({ path: `/admin/reservations/${id}`, query: { from: '/admin/reservations', fromTitle: '预约管理', dt: '预约详情' } })
+}
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info' }
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() {

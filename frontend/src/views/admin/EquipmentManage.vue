@@ -53,7 +53,7 @@
         <el-table-column label="操作" width="240" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
-              <el-button type="primary" link @click="router.push(`/admin/equipments/${row.id}`)">
+              <el-button type="primary" link @click="router.push({ path: `/admin/equipments/${row.id}`, query: { from: '/admin/equipments', fromTitle: '设备管理', dt: '设备详情' } })">
                 <el-icon><View /></el-icon>详情
               </el-button>
               <el-button type="primary" link @click="showEditDialog(row)">

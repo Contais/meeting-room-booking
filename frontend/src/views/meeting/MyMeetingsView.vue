@@ -42,7 +42,7 @@
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="会议主题" min-width="150">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="router.push(`/reservation/my/${row.id}`)">{{ row.subject }}</el-link>
+            <el-link type="primary" :underline="false" @click="goDetail(row.id)">{{ row.subject }}</el-link>
           </template>
         </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />
@@ -63,7 +63,7 @@
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button type="primary" link @click="router.push(`/reservation/my/${row.id}`)">
+            <el-button type="primary" link @click="goDetail(row.id)">
               <el-icon><View /></el-icon>详情
             </el-button>
           </template>
@@ -102,8 +102,6 @@ const query = reactive({
 const timeRange = ref<string[]>([])
 const timeScope = ref<string>('')
 
-function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
-
 /** 根据时间判断会议状态：进行中 / 即将到来 / 已结束 */
 function meetingStatusText(row: Reservation): string {
   const now = Date.now()
@@ -123,6 +121,9 @@ function meetingStatusType(row: Reservation): any {
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
+function goDetail(id: number) {
+  router.push({ path: `/reservation/my/${id}`, query: { from: '/my-meetings', fromTitle: '我的会议', dt: '会议详情' } })
+}
 function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => { query.page = 1; loadData() }, 300)

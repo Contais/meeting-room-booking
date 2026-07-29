@@ -149,11 +149,17 @@ const iconComponents = Object.fromEntries(
 
 // 当前页面标题
 const currentTitle = computed(() => {
-  return (route.meta.title as string) || ''
+  return (route.query.dt as string) || (route.meta.title as string) || ''
 })
 
 // 父级面包屑（详情页可点击跳转父级列表）
-const parentMeta = computed(() => (route.meta.parent as { path: string; title: string } | undefined))
+// 优先使用 URL 查询参数 from/fromTitle（支持从不同列表页进入同一详情页时显示正确来源）
+const parentMeta = computed(() => {
+  const from = route.query.from as string | undefined
+  const fromTitle = route.query.fromTitle as string | undefined
+  if (from && fromTitle) return { path: from, title: fromTitle }
+  return (route.meta.parent as { path: string; title: string } | undefined)
+})
 function goParent() {
   if (parentMeta.value) router.push(parentMeta.value.path)
 }
