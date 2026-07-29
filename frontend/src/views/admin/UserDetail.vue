@@ -23,9 +23,7 @@
 
       <div class="detail-card-body">
         <div v-if="user" class="user-header">
-          <div class="avatar-large">
-            {{ (user.username || 'U').charAt(0).toUpperCase() }}
-          </div>
+          <UserAvatar :avatar="user.avatar" :username="user.username" size="lg" />
           <div class="user-info">
             <h3>{{ user.realName || user.username }}</h3>
             <p>{{ user.username }}</p>
@@ -90,6 +88,7 @@ import { ArrowLeft, Edit } from '@element-plus/icons-vue'
 import { getUserDetail, updateUser, toggleUserStatus } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import FormDrawer from '@/components/FormDrawer.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { UserInfo } from '@/types/user'
 import type { Department } from '@/types/department'
@@ -178,20 +177,6 @@ onMounted(() => { loadDetail(); loadDeptTree() })
   gap: 16px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border-light);
-}
-
-.avatar-large {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: 600;
-  flex-shrink: 0;
 }
 
 .user-info h3 {

@@ -17,7 +17,7 @@
       <el-table :data="tableData" v-loading="loading">
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="用户名" min-width="200">
-          <template #default="{ row }"><div class="user-cell"><div class="user-avatar">{{ (row.username || 'U').charAt(0).toUpperCase() }}</div><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.email || row.phone || '-' }}</span></div></div></template>
+          <template #default="{ row }"><div class="user-cell"><UserAvatar :avatar="row.avatar" :username="row.username" size="sm" /><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.email || row.phone || '-' }}</span></div></div></template>
         </el-table-column>
         <el-table-column prop="realName" label="姓名" min-width="90" />
         <el-table-column prop="phone" label="手机号" min-width="130" />
@@ -81,6 +81,7 @@ import { listAllRoles } from '@/api/role'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { formatDateTime } from '@/utils/datetime'
 import type { Department } from '@/types/department'
 
@@ -148,7 +149,6 @@ onMounted(() => { loadData(); loadDeptTree(); loadRoleList() })
 <style scoped>
 .page-view { display: flex; flex-direction: column; gap: 16px; }
 .user-cell { display: flex; align-items: center; gap: 10px; }
-.user-avatar { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-email { font-size: 11px; color: var(--text-muted); }
