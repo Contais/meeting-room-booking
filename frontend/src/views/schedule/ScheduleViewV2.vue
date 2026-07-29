@@ -70,11 +70,11 @@
           <button class="ctrl-btn" @click="goToday">今天</button>
           <button class="ctrl-icon" @click="goPrev"><el-icon><ArrowLeft /></el-icon></button>
           <button class="ctrl-icon" @click="goNext"><el-icon><ArrowRight /></el-icon></button>
-          <el-radio-group v-model="viewMode" size="small" class="view-switch">
-            <el-radio-button value="day">日</el-radio-button>
-            <el-radio-button value="week">周</el-radio-button>
-            <el-radio-button value="month">月</el-radio-button>
-          </el-radio-group>
+          <div class="view-segment">
+            <button class="seg-item" :class="{ active: viewMode === 'day' }" @click="viewMode = 'day'">日</button>
+            <button class="seg-item" :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">周</button>
+            <button class="seg-item" :class="{ active: viewMode === 'month' }" @click="viewMode = 'month'">月</button>
+          </div>
           <span class="date-display">{{ dateDisplay }}</span>
         </div>
         <div class="control-right">
@@ -91,41 +91,54 @@
       <div v-if="viewMode === 'day'" class="day-view v2-card"
         :class="{ dragging: dayDrag.active }"
         :style="{ '--hour-width': `${hourWidth}px`, '--day-edge-gap': `${dayEdgeGap}px` }">
-        <!-- 我的日历：单行时间轴 -->
+        <!-- 我的日历：纵向议程视图 -->
         <template v-if="tab === 'my'">
-          <div class="my-day-header">
-            <div class="my-day-corner">{{ formatDayLabel(currentDate) }}</div>
-            <div class="my-day-ticks" :style="{ transform: `translateX(${-headerScrollX}px)` }">
-              <div v-for="h in visibleHours" :key="h" class="my-tick">
-                <span>{{ String(h).padStart(2, '0') }}:00</span>
-              </div>
+          <div class="my-agenda">
+            <div class="my-agenda-head">
+              <span class="my-agenda-date">{{ formatDayLabel(currentDate) }}</span>
+              <span class="my-agenda-weekday">{{ weekdayText(currentDate) }}</span>
+              <span v-if="isCurrentDay(currentDate)" class="my-agenda-today-badge">今天</span>
+              <span class="my-agenda-count">{{ myDayReservations.length }} 场会议</span>
             </div>
-          </div>
-          <div ref="dayBodyRef" class="day-body-wrap" @scroll="onDayScroll"
-            @pointerdown="onDayPointerDown" @pointermove="onDayPointerMove"
-            @pointerup="onDayPointerUp" @pointercancel="onDayPointerUp">
-            <div class="day-body">
-              <div class="work-hours-band" v-if="workHoursOnly"
-                :style="{ left: `${dayWorkHoursLeft}px`, width: `${dayWorkHoursWidth}px` }"></div>
-              <div v-for="h in visibleHours" :key="h" class="my-hour-line"
-                :style="{ left: `${dayEdgeGap + (h - VIEW_START) * hourWidth}px` }"></div>
-              <div v-if="showDayNowLine" class="now-line"
-                :style="{ left: `${dayNowLineLeft}px` }">
-                <span class="now-label">{{ currentTimeLabel }}</span>
-              </div>
-              <el-tooltip v-for="r in myDayReservations" :key="r.id"
-                :content="`${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}`"
-                placement="top" raw-content>
-                <div class="my-day-event" :class="'s' + r.status"
-                  :style="myDayEventStyle(r)" @click="onEventClick(r)">
-                  <div class="evt-bar"></div>
-                  <div class="evt-body">
-                    <div class="evt-title">{{ r.subject || '未命名' }}</div>
-                    <div class="evt-time">{{ formatTime(r.startTime) }} - {{ formatTime(r.endTime) }}</div>
-                    <div class="evt-meta">{{ r.roomName || '' }}</div>
+            <div ref="myDayBodyRef" class="my-agenda-body">
+              <div class="my-agenda-scroll" @click="onMyDayAreaClick">
+                <!-- 时间刻度槽 -->
+                <div class="my-agenda-grid">
+                  <div v-for="h in allHours" :key="h" class="my-agenda-hour">
+                    <span class="my-agenda-hour-label">{{ String(h).padStart(2, '0') }}:00</span>
                   </div>
                 </div>
-              </el-tooltip>
+                <!-- 事件层 -->
+                <div class="my-agenda-events" ref="myDayEventsRef">
+                  <!-- 工作时段底色 -->
+                  <div v-if="workHoursOnly" class="my-agenda-work-band"
+                    :style="{ top: `${WORK_START_HOUR * MY_HOUR_HEIGHT}px`, height: `${(WORK_END_HOUR - WORK_START_HOUR) * MY_HOUR_HEIGHT}px` }"></div>
+                  <!-- 整点分割线 -->
+                  <div v-for="h in allHours" :key="'l'+h" class="my-agenda-line"
+                    :style="{ top: `${h * MY_HOUR_HEIGHT}px` }"></div>
+                  <!-- 当前时间线 -->
+                  <div v-if="showMyNowLine" class="my-agenda-now" :style="{ top: `${myNowLineTop}px` }">
+                    <span class="my-now-dot"></span>
+                    <span class="my-now-label">{{ currentTimeLabel }}</span>
+                  </div>
+                  <!-- 事件块 -->
+                  <div v-for="r in myDayReservations" :key="r.id"
+                    class="my-agenda-event evt-block" :class="'s' + r.status"
+                    :style="myAgendaEventStyle(r)" @click.stop="onEventClick(r)">
+                    <div class="evt-bar"></div>
+                    <div class="evt-body">
+                      <div class="evt-title">{{ r.subject || '未命名' }}</div>
+                      <div class="evt-time">{{ formatTime(r.startTime) }} - {{ formatTime(r.endTime) }}</div>
+                      <div v-if="r.roomName" class="evt-meta">{{ r.roomName }}</div>
+                    </div>
+                  </div>
+                  <!-- 空状态 -->
+                  <div v-if="!myDayReservations.length" class="my-agenda-empty">
+                    <el-icon><Calendar /></el-icon>
+                    <span>当日暂无会议，点击空白时段快速预约</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </template>
@@ -240,16 +253,29 @@
             <div class="mc-date">{{ day.date }}</div>
             <div class="mc-events">
               <div v-for="r in getDayReservations(day)" :key="r.id"
-                class="mc-event" :class="'s' + r.status"
-                :title="formatTime(r.startTime) + ' ' + (r.subject || '未命名')"
+                class="mc-event evt-block" :class="'s' + r.status"
                 @click.stop="onEventClick(r)">
                 <span class="mc-event-time">{{ formatTime(r.startTime) }}</span>
                 <span class="mc-event-title">{{ r.subject || '未命名' }}</span>
               </div>
-              <div v-if="day.reservations.length > 3 && !expandedDays.has(day.dateStr)"
-                class="mc-more" @click.stop="toggleDayExpand(day.dateStr)">+{{ day.reservations.length - 3 }} 更多</div>
-              <div v-if="expandedDays.has(day.dateStr) && day.reservations.length > 3"
-                class="mc-more" @click.stop="toggleDayExpand(day.dateStr)">收起</div>
+              <el-popover v-if="day.reservations.length > 3"
+                :visible="morePopoverDay === day.dateStr"
+                trigger="click" placement="top" :width="260"
+                popper-class="mc-more-popover"
+                @update:visible="(v: boolean) => onMorePopoverToggle(day.dateStr, v)">
+                <template #reference>
+                  <button class="mc-more" @click.stop="onMorePopoverToggle(day.dateStr, morePopoverDay !== day.dateStr)">+{{ day.reservations.length - 3 }} 更多</button>
+                </template>
+                <div class="mc-pop-list">
+                  <div class="mc-pop-head">{{ day.dateStr }} · 共 {{ day.reservations.length }} 场</div>
+                  <div v-for="r in day.reservations" :key="r.id"
+                    class="mc-pop-item evt-block" :class="'s' + r.status"
+                    @click="onPopoverEventClick(r)">
+                    <span class="mc-pop-time">{{ formatTime(r.startTime) }}</span>
+                    <span class="mc-pop-title">{{ r.subject || '未命名' }}</span>
+                  </div>
+                </div>
+              </el-popover>
             </div>
           </div>
         </div>
@@ -351,7 +377,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Plus, Close, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Back } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Plus, Close, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Back, Calendar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSchedule, listMyReservations, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { useUserStore } from '@/stores/user'
@@ -401,6 +427,7 @@ const ROOM_COLUMN_WIDTH = 120
 const VISIBLE_HOURS = 9
 const DEFAULT_HOUR_WIDTH = 60
 const WEEK_HOUR_HEIGHT = 60
+const MY_HOUR_HEIGHT = 56
 const DAY_EDGE_GAP_RATIO = 0.35
 const WEEK_EDGE_GAP_RATIO = 0.35
 const VIEW_START = 9
@@ -416,11 +443,12 @@ const weekEdgeGap = WEEK_HOUR_HEIGHT * WEEK_EDGE_GAP_RATIO
 const weekTrackHeight = weekHoursHeight + weekEdgeGap * 2
 
 const allHours = computed(() => { const h = []; for (let i = START_HOUR; i < END_HOUR; i++) h.push(i); return h })
-const visibleHours = computed(() => { const h = []; for (let i = VIEW_START; i < VIEW_START + VISIBLE_HOURS; i++) h.push(i); return h })
 
 // ====== 拖拽 ======
 const dayBodyRef = ref<HTMLElement>()
 const weekBodyRef = ref<HTMLElement>()
+const myDayBodyRef = ref<HTMLElement>()
+const myDayEventsRef = ref<HTMLElement>()
 const headerScrollX = ref(0)
 let dayBodyResizeObserver: ResizeObserver | null = null
 let dayInertiaFrame = 0
@@ -436,6 +464,8 @@ const currentMinutes = computed(() => { const n = new Date(nowTimestamp.value); 
 const currentTimeLabel = computed(() => { const n = new Date(nowTimestamp.value); return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}` })
 const showDayNowLine = computed(() => formatDate(currentDate.value) === todayString.value)
 const dayNowLineLeft = computed(() => dayEdgeGap.value + (currentMinutes.value / (TOTAL_HOURS * 60)) * gridWidth.value)
+const showMyNowLine = computed(() => formatDate(currentDate.value) === todayString.value)
+const myNowLineTop = computed(() => (currentMinutes.value / 60) * MY_HOUR_HEIGHT)
 const showWeekNowLine = computed(() => weekDays.value.some(d => d.dateStr === todayString.value))
 const weekNowLineTop = computed(() => weekEdgeGap + (currentMinutes.value / (TOTAL_HOURS * 60)) * weekHoursHeight)
 const weekNowLineTodayIndex = computed(() => weekDays.value.findIndex(d => d.dateStr === todayString.value))
@@ -494,7 +524,7 @@ const todayNext = computed(() => {
 
 // 月视图
 const monthDays = ref<any[]>([])
-const expandedDays = ref<Set<string>>(new Set())
+const morePopoverDay = ref<string>('')
 
 // 周视图重叠布局
 const weekEventLayoutMap = computed(() => {
@@ -599,15 +629,18 @@ function scrollToDefaultHour() {
   updateDayHourWidth()
   const scrollLeft = VIEW_START * hourWidth.value
   const scrollTop = weekEdgeGap + VIEW_START * WEEK_HOUR_HEIGHT
+  const myScrollTop = Math.max(0, (VIEW_START - 1) * MY_HOUR_HEIGHT)
   headerScrollX.value = scrollLeft
   const tryScroll = (attempt: number) => {
     if (attempt > 10) return
     nextTick(() => {
       if (dayBodyRef.value) setDayScrollLeft(scrollLeft)
       if (weekBodyRef.value) setWeekScrollTop(scrollTop)
+      if (myDayBodyRef.value) myDayBodyRef.value.scrollTop = myScrollTop
       const dayPending = !!dayBodyRef.value && dayBodyRef.value.scrollLeft !== scrollLeft
       const weekPending = !!weekBodyRef.value && weekBodyRef.value.scrollTop !== scrollTop
-      if (dayPending || weekPending) setTimeout(() => tryScroll(attempt + 1), 100)
+      const myPending = !!myDayBodyRef.value && Math.abs(myDayBodyRef.value.scrollTop - myScrollTop) > 2
+      if (dayPending || weekPending || myPending) setTimeout(() => tryScroll(attempt + 1), 100)
     })
   }
   setTimeout(() => tryScroll(0), 100)
@@ -701,12 +734,14 @@ async function loadData() {
   const d = currentDate.value
   if (tab.value === 'my') {
     const p: Record<string, string | number> = { page: 1, size: 500 }
-    if (viewMode.value === 'day') { p.startTime = formatDate(d); p.endTime = formatDate(d) }
-    else if (viewMode.value === 'week') { p.startTime = formatDate(weekDays.value[0].date); p.endTime = formatDate(weekDays.value[6].date) }
+    // 注意：后端过滤为 r.start_time >= startTime AND r.end_time <= endTime（完全包含语义）
+    // endTime 必须补到当天 23:59:59，否则当天的会议会因 end_time <= '当天 00:00:00' 被全部过滤
+    if (viewMode.value === 'day') { p.startTime = formatDate(d); p.endTime = formatDate(d) + ' 23:59:59' }
+    else if (viewMode.value === 'week') { p.startTime = formatDate(weekDays.value[0].date); p.endTime = formatDate(weekDays.value[6].date) + ' 23:59:59' }
     else {
       const ms = new Date(d.getFullYear(), d.getMonth(), 1); ms.setDate(ms.getDate() - ms.getDay())
       const me = new Date(ms); me.setDate(me.getDate() + 41)
-      p.startTime = formatDate(ms); p.endTime = formatDate(me)
+      p.startTime = formatDate(ms); p.endTime = formatDate(me) + ' 23:59:59'
     }
     try { const r = await listMyReservations(p as any); myReservations.value = r.data.records || [] } catch { myReservations.value = [] }
   } else {
@@ -736,12 +771,12 @@ function dayEventStyle(r: any) {
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   return { left: (dayEdgeGap.value + (startMinutes / (TOTAL_HOURS * 60)) * gridWidth.value) + 'px', width: ((durationMinutes / (TOTAL_HOURS * 60)) * gridWidth.value) + 'px' }
 }
-function myDayEventStyle(r: any) {
+function myAgendaEventStyle(r: any) {
   const start = new Date(r.startTime), end = new Date(r.endTime)
-  const startMinutes = (start.getHours() - VIEW_START) * 60 + start.getMinutes()
+  const startMinutes = start.getHours() * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
-  const topPx = (startMinutes / 60) * 60
-  const heightPx = Math.max((durationMinutes / 60) * 60, 36)
+  const topPx = (startMinutes / 60) * MY_HOUR_HEIGHT
+  const heightPx = Math.max((durationMinutes / 60) * MY_HOUR_HEIGHT, 32)
   return { top: topPx + 'px', height: heightPx + 'px', left: '8px', right: '8px' }
 }
 function weekEventStyle(r: any) {
@@ -761,8 +796,7 @@ function weekEventStyle(r: any) {
   const eventLeft = di * dayWidth + col * (eventWidth + gapPct)
   return { left: eventLeft + '%', width: eventWidth + '%', top: topPx + 'px', height: heightPx + 'px' }
 }
-function getDayReservations(day: any) { return expandedDays.value.has(day.dateStr) ? day.reservations : day.reservations.slice(0, 3) }
-function toggleDayExpand(ds: string) { expandedDays.value.has(ds) ? expandedDays.value.delete(ds) : expandedDays.value.add(ds) }
+function getDayReservations(day: any) { return day.reservations.slice(0, 3) }
 function buildMonthDays() {
   const d = currentDate.value, m = d.getMonth(), today = formatDate(new Date())
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
@@ -791,6 +825,25 @@ function onMonthCellClick(day: any) {
   bookingStartTime.value = ''; bookingEndTime.value = ''
   bookingVisible.value = true
 }
+// 我的日历-日视图：点击空白时段按 Y 坐标推算时间，快速预约
+function onMyDayAreaClick(e: MouseEvent) {
+  const layer = myDayEventsRef.value
+  if (!layer) return
+  const rect = layer.getBoundingClientRect()
+  const y = e.clientY - rect.top
+  const hour = Math.max(0, Math.min(23, Math.floor(y / MY_HOUR_HEIGHT)))
+  const dateStr = formatDate(currentDate.value)
+  bookingRoomId.value = undefined; bookingDate.value = dateStr
+  bookingStartTime.value = `${dateStr}T${String(hour).padStart(2, '0')}:00:00`
+  bookingEndTime.value = `${dateStr}T${String(hour + 1).padStart(2, '0')}:00:00`
+  bookingVisible.value = true
+}
+// 月视图「更多」浮层控制
+function onMorePopoverToggle(ds: string, v: boolean) { morePopoverDay.value = v ? ds : '' }
+function onPopoverEventClick(r: any) { morePopoverDay.value = ''; onEventClick(r) }
+// 工具
+function weekdayText(dt: Date) { return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dt.getDay()] }
+function isCurrentDay(dt: Date) { return formatDate(dt) === formatDate(new Date()) }
 function openQuickBook() {
   const dateStr = formatDate(currentDate.value)
   bookingRoomId.value = undefined; bookingDate.value = dateStr
@@ -927,36 +980,58 @@ onBeforeUnmount(() => {
 .v2-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .v2-control-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--bg-card, #fff); border-bottom: 1px solid var(--border-light, #e5e7eb); flex-shrink: 0; }
 .control-left, .control-right { display: flex; align-items: center; gap: 8px; }
-.ctrl-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid var(--border, #e5e7eb); background: #fff; color: var(--text-primary); border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.ctrl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; padding: 0 14px; border: 1px solid var(--border, #e5e7eb); background: #fff; color: var(--text-primary); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
 .ctrl-btn:hover { border-color: var(--primary, #667eea); color: var(--primary, #667eea); }
 .ctrl-btn.primary { background: var(--primary, #667eea); color: #fff; border-color: var(--primary, #667eea); }
 .ctrl-btn.primary:hover { opacity: 0.9; }
-.ctrl-icon { padding: 6px 8px; border: 1px solid var(--border, #e5e7eb); background: #fff; color: var(--text-secondary); border-radius: 6px; cursor: pointer; }
+.ctrl-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--border, #e5e7eb); background: #fff; color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
 .ctrl-icon:hover { border-color: var(--primary, #667eea); color: var(--primary, #667eea); }
-.view-switch { margin: 0 4px; }
+.view-segment { display: inline-flex; align-items: center; height: 32px; margin: 0 4px; padding: 2px; background: var(--bg-hover, #f3f4f6); border-radius: 8px; }
+.seg-item { height: 28px; min-width: 40px; padding: 0 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.seg-item:hover { color: var(--primary, #667eea); }
+.seg-item.active { background: #fff; color: var(--primary, #667eea); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .date-display { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-left: 8px; }
 
 .v2-card { flex: 1; background: var(--bg-card, #fff); margin: 12px; border-radius: 12px; border: 1px solid var(--border-light, #e5e7eb); overflow: hidden; display: flex; flex-direction: column; }
 
-/* ============ 日视图 - 我的日历（单行时间轴） ============ */
-.my-day-header { display: flex; border-bottom: 1px solid var(--border-light); flex-shrink: 0; padding: 8px 0; }
-.my-day-corner { width: 60px; padding: 0 12px; font-size: 12px; font-weight: 600; color: var(--primary, #667eea); flex-shrink: 0; }
-.my-day-ticks { flex: 1; display: flex; padding: 0 24px; }
-.my-tick { flex: 1; font-size: 11px; color: var(--text-muted); }
-.day-body-wrap { flex: 1; overflow: auto; max-height: 100%; cursor: grab; padding: 0; }
-.day-body-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
-.day-body-wrap::-webkit-scrollbar-track { background: transparent; }
-.day-body-wrap::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 4px; }
-.day-body { position: relative; min-height: 100%; min-width: fit-content; }
-.my-hour-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border-light, #f0f0f0); pointer-events: none; }
-.work-hours-band { position: absolute; top: 0; bottom: 0; background: rgba(102, 126, 234, 0.06); pointer-events: none; z-index: 0; }
-.now-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #3b82f6; z-index: 3; pointer-events: none; }
-.now-line::before { content: ''; position: absolute; top: -4px; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; }
-.now-label { position: absolute; top: 4px; left: 8px; padding: 2px 6px; border-radius: 999px; background: #3b82f6; color: #fff; font-size: 11px; }
-.my-day-event { position: absolute; display: flex; gap: 6px; padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: all 0.2s; z-index: 2; }
-.my-day-event:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.my-day-event .evt-bar { width: 3px; border-radius: 2px; flex-shrink: 0; }
-.my-day-event .evt-body { flex: 1; min-width: 0; overflow: hidden; }
+/* ============ 日视图 - 我的日历（纵向议程） ============ */
+.my-agenda { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.my-agenda-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px 10px; border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
+.my-agenda-date { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+.my-agenda-weekday { font-size: 13px; color: var(--text-secondary); }
+.my-agenda-today-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--primary, #667eea); color: #fff; }
+.my-agenda-count { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.my-agenda-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.my-agenda-body::-webkit-scrollbar { width: 8px; }
+.my-agenda-body::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 4px; }
+.my-agenda-scroll { display: flex; position: relative; min-height: 100%; }
+.my-agenda-grid { width: 64px; flex-shrink: 0; position: sticky; left: 0; z-index: 2; background: var(--bg-card, #fff); }
+.my-agenda-hour { height: 56px; position: relative; }
+.my-agenda-hour-label { font-size: 11px; color: var(--text-muted); position: absolute; top: -7px; right: 8px; background: var(--bg-card, #fff); padding: 0 4px; }
+.my-agenda-events { flex: 1; position: relative; height: 1344px; }
+.my-agenda-work-band { position: absolute; left: 0; right: 0; background: rgba(102,126,234,0.05); pointer-events: none; z-index: 0; }
+.my-agenda-line { position: absolute; left: 0; right: 0; height: 1px; background: var(--border-light, #f0f0f0); pointer-events: none; }
+.my-agenda-now { position: absolute; left: 0; right: 0; height: 2px; background: #ef4444; z-index: 3; pointer-events: none; }
+.my-now-dot { position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; }
+.my-now-label { position: absolute; left: 10px; top: -9px; padding: 1px 6px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 11px; }
+.my-agenda-event { position: absolute; display: flex; gap: 8px; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; z-index: 2; overflow: hidden; }
+.my-agenda-event .evt-bar { width: 3px; border-radius: 2px; flex-shrink: 0; }
+.my-agenda-event .evt-body { flex: 1; min-width: 0; overflow: hidden; }
+.my-agenda-empty { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; pointer-events: none; }
+.my-agenda-empty .el-icon { font-size: 36px; opacity: 0.4; }
+
+/* 事件块通用样式（飞书实色渐变） */
+.evt-block { color: #fff; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.evt-block .evt-bar { background: rgba(255,255,255,0.6); }
+.evt-block .evt-title { color: #fff; }
+.evt-block .evt-time { color: rgba(255,255,255,0.92); }
+.evt-block .evt-meta { color: rgba(255,255,255,0.8); }
+.evt-block .evt-room { color: rgba(255,255,255,0.85); }
+.evt-block:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); filter: brightness(1.05); }
+.evt-block.s0 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.evt-block.s1 { background: linear-gradient(135deg, #10b981, #059669); }
+.evt-block.s2 { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+.evt-block.s3 { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .evt-title { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .evt-time { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
 .evt-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1016,16 +1091,6 @@ onBeforeUnmount(() => {
 .week-event:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 .evt-room { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ============ 状态色 ============ */
-.s0 { background: rgba(245,158,11,0.15); border-left: 3px solid #f59e0b; }
-.s0 .evt-bar { background: #f59e0b; }
-.s1 { background: rgba(16,185,129,0.15); border-left: 3px solid #10b981; }
-.s1 .evt-bar { background: #10b981; }
-.s2 { background: rgba(156,163,175,0.15); border-left: 3px solid #9ca3af; }
-.s2 .evt-bar { background: #9ca3af; }
-.s3 { background: rgba(239,68,68,0.15); border-left: 3px solid #ef4444; }
-.s3 .evt-bar { background: #ef4444; }
-
 /* ============ 月视图 ============ */
 .month-view { padding: 0; }
 .month-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border-light); }
@@ -1040,10 +1105,16 @@ onBeforeUnmount(() => {
 .mc-date { font-size: 12px; padding: 4px; color: var(--text-primary); }
 .mc-events { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
 .mc-event { display: flex; gap: 4px; align-items: center; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mc-event-time { font-weight: 600; opacity: 0.8; flex-shrink: 0; }
+.mc-event-time { font-weight: 600; opacity: 0.9; flex-shrink: 0; }
 .mc-event-title { overflow: hidden; text-overflow: ellipsis; }
-.mc-more { font-size: 11px; color: var(--primary, #667eea); padding: 2px 6px; cursor: pointer; }
-.mc-more:hover { text-decoration: underline; }
+.mc-more { font-size: 11px; color: var(--primary, #667eea); padding: 2px 8px; cursor: pointer; border: none; background: transparent; border-radius: 4px; transition: background 0.15s; width: 100%; text-align: left; }
+.mc-more:hover { background: rgba(102,126,234,0.08); }
+/* 月视图 Popover 浮层 */
+.mc-pop-list { display: flex; flex-direction: column; gap: 4px; }
+.mc-pop-head { font-size: 12px; font-weight: 600; color: var(--text-secondary); padding-bottom: 6px; border-bottom: 1px solid var(--border-light); margin-bottom: 4px; }
+.mc-pop-item { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.mc-pop-time { font-weight: 600; flex-shrink: 0; min-width: 40px; }
+.mc-pop-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ============ 右侧抽屉 ============ */
 .v2-drawer {
@@ -1112,12 +1183,20 @@ html.dark .v2-control-bar { background: var(--bg-card, #161628); border-color: v
 html.dark .ctrl-btn, html.dark .ctrl-icon { background: #252542; border-color: var(--border); color: var(--text-primary); }
 html.dark .ctrl-btn:hover, html.dark .ctrl-icon:hover { border-color: #667eea; color: #a5b4fc; }
 html.dark .ctrl-btn.primary { background: #667eea; color: #fff; border-color: #667eea; }
+html.dark .view-segment { background: #1c1c2e; }
+html.dark .seg-item { color: var(--text-secondary); }
+html.dark .seg-item.active { background: #252542; color: #a5b4fc; }
 html.dark .date-display { color: var(--text-primary); }
 html.dark .v2-card { background: var(--bg-card, #161628); border-color: var(--border, #2a2a44); }
-html.dark .my-day-header, html.dark .day-header, html.dark .week-header { background: #161628; border-color: var(--border); }
-html.dark .my-day-corner { color: #a5b4fc; }
-html.dark .my-tick, html.dark .tick-label, html.dark .wk-day-name, html.dark .wk-time-label, html.dark .mh-cell { color: var(--text-muted); }
-html.dark .my-hour-line { background: var(--border); }
+html.dark .my-agenda-head { border-color: var(--border); }
+html.dark .my-agenda-date { color: var(--text-primary); }
+html.dark .my-agenda-weekday { color: var(--text-secondary); }
+html.dark .my-agenda-count { color: var(--text-muted); }
+html.dark .my-agenda-grid { background: var(--bg-card, #161628); }
+html.dark .my-agenda-hour-label { background: var(--bg-card, #161628); color: var(--text-muted); }
+html.dark .my-agenda-line { background: var(--border); }
+html.dark .day-header, html.dark .week-header { background: #161628; border-color: var(--border); }
+html.dark .tick-label, html.dark .wk-day-name, html.dark .wk-time-label, html.dark .mh-cell { color: var(--text-muted); }
 html.dark .day-row, html.dark .wk-time, html.dark .wk-cell, html.dark .month-cell { border-color: var(--border); }
 html.dark .room-label, html.dark .wk-times, html.dark .room-col-header, html.dark .wk-corner { background: var(--bg-card, #161628); border-color: var(--border); }
 html.dark .room-name, html.dark .wk-day-num, html.dark .mc-date { color: var(--text-primary); }
@@ -1126,6 +1205,9 @@ html.dark .grid-cell:hover, html.dark .wk-cell:hover, html.dark .month-cell:hove
 html.dark .month-cell.other-month { background: #161628; }
 html.dark .month-cell.today { background: rgba(102,126,234,0.15); }
 html.dark .month-cell.today .mc-date { color: #a5b4fc; }
+html.dark .mc-more { color: #a5b4fc; }
+html.dark .mc-more:hover { background: rgba(102,126,234,0.18); }
+html.dark .mc-pop-head { color: var(--text-secondary); border-color: var(--border); }
 html.dark .v2-drawer { background: var(--bg-card, #161628); border-color: var(--border, #2a2a44); }
 html.dark .drawer-head, html.dark .drawer-foot { border-color: var(--border); }
 html.dark .drawer-title { color: var(--text-primary); }
