@@ -8,7 +8,7 @@
       <div v-if="!room" class="dialog-form-item">
         <label>会议室</label>
         <el-select v-model="selectedRoomId" placeholder="请选择会议室" style="width: 100%" @change="onRoomChange">
-          <el-option v-for="r in rooms" :key="r.id" :label="r.name" :value="r.id" />
+            <el-option v-for="r in roomList" :key="r.id" :label="r.name" :value="r.id" />
         </el-select>
       </div>
       <div v-else class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
@@ -158,6 +158,7 @@ import { ElMessage } from 'element-plus'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { createReservation } from '@/api/reservation'
 import { listByRoomAndDate } from '@/api/reservation'
+import { listActiveRooms } from '@/api/meeting'
 import { listContacts } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import type { MeetingRoom } from '@/types/meeting'
@@ -194,16 +195,21 @@ const contacts = ref<UserInfo[]>([])
 const contactsLoading = ref(false)
 const deptTree = ref<Department[]>([])
 const filterDeptId = ref<number | null>(null)
+// 自动拉取的会议室列表（当外部未传入 rooms 时使用）
+const fetchedRooms = ref<MeetingRoom[]>([])
 
 // 拖拽状态
 const dragAnchor = ref<string>('')
 const isDragging = ref(false)
 let movedDuringDrag = false
 
+// 会议室列表：优先使用外部传入的 rooms，否则使用自动拉取的列表
+const roomList = computed(() => props.rooms && props.rooms.length > 0 ? props.rooms : fetchedRooms.value)
+
 const currentRoom = computed(() => {
   if (props.room) return props.room
-  if (props.rooms && selectedRoomId.value) {
-    return props.rooms.find(r => r.id === selectedRoomId.value) || null
+  if (roomList.value && selectedRoomId.value) {
+    return roomList.value.find(r => r.id === selectedRoomId.value) || null
   }
   return null
 })
@@ -664,6 +670,15 @@ watch(visible, async (val) => {
       form.selectedDate = props.date
       if (props.startTime) form.startMinute = props.startTime.substring(11, 16)
       if (props.endTime) form.endMinute = props.endTime.substring(11, 16)
+    }
+    // 未指定具体会议室且未外部传入 rooms 时，自动拉取可用会议室列表
+    if (!props.room && !(props.rooms && props.rooms.length > 0) && !fetchedRooms.value.length) {
+      try {
+        const res = await listActiveRooms()
+        fetchedRooms.value = res.data || []
+      } catch {
+        // 拉取失败不阻塞表单使用
+      }
     }
     const roomId = props.roomId || selectedRoomId.value
     if (roomId && form.selectedDate) {
