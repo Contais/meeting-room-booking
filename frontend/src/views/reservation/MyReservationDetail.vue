@@ -14,10 +14,24 @@
             <el-icon><Delete /></el-icon>
             <span>删除</span>
           </el-button>
-          <el-button v-if="canCancel" type="danger" plain @click="handleCancel">
-            <el-icon><Close /></el-icon>
-            <span>取消预约</span>
-          </el-button>
+          <!-- 管理员审批操作 -->
+          <template v-if="isAdminMode && reservation.status === 0">
+            <el-button type="danger" plain @click="handleReject">
+              <el-icon><Close /></el-icon>
+              <span>拒绝</span>
+            </el-button>
+            <el-button type="primary" plain @click="handleApprove">
+              <el-icon><Check /></el-icon>
+              <span>通过</span>
+            </el-button>
+          </template>
+          <!-- 取消预约：管理员模式始终可用（状态允许时）；用户模式仅创建者或管理员可取消 -->
+          <template v-else-if="canCancel">
+            <el-button type="danger" plain @click="handleCancel">
+              <el-icon><Close /></el-icon>
+              <span>取消预约</span>
+            </el-button>
+          </template>
         </div>
       </div>
 
@@ -35,16 +49,24 @@
           <el-descriptions-item label="会议室">
             {{ reservation.roomName }}
           </el-descriptions-item>
+          <!-- 管理员模式显示预约人 -->
+          <el-descriptions-item v-if="isAdminMode" label="预约人">
+            {{ reservation.username || '-' }}
+          </el-descriptions-item>
           <el-descriptions-item label="参会人数">
             {{ reservation.attendeeCount }} 人
           </el-descriptions-item>
-          <el-descriptions-item label="预约时段" :span="2">
+          <el-descriptions-item label="预约时段" :span="isAdminMode ? 2 : 2">
             {{ formatDateTime(reservation.startTime) }} ~ {{ formatDateTime(reservation.endTime) }}
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">
             {{ formatDateTime(reservation.createTime) }}
           </el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">
+          <!-- 管理员模式显示更新时间 -->
+          <el-descriptions-item v-if="isAdminMode" label="更新时间">
+            {{ formatDateTime(reservation.updateTime) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="备注" :span="isAdminMode ? 2 : 2">
             {{ reservation.remark || '-' }}
           </el-descriptions-item>
           <el-descriptions-item v-if="reservation.status === 3" label="拒绝原因" :span="2">
@@ -105,8 +127,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Close, Delete } from '@element-plus/icons-vue'
-import { getMyReservationDetail, cancelReservation, deleteReservation } from '@/api/reservation'
+import { ArrowLeft, Check, Close, Delete } from '@element-plus/icons-vue'
+import {
+  getMyReservationDetail,
+  getReservationDetail,
+  approveReservation,
+  rejectReservation,
+  cancelReservation,
+  deleteReservation,
+  adminDeleteReservation,
+} from '@/api/reservation'
 import { respondInvitation } from '@/api/attendee'
 import { useUserStore } from '@/stores/user'
 import { formatDateTime } from '@/utils/datetime'
@@ -122,14 +152,19 @@ const id = computed(() => Number(route.params.id))
 // 默认展开所有参会状态分组
 const activeGroups = ref<number[]>([0, 1, 2])
 
+// 管理员模式：路由路径以 /admin/ 开头
+const isAdminMode = computed(() => route.path.startsWith('/admin/'))
+
 const canCancel = computed(() => {
   if (!reservation.value) return false
-  // 仅预约创建者或管理员可取消
+  // 已取消(2) / 已拒绝(3) 不可取消
+  if (reservation.value.status === 2 || reservation.value.status === 3) return false
+  // 管理员模式始终可取消（状态允许时）
+  if (isAdminMode.value) return new Date(reservation.value.startTime) > new Date()
+  // 用户模式：仅预约创建者或管理员可取消
   const isCreator = reservation.value.userId === userStore.userInfo?.id
   const isAdmin = userStore.isAdmin()
   if (!isCreator && !isAdmin) return false
-  // 已取消(2) / 已拒绝(3) 不可取消
-  if (reservation.value.status === 2 || reservation.value.status === 3) return false
   return new Date(reservation.value.startTime) > new Date()
 })
 
@@ -167,10 +202,15 @@ function attendeeStatusType(s: number) {
 async function loadDetail() {
   loading.value = true
   try {
-    const res = await getMyReservationDetail(id.value)
+    // 管理员模式调用管理员接口，用户模式调用用户接口
+    const res = isAdminMode.value
+      ? await getReservationDetail(id.value)
+      : await getMyReservationDetail(id.value)
     reservation.value = res.data
-    // 进入详情页自动将参会状态从「待响应」改为「已接受」
-    await autoAcceptInvitation()
+    // 用户模式：进入详情页自动将参会状态从「待响应」改为「已接受」
+    if (!isAdminMode.value) {
+      await autoAcceptInvitation()
+    }
   } catch (error) {
     ElMessage.error('加载失败')
   } finally {
@@ -195,6 +235,34 @@ async function autoAcceptInvitation() {
   }
 }
 
+async function handleApprove() {
+  try {
+    await ElMessageBox.confirm('确定通过该预约？', '提示', { type: 'warning' })
+    await approveReservation(id.value)
+    ElMessage.success('已通过')
+    loadDetail()
+  } catch {
+    // 用户取消
+  }
+}
+
+async function handleReject() {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入拒绝原因（可选）', '拒绝预约', {
+      confirmButtonText: '确定拒绝',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '请输入拒绝原因，留空将默认为「管理员拒绝」',
+      type: 'warning'
+    })
+    await rejectReservation(id.value, value || '')
+    ElMessage.success('已拒绝')
+    loadDetail()
+  } catch {
+    // 用户取消
+  }
+}
+
 async function handleCancel() {
   try {
     await ElMessageBox.confirm('确定取消该预约？', '提示', { type: 'warning' })
@@ -209,7 +277,12 @@ async function handleCancel() {
 async function handleDelete() {
   try {
     await ElMessageBox.confirm('确定删除该预约？删除后不可恢复。', '确认删除', { type: 'warning' })
-    await deleteReservation(id.value)
+    // 管理员模式调用管理员删除接口，用户模式调用用户删除接口
+    if (isAdminMode.value) {
+      await adminDeleteReservation(id.value)
+    } else {
+      await deleteReservation(id.value)
+    }
     ElMessage.success('已删除')
     router.back()
   } catch {

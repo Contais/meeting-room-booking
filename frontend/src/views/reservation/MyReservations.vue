@@ -1,6 +1,6 @@
 <template>
   <div class="page-view">
-    <SearchBar @search="onFilterChange" @reset="resetQuery">
+    <SearchBar :default-expanded="hasInitialQuery" @search="onFilterChange" @reset="resetQuery">
       <template #collapsed>
         <el-input v-model="query.keyword" placeholder="搜索预约编号 / 会议主题" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
       </template>
@@ -101,6 +101,9 @@ import type { Reservation } from '@/types/reservation'
 
 const route = useRoute()
 const router = useRouter()
+
+// 从首页统计跳转携带查询参数时自动展开搜索栏
+const hasInitialQuery = Object.keys(route.query).length > 0
 
 const bookingDialogVisible = ref(false)
 const loading = ref(false)
