@@ -82,9 +82,6 @@
           <button class="ctrl-btn primary" @click="openQuickBook">
             <el-icon><Plus /></el-icon><span>预约</span>
           </button>
-          <button class="ctrl-btn" @click="router.push('/schedule')">
-            <el-icon><Back /></el-icon><span>返回 v1</span>
-          </button>
         </div>
       </div>
 
@@ -378,7 +375,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ArrowRight, Plus, Close, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Back, Calendar } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Plus, Close, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Calendar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSchedule, listMyReservations, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { useUserStore } from '@/stores/user'
