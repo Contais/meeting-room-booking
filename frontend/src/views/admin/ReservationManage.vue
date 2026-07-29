@@ -102,7 +102,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Check, Close, Refresh, View, Delete } from '@element-plus/icons-vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation, adminDeleteReservation } from '@/api/reservation'
@@ -112,6 +112,7 @@ import BookingDialog from '@/components/BookingDialog.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
+const route = useRoute()
 const router = useRouter()
 const bookingDialogVisible = ref(false)
 const loading = ref(false)
@@ -224,7 +225,16 @@ async function handleDelete(row: Reservation) {
     loadData()
   } catch { /* */ }
 }
-onMounted(loadData)
+/** 从首页「待审批」统计跳转携带 status=0 时初始化筛选条件 */
+function applyRouteQuery() {
+  const q = route.query
+  if (q.status != null) query.status = Number(q.status)
+}
+
+onMounted(() => {
+  applyRouteQuery()
+  loadData()
+})
 </script>
 
 <style scoped>

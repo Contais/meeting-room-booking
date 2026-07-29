@@ -12,7 +12,7 @@
     </div>
 
     <div class="stat-row">
-      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx" @click="$router.push(item.path)">
+      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx" @click="goStat(item)">
         <div class="stat-icon" :style="{ background: item.bg }"><el-icon :size="20"><component :is="item.icon" /></el-icon></div>
         <div class="stat-info"><div class="stat-value">{{ item.value }}</div><div class="stat-label">{{ item.label }}</div></div>
       </div>
@@ -47,7 +47,8 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted, ref } from 'vue'
-import { OfficeBuilding, Calendar, Clock, User, Setting, Bell, DataLine, Tickets } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { OfficeBuilding, Calendar, User, Setting, Bell, DataLine, Tickets } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getHomeStats, getRoomUsage, getPeakHours } from '@/api/home'
 import VChart from 'vue-echarts'
@@ -58,19 +59,46 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent])
 
+const router = useRouter()
 const userStore = useUserStore()
 const stats = reactive({ roomCount: 0, todayReservations: 0, pendingApproval: 0, weekReservations: 0, totalReservations: 0, myUpcomingMeetings: 0, myPendingMeetings: 0 })
 
 const usageChartOption = ref({})
 const peakChartOption = ref({})
 
-const statItems = computed(() => [
-  { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)', path: '/meeting/rooms' },
-  { label: '即将到来的会议', value: stats.myUpcomingMeetings, icon: Tickets, bg: 'linear-gradient(135deg, #f093fb, #f5576c)', path: '/my-meetings' },
-  { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)', path: '/reservation/my' },
-  { label: '待响应邀请', value: stats.myPendingMeetings, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', path: '/my-meetings' },
-  ...(userStore.isAdmin() ? [{ label: '待审批', value: stats.pendingApproval, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)', path: '/admin/reservations' }] : []),
-])
+interface StatItem {
+  label: string
+  value: number
+  icon: any
+  bg: string
+  path: string
+  query?: Record<string, string>
+}
+
+const statItems = computed<StatItem[]>(() => {
+  // 今日 00:00:00 ~ 23:59:59
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const dayStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T00:00:00`
+  const dayEnd = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T23:59:59`
+  const items: StatItem[] = [
+    { label: '会议室', value: stats.roomCount, icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)', path: '/meeting/rooms' },
+    // 即将到来的会议：传递 upcoming=1，列表页自动过滤 start_time > NOW()
+    { label: '即将到来的会议', value: stats.myUpcomingMeetings, icon: Tickets, bg: 'linear-gradient(135deg, #f093fb, #f5576c)', path: '/my-meetings', query: { upcoming: '1' } },
+    // 今日预约：传递今日时段，列表页按创建时段过滤
+    { label: '今日预约', value: stats.todayReservations, icon: Calendar, bg: 'linear-gradient(135deg, #4facfe, #00f2fe)', path: '/reservation/my', query: { startTime: dayStart, endTime: dayEnd, status: '1' } },
+    // 待响应邀请：传递 attendeeStatus=0（待响应）
+    { label: '待响应邀请', value: stats.myPendingMeetings, icon: Bell, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', path: '/my-meetings', query: { attendeeStatus: '0' } },
+  ]
+  if (userStore.isAdmin()) {
+    items.push({ label: '待审批', value: stats.pendingApproval, icon: DataLine, bg: 'linear-gradient(135deg, #10b981, #059669)', path: '/admin/reservations', query: { status: '0' } })
+  }
+  return items
+})
+
+function goStat(item: StatItem) {
+  router.push({ path: item.path, query: item.query || {} })
+}
 
 const actionItems = computed(() => [
   { label: '预约会议室', path: '/meeting/rooms', icon: OfficeBuilding, bg: 'linear-gradient(135deg, #667eea, #764ba2)' },

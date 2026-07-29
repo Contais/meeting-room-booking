@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.AttendeeStatusEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
@@ -48,11 +49,24 @@ public class HomeServiceImpl implements HomeService {
         LocalDate today = LocalDate.now();
         LocalDateTime dayStart = today.atStartOfDay();
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
-        long todayReservations = reservationRepository.selectCount(
-                new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
-                        .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
-        );
+
+        // 今日预约：用户作为预约人创建的、今日开始的、已确认的预约数
+        // 与「我的预约」页面口径一致（/reservation/my 仅展示用户创建的预约）
+        long todayReservations = 0;
+        if (userId != null) {
+            todayReservations = reservationRepository.selectCount(
+                    new LambdaQueryWrapper<MeetingRoomReservation>()
+                            .eq(MeetingRoomReservation::getUserId, userId)
+                            .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.CONFIRMED.getCode())
+                            .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
+            );
+        } else {
+            todayReservations = reservationRepository.selectCount(
+                    new LambdaQueryWrapper<MeetingRoomReservation>()
+                            .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
+                            .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
+            );
+        }
         stats.put("todayReservations", todayReservations);
 
         long pendingApproval = reservationRepository.selectCount(
@@ -78,11 +92,10 @@ public class HomeServiceImpl implements HomeService {
 
         // 我的会议统计：作为参会人参加的会议数量
         if (userId != null) {
-            // 查询用户参加的所有预约 ID
+            // 查询用户参加的所有参会记录（含参会状态）
             List<ReservationAttendee> myAttendees = attendeeRepository.selectList(
                     new LambdaQueryWrapper<ReservationAttendee>()
                             .eq(ReservationAttendee::getUserId, userId)
-                            .select(ReservationAttendee::getReservationId)
             );
             if (!myAttendees.isEmpty()) {
                 List<Long> reservationIds = myAttendees.stream()
@@ -97,12 +110,20 @@ public class HomeServiceImpl implements HomeService {
                                 .gt(MeetingRoomReservation::getStartTime, LocalDateTime.now())
                 );
                 stats.put("myUpcomingMeetings", myUpcomingMeetings);
-                // 待响应的会议邀请数
-                long myPendingMeetings = reservationRepository.selectCount(
-                        new LambdaQueryWrapper<MeetingRoomReservation>()
-                                .in(MeetingRoomReservation::getId, reservationIds)
-                                .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode())
-                );
+                // 待响应邀请数：参会状态为待响应 AND 预约已确认
+                List<Long> pendingReservationIds = myAttendees.stream()
+                        .filter(a -> AttendeeStatusEnum.PENDING.getCode().equals(a.getStatus()))
+                        .map(ReservationAttendee::getReservationId)
+                        .distinct()
+                        .collect(Collectors.toList());
+                long myPendingMeetings = 0;
+                if (!pendingReservationIds.isEmpty()) {
+                    myPendingMeetings = reservationRepository.selectCount(
+                            new LambdaQueryWrapper<MeetingRoomReservation>()
+                                    .in(MeetingRoomReservation::getId, pendingReservationIds)
+                                    .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.CONFIRMED.getCode())
+                    );
+                }
                 stats.put("myPendingMeetings", myPendingMeetings);
             } else {
                 stats.put("myUpcomingMeetings", 0L);

@@ -10,10 +10,18 @@
           <el-input v-model="query.subject" placeholder="请输入" clearable @input="onSearchInput" @keyup.enter="onSearchInput" />
         </div>
         <div class="search-item">
-          <label>状态</label>
-          <el-select v-model="query.status" placeholder="全部" clearable @change="onFilterChange">
-            <el-option label="待确认" :value="0" />
-            <el-option label="已确认" :value="1" />
+          <label>参会状态</label>
+          <el-select v-model="query.attendeeStatus" placeholder="全部" clearable @change="onFilterChange">
+            <el-option label="待响应" :value="0" />
+            <el-option label="已接受" :value="1" />
+            <el-option label="已拒绝" :value="2" />
+          </el-select>
+        </div>
+        <div class="search-item">
+          <label>时间范围</label>
+          <el-select v-model="timeScope" placeholder="全部" clearable @change="onTimeScopeChange">
+            <el-option label="即将到来" value="upcoming" />
+            <el-option label="今日" value="today" />
           </el-select>
         </div>
         <div class="search-item is-wide">
@@ -48,9 +56,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90" align="center">
+        <el-table-column label="会议状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag>
+            <el-tag :type="meetingStatusType(row)" size="small" effect="light">{{ meetingStatusText(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right" align="center">
@@ -67,7 +75,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Refresh, View } from '@element-plus/icons-vue'
 import { listMyMeetings } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
@@ -75,6 +83,7 @@ import TableCard from '@/components/TableCard.vue'
 import { formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
+const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
@@ -87,12 +96,31 @@ const query = reactive({
   subject: '',
   startTime: '',
   endTime: '',
-  status: undefined as number | undefined
+  attendeeStatus: undefined as number | undefined,
+  upcoming: undefined as boolean | undefined
 })
 const timeRange = ref<string[]>([])
+const timeScope = ref<string>('')
 
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
-function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info' }
+
+/** 根据时间判断会议状态：进行中 / 即将到来 / 已结束 */
+function meetingStatusText(row: Reservation): string {
+  const now = Date.now()
+  const start = new Date(row.startTime).getTime()
+  const end = new Date(row.endTime).getTime()
+  if (now < start) return '即将到来'
+  if (now >= start && now <= end) return '进行中'
+  return '已结束'
+}
+function meetingStatusType(row: Reservation): any {
+  const now = Date.now()
+  const start = new Date(row.startTime).getTime()
+  const end = new Date(row.endTime).getTime()
+  if (now < start) return 'success'
+  if (now >= start && now <= end) return 'warning'
+  return 'info'
+}
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() {
@@ -104,6 +132,29 @@ function onSizeChange() { query.page = 1; loadData() }
 function onTimeRangeChange(val: string[] | null) {
   query.startTime = val && val.length === 2 ? val[0] : ''
   query.endTime = val && val.length === 2 ? val[1] : ''
+  // 手动选择时段时清除快捷范围
+  timeScope.value = ''
+  query.upcoming = undefined
+  onFilterChange()
+}
+function onTimeScopeChange(val: string | null) {
+  // 清除手动时段
+  timeRange.value = []
+  query.startTime = ''
+  query.endTime = ''
+  if (val === 'upcoming') {
+    query.upcoming = true
+  } else if (val === 'today') {
+    query.upcoming = undefined
+    const today = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const dayStart = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T00:00:00`
+    const dayEnd = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T23:59:59`
+    query.startTime = dayStart
+    query.endTime = dayEnd
+  } else {
+    query.upcoming = undefined
+  }
   onFilterChange()
 }
 function resetQuery() {
@@ -111,9 +162,11 @@ function resetQuery() {
   query.subject = ''
   query.startTime = ''
   query.endTime = ''
-  query.status = undefined
+  query.attendeeStatus = undefined
+  query.upcoming = undefined
   query.page = 1
   timeRange.value = []
+  timeScope.value = ''
   loadData()
 }
 async function loadData() {
@@ -122,15 +175,56 @@ async function loadData() {
     const params: Record<string, any> = { page: query.page, size: query.size }
     if (query.keyword) params.keyword = query.keyword
     if (query.subject) params.subject = query.subject
-    if (query.status != null) params.status = query.status
+    if (query.attendeeStatus != null) params.attendeeStatus = query.attendeeStatus
+    if (query.upcoming) params.upcoming = true
     if (query.startTime) params.startTime = query.startTime
     if (query.endTime) params.endTime = query.endTime
     const res = await listMyMeetings(params)
     tableData.value = res.data.records
     total.value = Number(res.data.total) || 0
+    // 同步查询条件到 URL（便于从首页统计跳转后保留筛选状态）
+    router.replace({ query: buildRouteQuery() })
   } catch { /* */ } finally { loading.value = false }
 }
-onMounted(loadData)
+
+function buildRouteQuery(): Record<string, string> {
+  const q: Record<string, string> = {}
+  if (query.keyword) q.keyword = query.keyword
+  if (query.subject) q.subject = query.subject
+  if (query.attendeeStatus != null) q.attendeeStatus = String(query.attendeeStatus)
+  if (query.upcoming) q.upcoming = '1'
+  if (query.startTime) q.startTime = query.startTime
+  if (query.endTime) q.endTime = query.endTime
+  if (timeScope.value) q.scope = timeScope.value
+  return q
+}
+
+/** 从首页统计跳转携带的查询参数初始化筛选条件 */
+function applyRouteQuery() {
+  const q = route.query
+  if (q.keyword) query.keyword = String(q.keyword)
+  if (q.subject) query.subject = String(q.subject)
+  if (q.attendeeStatus != null) query.attendeeStatus = Number(q.attendeeStatus)
+  if (q.upcoming === '1') {
+    query.upcoming = true
+    timeScope.value = 'upcoming'
+  }
+  if (q.scope === 'today') {
+    timeScope.value = 'today'
+    const today = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    query.startTime = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T00:00:00`
+    query.endTime = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T23:59:59`
+  } else if (q.startTime) {
+    query.startTime = String(q.startTime)
+  }
+  if (q.endTime) query.endTime = String(q.endTime)
+}
+
+onMounted(() => {
+  applyRouteQuery()
+  loadData()
+})
 </script>
 
 <style scoped>

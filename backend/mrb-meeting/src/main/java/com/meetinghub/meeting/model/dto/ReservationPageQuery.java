@@ -21,4 +21,8 @@ public class ReservationPageQuery implements Serializable {
     private String reservationCode;
     private String createTimeStart;
     private String createTimeEnd;
+    /** 参会人RSVP状态过滤（仅我的会议生效）: 0-待响应, 1-已接受, 2-已拒绝 */
+    private Integer attendeeStatus;
+    /** 仅查询即将到来的会议（仅我的会议生效）: start_time > NOW() */
+    private Boolean upcoming;
 }

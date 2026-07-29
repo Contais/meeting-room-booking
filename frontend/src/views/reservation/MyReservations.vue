@@ -89,7 +89,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Close, View, Delete } from '@element-plus/icons-vue'
 import { listMyReservations, cancelReservation, deleteReservation } from '@/api/reservation'
@@ -99,6 +99,7 @@ import BookingDialog from '@/components/BookingDialog.vue'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
+const route = useRoute()
 const router = useRouter()
 
 const bookingDialogVisible = ref(false)
@@ -192,7 +193,20 @@ async function handleDelete(row: Reservation) {
     loadData()
   } catch { /* */ }
 }
-onMounted(loadData)
+
+/** 从首页统计跳转携带的查询参数初始化筛选条件（如今日预约带今日时段） */
+function applyRouteQuery() {
+  const q = route.query
+  if (q.startTime) query.startTime = String(q.startTime)
+  if (q.endTime) query.endTime = String(q.endTime)
+  if (query.startTime && query.endTime) timeRange.value = [query.startTime, query.endTime]
+  if (q.status != null) query.status = Number(q.status)
+}
+
+onMounted(() => {
+  applyRouteQuery()
+  loadData()
+})
 </script>
 
 <style scoped>
