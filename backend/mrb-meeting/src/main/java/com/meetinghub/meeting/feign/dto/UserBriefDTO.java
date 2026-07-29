@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.feign.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -11,8 +12,13 @@ import java.io.Serializable;
  * 避免对 mrb-user 模块的强类型耦合。字段命名与 mrb-user 的 UserVO 保持一致，
  * 由 Jackson 自动完成反序列化。
  * </p>
+ * <p>
+ * 使用 {@code @JsonIgnoreProperties(ignoreUnknown = true)} 容忍远端扩展字段，
+ * 防止 mrb-user 的 UserVO 新增字段后导致 Feign 反序列化失败。
+ * </p>
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserBriefDTO implements Serializable {
     private Long id;
     private String username;
