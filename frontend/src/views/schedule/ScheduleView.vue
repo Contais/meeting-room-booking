@@ -16,6 +16,9 @@
         <span class="date-display">{{ dateDisplay }}</span>
       </div>
       <div class="control-right">
+        <el-button size="small" @click="router.push('/schedule/v2')">
+          <el-icon><MagicStick /></el-icon> 体验新版
+        </el-button>
         <el-button type="primary" size="small" @click="openQuickBook">
           <el-icon><Plus /></el-icon> 预约会议室
         </el-button>
@@ -221,9 +224,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft, ArrowRight, Plus, MagicStick } from '@element-plus/icons-vue'
 import { getSchedule } from '@/api/reservation'
 import BookingDialog from '@/components/BookingDialog.vue'
+
+const router = useRouter()
 
 const viewMode = ref<'day' | 'week' | 'month'>('day')
 const currentDate = ref(new Date())
