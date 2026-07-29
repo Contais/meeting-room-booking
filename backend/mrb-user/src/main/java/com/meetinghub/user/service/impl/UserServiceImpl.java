@@ -353,7 +353,9 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         Map<Long, String> deptNameMap = batchQueryDeptNames(
                 user.getDepartmentId() != null ? List.of(user.getDepartmentId()) : List.of()
         );
-        Map<String, String> avatarSignMap = batchSignAvatars(List.of(user.getAvatar()));
+        Map<String, String> avatarSignMap = batchSignAvatars(
+                StringUtils.hasText(user.getAvatar()) ? List.of(user.getAvatar()) : List.of()
+        );
         return toVO(user, deptNameMap, avatarSignMap);
     }
 
