@@ -20,8 +20,8 @@ import java.util.List;
 /**
  * 站内信通知控制器
  * <p>
- * 路径前缀保持 {@code /user/notification/**} 与 {@code /user/internal/notification/**}，
- * 以保证前端调用路径与现有 Feign 契约零改动；网关通过细粒度路由将通知路径分流到 mrb-platform。
+ * 路径前缀 {@code /platform/notification/**}（用户接口）与 {@code /platform/internal/notification/**}（服务间 Feign），
+ * 统一收敛至 mrb-platform 命名空间，由网关 {@code /api/platform/**} 路由分发。
  * </p>
  */
 @RestController
@@ -32,7 +32,7 @@ public class NotificationController {
 
     // === 用户接口 ===
 
-    @GetMapping("/user/notification/page")
+    @GetMapping("/platform/notification/page")
     public Result<IPage<NotificationVO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -41,24 +41,24 @@ public class NotificationController {
         return Result.ok(notificationService.page(UserContext.getCurrentUserId(), type, isRead, page, size));
     }
 
-    @GetMapping("/user/notification/unread-count")
+    @GetMapping("/platform/notification/unread-count")
     public Result<Long> unreadCount() {
         return Result.ok(notificationService.unreadCount(UserContext.getCurrentUserId()));
     }
 
-    @PostMapping("/user/notification/read/{id}")
+    @PostMapping("/platform/notification/read/{id}")
     public Result<Void> markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(UserContext.getCurrentUserId(), id);
         return Result.ok();
     }
 
-    @PostMapping("/user/notification/read-all")
+    @PostMapping("/platform/notification/read-all")
     public Result<Void> markAllAsRead() {
         notificationService.markAllAsRead(UserContext.getCurrentUserId());
         return Result.ok();
     }
 
-    @DeleteMapping("/user/notification/{id}")
+    @DeleteMapping("/platform/notification/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         notificationService.delete(UserContext.getCurrentUserId(), id);
         return Result.ok();
@@ -66,13 +66,13 @@ public class NotificationController {
 
     // === 内部接口（仅供服务间 Feign 调用，绕过网关鉴权） ===
 
-    @PostMapping("/user/internal/notification/send")
+    @PostMapping("/platform/internal/notification/send")
     public Result<Void> send(@RequestBody NotificationSendDTO dto) {
         notificationService.send(dto);
         return Result.ok();
     }
 
-    @PostMapping("/user/internal/notification/send-batch")
+    @PostMapping("/platform/internal/notification/send-batch")
     public Result<Void> sendBatch(@RequestParam List<Long> userIds, @RequestBody NotificationSendDTO template) {
         notificationService.sendBatch(userIds, template);
         return Result.ok();

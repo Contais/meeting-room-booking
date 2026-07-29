@@ -24,6 +24,6 @@ public interface FileFeignClient {
      * @param objectKeys 对象键列表
      * @return objectKey -> 预签名 URL
      */
-    @PostMapping("/file/internal/presigned-urls")
+    @PostMapping("/platform/file/internal/presigned-urls")
     Result<Map<String, String>> batchPresignedUrls(@RequestBody List<String> objectKeys);
 }

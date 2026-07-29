@@ -10,13 +10,6 @@ spring:
   cloud:
     gateway:
       routes:
-        # 通知域已迁至 mrb-platform，需在 uc-service 之前匹配，单独分流
-        - id: uc-notification-service
-          uri: lb://mrb-platform
-          predicates:
-            - Path=/api/uc/user/notification/**
-          filters:
-            - StripPrefix=2
         - id: uc-service
           uri: lb://mrb-user
           predicates:
@@ -35,14 +28,7 @@ spring:
             - Path=/api/meeting/**
           filters:
             - StripPrefix=1
-        # 文件存储域已迁至 mrb-platform
-        - id: file-service
-          uri: lb://mrb-platform
-          predicates:
-            - Path=/api/file/**
-          filters:
-            - StripPrefix=1
-        # 平台基础服务：字典、系统配置
+        # 平台基础服务：字典、系统配置、文件存储、消息通知
         - id: platform-service
           uri: lb://mrb-platform
           predicates:

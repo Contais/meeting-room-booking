@@ -8,10 +8,8 @@
 mrb-gateway (8080)
    ├── /api/auth/**        → mrb-auth (8082)
    ├── /api/uc/**          → mrb-user (8081)
-   ├── /api/uc/user/notification/** → mrb-platform (8084)  ← 通知分流
    ├── /api/meeting/**     → mrb-meeting (8083)
-   ├── /api/file/**        → mrb-platform (8084)           ← 文件存储
-   ├── /api/platform/**    → mrb-platform (8084)           ← 字典/配置
+   ├── /api/platform/**    → mrb-platform (8084)           ← 字典/配置/文件/通知
    └── /ws/**              → mrb-platform (8084)           ← WebSocket
 ```
 
@@ -59,20 +57,20 @@ mrb-meeting.MeetingRoomServiceImpl 同理处理 image_url。
 ### 2.4 内部接口契约
 
 ```
-POST /file/internal/presigned-urls
+POST /platform/file/internal/presigned-urls
 Request:  List<String> objectKeys
 Response: Result<Map<String, String>>  // objectKey -> 签名URL，http 入参自动跳过
 ```
 
 ## 三、通知域迁移
 
-### 3.1 路径兼容
+### 3.1 路径统一
 
-NotificationController 方法路径保持 `/user/notification/**` 与 `/user/internal/notification/**`，前端调用路径零改动。网关通过细粒度路由 `Path=/api/uc/user/notification/**`（置于 uc-service 之前）分流到 mrb-platform。
+NotificationController 方法路径迁移至 `/platform/notification/**` 与 `/platform/internal/notification/**`，前端调用路径同步迁移至 `/api/platform/notification/**`。网关由 `platform-service` 路由（`/api/platform/**`）统一分发，无需细粒度分流。
 
 ### 3.2 Feign 契约
 
-`NotificationFeignClient` 仅改 `@FeignClient(name="mrb-platform")`，方法路径不变。
+`NotificationFeignClient` 改 `@FeignClient(name="mrb-platform")`，方法路径同步迁移至 `/platform/internal/notification/**`。
 
 ### 3.3 数据迁移
 

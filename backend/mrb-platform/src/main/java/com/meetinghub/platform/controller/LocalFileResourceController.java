@@ -20,13 +20,13 @@ import java.nio.file.Path;
 /**
  * 本地文件资源访问控制器
  * <p>
- * 仅在本地存储模式启用，对外提供 /file/static/** 静态访问，
+ * 仅在本地存储模式启用，对外提供 /platform/file/static/** 静态访问，
  * 供浏览器 {@code <img src>} 直接加载（网关已放行该前缀的匿名访问）。
  * </p>
  */
 @Slf4j
 @RestController
-@RequestMapping("/file/static")
+@RequestMapping("/platform/file/static")
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "file.storage", name = "type", havingValue = "local", matchIfMissing = true)
 public class LocalFileResourceController {
@@ -56,10 +56,10 @@ public class LocalFileResourceController {
     }
 
     private String extractObjectKey(String requestUri) {
-        int idx = requestUri.indexOf("/file/static/");
+        int idx = requestUri.indexOf("/platform/file/static/");
         if (idx < 0) {
             return "";
         }
-        return requestUri.substring(idx + "/file/static/".length());
+        return requestUri.substring(idx + "/platform/file/static/".length());
     }
 }

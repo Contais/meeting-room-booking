@@ -38,7 +38,7 @@
 |------|------|
 | `NotificationController` / `NotificationService(Impl)` / `NotificationRepository` / `Notification` / `NotificationVO` | 平移至 platform 包 |
 | `NotificationWebSocketHandler` / `WebSocketAuthInterceptor` / `WebSocketConfig` | WebSocket 实时推送整体迁入 |
-| Controller 路径 | 保持 `/user/notification/**` 与 `/user/internal/notification/**` 不变，前端零改动 |
+| Controller 路径 | 迁移至 `/platform/notification/**` 与 `/platform/internal/notification/**`，前端调用路径同步迁移 |
 
 ### 2.4 字典 + 系统配置域（新建）
 

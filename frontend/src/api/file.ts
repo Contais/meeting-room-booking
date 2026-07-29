@@ -11,7 +11,7 @@ export function uploadFile(file: File | Blob, bizType: FileBizType): Promise<Res
   const formData = new FormData()
   formData.append('file', file)
   formData.append('bizType', bizType)
-  return request.post('/api/file/upload', formData, {
+  return request.post('/api/platform/file/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 30000,
   })
@@ -22,5 +22,5 @@ export function uploadFile(file: File | Blob, bizType: FileBizType): Promise<Res
  * @param objectKey 对象键
  */
 export function deleteFile(objectKey: string): Promise<Result<void>> {
-  return request.delete('/api/file/delete', { params: { objectKey } })
+  return request.delete('/api/platform/file/delete', { params: { objectKey } })
 }
