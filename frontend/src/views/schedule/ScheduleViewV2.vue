@@ -300,8 +300,8 @@
             <div class="detail-row">
               <el-icon><Clock /></el-icon>
               <div>
-                <div class="detail-row-val">{{ formatDateTime(currentDetail.startTime) }}</div>
-                <div class="detail-row-sub">至 {{ formatDateTime(currentDetail.endTime) }}</div>
+                <div class="detail-row-val">{{ detailTimeText }}</div>
+                <div class="detail-row-sub">会议时间</div>
               </div>
             </div>
             <div class="detail-row">
@@ -383,7 +383,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSchedule, listMyReservations, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { useUserStore } from '@/stores/user'
 import BookingDialog from '@/components/BookingDialog.vue'
-import { formatDateTime } from '@/utils/datetime'
+import { formatTimeRange } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
 const router = useRouter()
@@ -408,6 +408,11 @@ const todayReservations = ref<Reservation[]>([]) // 今日数据（独立加载�
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const currentDetail = ref<Reservation | null>(null)
+// 预约时段紧凑展示：2026-07-29 09:00～10:30（同天）/ 跨天则完整日期
+const detailTimeText = computed(() => {
+  if (!currentDetail.value) return ''
+  return formatTimeRange(currentDetail.value.startTime, currentDetail.value.endTime).full
+})
 
 // ====== 预约弹窗 ======
 const bookingVisible = ref(false)
@@ -1103,6 +1108,12 @@ onBeforeUnmount(() => {
 
 /* ============ 日视图 - 会议室日历（横向多行） ============ */
 .day-view.dragging, .day-view.dragging *, .week-view.dragging, .week-view.dragging * { cursor: grabbing !important; user-select: none; }
+.day-body-wrap { flex: 1; overflow: auto; cursor: grab; scrollbar-gutter: stable; }
+.day-body-wrap::-webkit-scrollbar { width: 10px; height: 10px; }
+.day-body-wrap::-webkit-scrollbar-track { background: transparent; }
+.day-body-wrap::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 4px; }
+.day-body-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-muted, #9ca3af); }
+.day-body { position: relative; min-width: fit-content; }
 .day-header { display: flex; border-bottom: 2px solid var(--border-light, #e5e7eb); background: var(--bg-hover, #fafbfc); flex-shrink: 0; }
 .room-col-header { width: 120px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; border-right: 1px solid var(--border-light); position: sticky; left: 0; z-index: 3; background: var(--bg-hover, #fafbfc); }
 .day-ticks-wrap { flex: 1; overflow: hidden; }
@@ -1175,7 +1186,9 @@ onBeforeUnmount(() => {
 .mc-more { font-size: 11px; color: var(--primary, #667eea); padding: 2px 8px; cursor: pointer; border: none; background: transparent; border-radius: 4px; transition: background 0.15s; width: 100%; text-align: left; }
 .mc-more:hover { background: rgba(102,126,234,0.08); }
 /* 月视图 Popover 浮层 */
-.mc-pop-list { display: flex; flex-direction: column; gap: 4px; }
+.mc-pop-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
+.mc-pop-list::-webkit-scrollbar { width: 6px; }
+.mc-pop-list::-webkit-scrollbar-thumb { background: var(--border, #cbd5e1); border-radius: 3px; }
 .mc-pop-head { font-size: 12px; font-weight: 600; color: var(--text-secondary); padding-bottom: 6px; border-bottom: 1px solid var(--border-light); margin-bottom: 4px; }
 .mc-pop-item { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
 .mc-pop-time { font-weight: 600; flex-shrink: 0; min-width: 40px; }

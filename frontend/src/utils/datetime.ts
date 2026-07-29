@@ -23,8 +23,8 @@ export function formatTime(t?: string | null): string {
 
 /**
  * 时间段智能显示：
- * - 同一天：2026-07-22 21:36 ~ 22:00（日期一次，时间范围紧凑）
- * - 跨天：2026-07-22 21:36 ~ 2026-07-23 10:00
+ * - 同一天：2026-07-22 21:36～22:00（日期一次，时间范围紧凑，全角波浪号）
+ * - 跨天：2026-07-22 21:36～2026-07-23 10:00
  */
 export function formatTimeRange(start?: string | null, end?: string | null): { date: string; range: string; full: string } {
   if (!start || !end) return { date: '', range: '', full: '' }
@@ -35,13 +35,13 @@ export function formatTimeRange(start?: string | null, end?: string | null): { d
   if (startDate === endDate) {
     return {
       date: startDate,
-      range: `${startTime} ~ ${endTime}`,
-      full: `${startDate} ${startTime} ~ ${endTime}`
+      range: `${startTime}～${endTime}`,
+      full: `${startDate} ${startTime}～${endTime}`
     }
   }
   return {
     date: '',
     range: '',
-    full: `${startDate} ${startTime} ~ ${endDate} ${endTime}`
+    full: `${startDate} ${startTime}～${endDate} ${endTime}`
   }
 }

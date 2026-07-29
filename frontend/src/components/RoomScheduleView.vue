@@ -193,16 +193,84 @@
       </div>
     </div>
 
-    <!-- 预约详情 -->
-    <el-dialog v-model="detailVisible" title="预约详情" width="400px">
-      <el-descriptions :column="1" border v-if="currentReservation">
-        <el-descriptions-item label="主题">{{ currentReservation.subject || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="时间段">{{ formatTime(currentReservation.startTime) }} - {{ formatTime(currentReservation.endTime) }}</el-descriptions-item>
-        <el-descriptions-item label="预约人">{{ currentReservation.userName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="参会人数">{{ currentReservation.attendeeCount || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="状态"><el-tag :type="statusType(currentReservation.status)" size="small">{{ statusText(currentReservation.status) }}</el-tag></el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+    <!-- 预约详情抽屉（与日历视图交互一致） -->
+    <el-drawer v-model="detailVisible" direction="rtl" size="380px" :with-header="false" :body-style="{ padding: '0', overflow: 'hidden' }" class="rs-detail-drawer">
+      <div class="rs-drawer">
+        <div class="drawer-head">
+          <span class="drawer-title">预约详情</span>
+          <button class="drawer-close" @click="detailVisible = false"><el-icon><Close /></el-icon></button>
+        </div>
+        <div v-loading="detailLoading" class="drawer-body">
+          <template v-if="currentDetail">
+            <div class="detail-status-bar" :class="'s' + currentDetail.status">
+              <span class="status-dot"></span>
+              <span class="status-text">{{ statusText(currentDetail.status) }}</span>
+            </div>
+            <h3 class="detail-subject">{{ currentDetail.subject || '未命名会议' }}</h3>
+            <div class="detail-row">
+              <el-icon><Clock /></el-icon>
+              <div>
+                <div class="detail-row-val">{{ detailTimeText }}</div>
+                <div class="detail-row-sub">会议时间</div>
+              </div>
+            </div>
+            <div class="detail-row">
+              <el-icon><OfficeBuilding /></el-icon>
+              <div>
+                <div class="detail-row-val">{{ currentDetail.roomName || roomInfo?.name || '-' }}</div>
+                <div class="detail-row-sub">会议室</div>
+              </div>
+            </div>
+            <div class="detail-row">
+              <el-icon><User /></el-icon>
+              <div>
+                <div class="detail-row-val">{{ currentDetail.username || currentDetail.userName || '-' }}</div>
+                <div class="detail-row-sub">预约人</div>
+              </div>
+            </div>
+            <div class="detail-row">
+              <el-icon><UserFilled /></el-icon>
+              <div>
+                <div class="detail-row-val">{{ currentDetail.attendeeCount || 0 }} 人</div>
+                <div class="detail-row-sub">参会人</div>
+              </div>
+            </div>
+            <div v-if="currentDetail.remark" class="detail-row">
+              <el-icon><Document /></el-icon>
+              <div>
+                <div class="detail-row-val">{{ currentDetail.remark }}</div>
+                <div class="detail-row-sub">备注</div>
+              </div>
+            </div>
+            <div v-if="currentDetail.rejectReason" class="detail-row">
+              <el-icon><WarningFilled /></el-icon>
+              <div>
+                <div class="detail-row-val danger">{{ currentDetail.rejectReason }}</div>
+                <div class="detail-row-sub">拒绝原因</div>
+              </div>
+            </div>
+            <div v-if="currentDetail.attendees && currentDetail.attendees.length" class="detail-attendees">
+              <div class="attendees-title">参会人 ({{ currentDetail.attendees.length }})</div>
+              <div v-for="a in currentDetail.attendees" :key="a.userId" class="attendee-item">
+                <div class="attendee-avatar">{{ (a.realName || a.username || 'U').charAt(0) }}</div>
+                <div class="attendee-info">
+                  <div class="attendee-name">{{ a.realName || a.username }}</div>
+                  <div class="attendee-dept">{{ a.departmentName || '未分配部门' }}</div>
+                </div>
+                <el-tag size="small" :type="attendeeStatusType(a.status)" effect="light">
+                  {{ attendeeStatusText(a.status) }}
+                </el-tag>
+              </div>
+            </div>
+          </template>
+          <el-empty v-else-if="!detailLoading" description="暂无详情" :image-size="80" />
+        </div>
+        <div v-if="currentDetail" class="drawer-foot">
+          <button v-if="canCancel" class="drawer-btn danger" @click="handleCancel">取消预约</button>
+          <button class="drawer-btn primary" @click="handleViewFull">查看完整详情</button>
+        </div>
+      </div>
+    </el-drawer>
 
     <!-- 预约弹窗 -->
     <BookingDialog
@@ -219,9 +287,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { ArrowLeft, ArrowRight, Plus } from '@element-plus/icons-vue'
-import { getSchedule } from '@/api/reservation'
+import { useRouter } from 'vue-router'
+import { ArrowLeft, ArrowRight, Plus, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Close } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getSchedule, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { getRoomById } from '@/api/meeting'
+import { useUserStore } from '@/stores/user'
+import { formatTimeRange } from '@/utils/datetime'
 import BookingDialog from '@/components/BookingDialog.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
@@ -233,12 +305,22 @@ const emit = defineEmits<{
   (e: 'book', startTime: string, endTime: string): void
 }>()
 
+const router = useRouter()
+const userStore = useUserStore()
+const isAdmin = userStore.isAdmin()
+
 const viewMode = ref<'day' | 'week' | 'month'>('day')
 const currentDate = ref(new Date())
 const reservations = ref<any[]>([])
 const detailVisible = ref(false)
-const currentReservation = ref<any>(null)
+const detailLoading = ref(false)
+const currentDetail = ref<any>(null)
 const roomInfo = ref<MeetingRoom | null>(null)
+// 预约时段紧凑展示：2026-07-29 09:00～10:30（同天）/ 跨天则完整日期
+const detailTimeText = computed(() => {
+  if (!currentDetail.value) return ''
+  return formatTimeRange(currentDetail.value.startTime, currentDetail.value.endTime).full
+})
 
 // 预约弹窗相关
 const bookingVisible = ref(false)
@@ -672,9 +754,45 @@ function openQuickBook() {
   bookingVisible.value = true
 }
 function onBookingSuccess() { loadData() }
-function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] || 'info' }
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
-function showDetail(r: any) { currentReservation.value = r; detailVisible.value = true }
+function attendeeStatusText(s: number) { return { 0: '待查阅', 1: '已查阅', 2: '已拒绝' }[s] || '未知' }
+function attendeeStatusType(s: number) { return ({ 0: 'info', 1: 'success', 2: 'danger' } as const)[s] || 'info' }
+// 点击事件块：拉取完整详情（管理员可查全部；普通用户仅本人可查，失败则回退展示日程数据）
+async function showDetail(r: any) {
+  detailVisible.value = true
+  detailLoading.value = true
+  currentDetail.value = r
+  try {
+    const api = isAdmin ? getReservationDetail : getMyReservationDetail
+    const res = await api(r.id)
+    currentDetail.value = res.data
+  } catch {
+    currentDetail.value = r
+  } finally {
+    detailLoading.value = false
+  }
+}
+const canCancel = computed(() => {
+  if (!currentDetail.value) return false
+  if (currentDetail.value.status !== 1) return false
+  return new Date(currentDetail.value.startTime).getTime() > Date.now()
+})
+async function handleCancel() {
+  if (!currentDetail.value) return
+  try {
+    await ElMessageBox.confirm('确定取消该预约？', '提示', { type: 'warning' })
+    await cancelReservation(currentDetail.value.id)
+    ElMessage.success('取消成功')
+    detailVisible.value = false
+    loadData()
+  } catch { /* */ }
+}
+function handleViewFull() {
+  if (!currentDetail.value) return
+  const id = currentDetail.value.id
+  if (isAdmin) router.push(`/admin/reservations/${id}`)
+  else router.push(`/reservation/my/${id}`)
+}
 
 watch([viewMode, currentDate], loadData)
 watch(viewMode, async (mode) => {
@@ -1023,9 +1141,49 @@ defineExpose({ loadData })
 .mc-event-title { overflow: hidden; text-overflow: ellipsis; }
 .mc-more { font-size: 11px; color: #409eff; padding: 2px 8px; cursor: pointer; border: none; background: transparent; border-radius: 4px; transition: background 0.15s; width: 100%; text-align: left; }
 .mc-more:hover { background: rgba(64,158,255,0.08); }
-.mc-pop-list { display: flex; flex-direction: column; gap: 4px; }
+.mc-pop-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
+.mc-pop-list::-webkit-scrollbar { width: 6px; }
+.mc-pop-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 .mc-pop-head { font-size: 12px; font-weight: 600; color: #6b7280; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; margin-bottom: 4px; }
 .mc-pop-item { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
 .mc-pop-time { font-weight: 600; flex-shrink: 0; min-width: 40px; }
 .mc-pop-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ========== 预约详情抽屉（与日历视图一致） ========== */
+.rs-drawer { display: flex; flex-direction: column; height: 100%; }
+.drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.drawer-title { font-size: 14px; font-weight: 600; color: #303133; }
+.drawer-close { border: none; background: transparent; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 4px; display: inline-flex; align-items: center; }
+.drawer-close:hover { background: #f3f4f6; color: #303133; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.detail-status-bar { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; margin-bottom: 12px; }
+.detail-status-bar .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.detail-status-bar.s0 { background: rgba(245,158,11,0.15); color: #92400e; }
+.detail-status-bar.s0 .status-dot { background: #f59e0b; }
+.detail-status-bar.s1 { background: rgba(16,185,129,0.15); color: #065f46; }
+.detail-status-bar.s1 .status-dot { background: #10b981; }
+.detail-status-bar.s2 { background: rgba(156,163,175,0.15); color: #6b7280; }
+.detail-status-bar.s2 .status-dot { background: #9ca3af; }
+.detail-status-bar.s3 { background: rgba(239,68,68,0.15); color: #991b1b; }
+.detail-status-bar.s3 .status-dot { background: #ef4444; }
+.detail-subject { font-size: 18px; font-weight: 600; color: #303133; margin: 0 0 16px; }
+.detail-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.detail-row .el-icon { color: #9ca3af; margin-top: 2px; }
+.detail-row-val { font-size: 13px; color: #303133; font-weight: 500; }
+.detail-row-val.danger { color: #ef4444; }
+.detail-row-sub { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.detail-attendees { margin-top: 16px; }
+.attendees-title { font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
+.attendee-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+.attendee-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.attendee-info { flex: 1; min-width: 0; }
+.attendee-name { font-size: 13px; color: #303133; font-weight: 500; }
+.attendee-dept { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.drawer-foot { display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
+.drawer-btn { flex: 1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; border: 1px solid #e5e7eb; background: #fff; color: #303133; }
+.drawer-btn:hover { border-color: #409eff; color: #409eff; }
+.drawer-btn.primary { background: #409eff; color: #fff; border-color: #409eff; }
+.drawer-btn.primary:hover { opacity: 0.9; }
+.drawer-btn.danger { color: #ef4444; border-color: #fecaca; }
+.drawer-btn.danger:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 </style>
