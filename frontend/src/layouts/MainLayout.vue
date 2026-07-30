@@ -62,7 +62,7 @@
           <el-dropdown trigger="hover" popper-class="user-dropdown-popper" placement="bottom-end">
             <div class="avatar-btn">
               <div class="avatar" :style="getAvatarStyle()">
-                <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="avatar-img" alt="头像" @error="avatarImgError = true" />
+                <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="avatar-img" alt="头像" @error="handleAvatarError" />
                 <template v-else-if="avatarIcon">
                   <el-icon :size="18"><component :is="avatarIcon" /></el-icon>
                 </template>
@@ -80,7 +80,7 @@
               <div class="user-dropdown-panel">
                 <div class="dropdown-header">
                   <div class="dropdown-avatar" :style="getAvatarStyle()">
-                    <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="dropdown-avatar-img" alt="头像" @error="avatarImgError = true" />
+                    <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="dropdown-avatar-img" alt="头像" @error="handleAvatarError" />
                     <template v-else-if="avatarIcon">
                       <el-icon :size="22"><component :is="avatarIcon" /></el-icon>
                     </template>
@@ -201,10 +201,24 @@ const avatarIcon = computed(() => {
 })
 
 // 头像是否为图片 URL（文件上传后的地址），否则为图标 JSON
-// 签名 URL 过期导致图片加载失败时，降级为图标/首字母头像
+// presigned URL 过期时自动刷新用户信息获取新 URL，刷新后仍失败才降级图标
 const avatarImgError = ref(false)
+let avatarHasRefreshed = false
 watch(() => userStore.userInfo?.avatar, () => { avatarImgError.value = false })
 const avatarIsUrl = computed(() => isAvatarUrl(userStore.userInfo?.avatar) && !avatarImgError.value)
+
+async function handleAvatarError() {
+  if (!avatarHasRefreshed) {
+    // 首次失败：presigned URL 可能已过期，刷新用户信息让后端重新签发
+    avatarHasRefreshed = true
+    avatarImgError.value = true
+    await userStore.fetchUserInfo()
+    // fetchUserInfo 更新 userInfo.avatar → watch 重置 avatarImgError=false → img 用新 URL 重新加载
+    // 若新 URL 仍失败 → @error 再次触发 → avatarHasRefreshed=true → 降级图标
+  } else {
+    avatarImgError.value = true
+  }
+}
 
 function getAvatarStyle(): Record<string, string> {
   const gradient = avatarGradients[avatarData.value.gradient] || avatarGradients[0]
