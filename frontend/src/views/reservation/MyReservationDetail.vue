@@ -14,8 +14,8 @@
             <el-icon><Delete /></el-icon>
             <span>删除</span>
           </el-button>
-          <!-- 管理员审批操作 -->
-          <template v-if="isAdminMode && reservation.status === 0">
+          <!-- 管理员审批操作：管理员模式或当前用户为管理员，且预约处于待确认状态 -->
+          <template v-if="(isAdminMode || userStore.isAdmin()) && reservation.status === 0">
             <el-button type="danger" plain @click="handleReject">
               <el-icon><Close /></el-icon>
               <span>拒绝</span>
