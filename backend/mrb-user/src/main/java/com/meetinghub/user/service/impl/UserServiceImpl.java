@@ -27,6 +27,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -319,31 +321,72 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     /**
      * 批量将 avatar objectKey 转为预签名 URL
      * <p>
-     * 兼容策略：以 {@code http} 开头的旧数据（一期公开链接）跳过签名原样返回；
-     * objectKey 调用 mrb-platform 生成签名 URL；调用失败降级保留原值，不影响主流程。
+     * 兼容策略：
+     * 1. objectKey（新数据）→ 直接调用 mrb-platform 生成签名 URL
+     * 2. presigned URL（旧数据，DB 中存了带签名的完整 URL）→ 提取 objectKey 重新签名
+     * 3. 其他 http 链接（一期公开链接）→ 跳过签名原样返回
+     * 调用失败降级保留原值，不影响主流程。
      * </p>
      */
     private Map<String, String> batchSignAvatars(List<String> avatars) {
         if (avatars == null || avatars.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<String> keys = avatars.stream()
-                .filter(StringUtils::hasText)
-                .filter(a -> !a.startsWith("http"))
-                .distinct()
-                .collect(Collectors.toList());
-        if (keys.isEmpty()) {
+        // 原始头像值 → objectKey（用于签名）
+        Map<String, String> originalToKey = new LinkedHashMap<>();
+        for (String avatar : avatars) {
+            if (!StringUtils.hasText(avatar)) continue;
+            if (avatar.startsWith("http")) {
+                // 旧数据：可能是 presigned URL（含查询参数）或公开链接
+                String objectKey = extractObjectKeyFromUrl(avatar);
+                if (objectKey != null) {
+                    originalToKey.put(avatar, objectKey);
+                }
+                // 无法提取 objectKey 的公开链接跳过，原样返回
+            } else {
+                // 新数据：objectKey，直接签名
+                originalToKey.put(avatar, avatar);
+            }
+        }
+        if (originalToKey.isEmpty()) {
             return Collections.emptyMap();
         }
+        List<String> keys = originalToKey.values().stream().distinct().collect(Collectors.toList());
         try {
             Result<Map<String, String>> result = fileFeignClient.batchPresignedUrls(keys);
             if (result != null && result.getCode() == 200 && result.getData() != null) {
-                return result.getData();
+                Map<String, String> signMap = result.getData();
+                // 构建结果：原始头像值 → 签名 URL
+                Map<String, String> resultMap = new HashMap<>();
+                for (Map.Entry<String, String> entry : originalToKey.entrySet()) {
+                    String signedUrl = signMap.get(entry.getValue());
+                    if (signedUrl != null) {
+                        resultMap.put(entry.getKey(), signedUrl);
+                    }
+                }
+                return resultMap;
             }
         } catch (Exception e) {
             log.warn("批量签名用户头像失败，降级保留原值", e);
         }
         return Collections.emptyMap();
+    }
+
+    /**
+     * 从 presigned URL 中提取 objectKey
+     * 例如：https://{bucket}.cos.{region}.myqcloud.com/avatar/2026-07/xxx.jpg?q-sign-algorithm=...
+     *    → avatar/2026-07/xxx.jpg
+     */
+    private String extractObjectKeyFromUrl(String url) {
+        String path = url;
+        int queryIdx = path.indexOf('?');
+        if (queryIdx >= 0) {
+            path = path.substring(0, queryIdx);
+        }
+        int schemeEnd = path.indexOf("://") + 3;
+        if (schemeEnd < 3) return null;
+        int pathStart = path.indexOf('/', schemeEnd);
+        return pathStart >= 0 ? path.substring(pathStart + 1) : null;
     }
 
     /**

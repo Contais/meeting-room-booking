@@ -310,7 +310,7 @@ async function confirmAvatar() {
   }
 }
 
-/** 图片头像上传成功后立即保存为头像 URL */
+/** 图片头像上传成功后立即保存为头像 objectKey（非 presigned URL，避免 URL 过期） */
 async function onAvatarUploaded(payload: FileUploadVO | null) {
   if (!payload) {
     // 移除图片头像，回退为首字母
@@ -327,7 +327,9 @@ async function onAvatarUploaded(payload: FileUploadVO | null) {
   }
   profileLoading.value = true
   try {
-    await updateProfile({ avatar: payload.url })
+    // DB 存 objectKey（永久有效），后端读取时动态签发 presigned URL
+    await updateProfile({ avatar: payload.objectKey })
+    // 表单用 presigned URL 临时显示，fetchUserInfo 后 store 会有新鲜签名 URL
     profileForm.avatar = payload.url
     await userStore.fetchUserInfo()
     ElMessage.success('头像更新成功')

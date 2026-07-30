@@ -30,7 +30,9 @@ import org.springframework.util.StringUtils;
 import java.beans.PropertyDescriptor;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -198,7 +200,10 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
     /**
      * 批量将 imageUrl objectKey 转为预签名 URL
      * <p>
-     * 兼容策略：以 {@code http} 开头的旧数据跳过签名原样返回；objectKey 调用 mrb-platform 签名；
+     * 兼容策略：
+     * 1. objectKey（新数据）→ 直接调用 mrb-platform 生成签名 URL
+     * 2. presigned URL（旧数据，DB 中存了带签名的完整 URL）→ 提取 objectKey 重新签名
+     * 3. 其他 http 链接 → 跳过签名原样返回
      * 调用失败降级保留原值，不影响会议室查询主流程。
      * </p>
      */
@@ -206,23 +211,51 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         if (imageUrls == null || imageUrls.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<String> keys = imageUrls.stream()
-                .filter(StringUtils::hasText)
-                .filter(u -> !u.startsWith("http"))
-                .distinct()
-                .collect(Collectors.toList());
-        if (keys.isEmpty()) {
+        Map<String, String> originalToKey = new LinkedHashMap<>();
+        for (String imageUrl : imageUrls) {
+            if (!StringUtils.hasText(imageUrl)) continue;
+            if (imageUrl.startsWith("http")) {
+                String objectKey = extractObjectKeyFromUrl(imageUrl);
+                if (objectKey != null) {
+                    originalToKey.put(imageUrl, objectKey);
+                }
+            } else {
+                originalToKey.put(imageUrl, imageUrl);
+            }
+        }
+        if (originalToKey.isEmpty()) {
             return Collections.emptyMap();
         }
+        List<String> keys = originalToKey.values().stream().distinct().collect(Collectors.toList());
         try {
             Result<Map<String, String>> result = fileFeignClient.batchPresignedUrls(keys);
             if (result != null && result.getCode() == 200 && result.getData() != null) {
-                return result.getData();
+                Map<String, String> signMap = result.getData();
+                Map<String, String> resultMap = new HashMap<>();
+                for (Map.Entry<String, String> entry : originalToKey.entrySet()) {
+                    String signedUrl = signMap.get(entry.getValue());
+                    if (signedUrl != null) {
+                        resultMap.put(entry.getKey(), signedUrl);
+                    }
+                }
+                return resultMap;
             }
         } catch (Exception e) {
             log.warn("批量签名会议室图片失败，降级保留原值", e);
         }
         return Collections.emptyMap();
+    }
+
+    private String extractObjectKeyFromUrl(String url) {
+        String path = url;
+        int queryIdx = path.indexOf('?');
+        if (queryIdx >= 0) {
+            path = path.substring(0, queryIdx);
+        }
+        int schemeEnd = path.indexOf("://") + 3;
+        if (schemeEnd < 3) return null;
+        int pathStart = path.indexOf('/', schemeEnd);
+        return pathStart >= 0 ? path.substring(pathStart + 1) : null;
     }
 
     private MeetingRoomVO toVO(MeetingRoom room, Map<String, String> imageSignMap) {
