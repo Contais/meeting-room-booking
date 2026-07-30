@@ -15,6 +15,7 @@ import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.feign.UserFeignClient;
 import com.meetinghub.meeting.feign.NotificationFeignClient;
+import com.meetinghub.meeting.mq.producer.NotificationProducer;
 import com.meetinghub.common.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
@@ -51,6 +52,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     private final UserFeignClient userFeignClient;
     private final ReservationAttendeeService attendeeService;
     private final NotificationFeignClient notificationFeignClient;
+    private final NotificationProducer notificationProducer;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -409,16 +411,21 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     }
 
     /**
-     * 发送站内信通知（容错：Feign 调用失败仅记录日志，不影响主业务）
+     * 发送站内信通知（容错：MQ 异步投递优先，失败降级 Feign 同步调用，再失败仅记录日志）
      */
     private void sendNotificationSafe(List<Long> userIds, NotificationSendDTO template) {
         if (userIds == null || userIds.isEmpty()) {
             return;
         }
         try {
-            notificationFeignClient.sendBatch(userIds, template);
+            notificationProducer.send(userIds, template);
         } catch (Exception e) {
-            log.warn("站内信发送失败, userIds={}, type={}, 降级跳过", userIds, template.getType(), e);
+            log.warn("MQ 投递失败，降级 Feign 同步发送, type={}", template.getType(), e);
+            try {
+                notificationFeignClient.sendBatch(userIds, template);
+            } catch (Exception ex) {
+                log.warn("降级 Feign 调用也失败, userIds={}, type={}", userIds, template.getType(), ex);
+            }
         }
     }
 
