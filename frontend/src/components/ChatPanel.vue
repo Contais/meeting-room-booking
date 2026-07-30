@@ -151,6 +151,9 @@ async function doSend(text) {
 
   messages.value.push({ role: 'assistant', content: '' })
   const msgIdx = messages.value.length - 1
+  // push 思考气泡后再次滚动到底，避免窗口满时思考气泡被输入框遮挡
+  await nextTick()
+  scrollToBottom()
 
   abortController = new AbortController()
 
@@ -271,8 +274,9 @@ defineExpose({
 .chat-actions { display: flex; gap: 2px; }
 
 .chat-messages {
-  flex: 1; overflow-y: auto; padding: 16px;
+  flex: 1; overflow-y: auto; padding: 16px 16px 24px;
   display: flex; flex-direction: column; gap: 12px;
+  scroll-behavior: smooth;
 }
 
 .chat-empty {
@@ -308,11 +312,19 @@ defineExpose({
 }
 @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
-/* 引导提问芯片 */
-.suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 80%; align-items: center; }
+/* 引导提问芯片：inline-flex 让容器宽度随内容，多行对齐起始边，保证换行时行列对齐 */
+.suggest-chips {
+  display: inline-flex; flex-wrap: wrap; gap: 6px 8px;
+  max-width: 100%;
+  justify-content: flex-start; align-content: flex-start; align-items: flex-start;
+}
 .suggest-chips :deep(.el-button) {
-  font-size: 12px; padding: 4px 12px; height: auto;
-  white-space: nowrap;
+  flex: 0 0 auto;          /* 禁止伸缩，避免被压缩后错位 */
+  box-sizing: border-box;
+  max-width: 100%;         /* 单个按钮不超过容器宽度 */
+  font-size: 12px; padding: 6px 12px; height: auto; line-height: 1.4;
+  white-space: normal;     /* 允许内部换行，防止超长按钮撑破容器导致收缩错位 */
+  text-align: left;
   background: rgba(102, 126, 234, 0.08); color: #667eea; border-color: transparent;
 }
 .suggest-chips :deep(.el-button:hover) {
@@ -339,6 +351,9 @@ defineExpose({
 .chat-msg.assistant .thinking-bubble {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.10), rgba(118, 75, 162, 0.10));
   border-bottom-left-radius: 4px;
+  min-height: 42px;              /* 足够高度，避免被输入框顶边"压线" */
+  display: flex;
+  align-items: center;
 }
 
 /* 打字动画 */
