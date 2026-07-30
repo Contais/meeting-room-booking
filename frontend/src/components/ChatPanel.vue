@@ -18,10 +18,22 @@
           <div v-for="(msg, idx) in messages" :key="idx" class="chat-msg" :class="msg.role">
             <div class="msg-bubble">
               <div v-if="msg.role === 'user'" class="msg-text">{{ msg.content }}</div>
-              <div v-else class="msg-text markdown-content" v-html="renderMarkdown(msg.content)"></div>
+              <div v-else class="msg-text markdown-content">
+                <div v-html="renderMarkdown(msg.content)"></div>
+                <span v-if="loading && idx === messages.length - 1 && msg.content" class="streaming-cursor"></span>
+              </div>
+            </div>
+            <div v-if="msg.role === 'assistant' && getSuggestions(msg.content).length" class="suggest-chips">
+              <el-button
+                v-for="(s, si) in getSuggestions(msg.content)"
+                :key="si"
+                size="small"
+                round
+                @click="sendSuggestion(s)"
+              >{{ s }}</el-button>
             </div>
           </div>
-          <div v-if="loading" class="chat-msg assistant">
+          <div v-if="loading && !hasStreamingContent" class="chat-msg assistant">
             <div class="msg-bubble">
               <div class="msg-text">
                 <div class="typing-indicator"><span></span><span></span><span></span></div>
@@ -33,7 +45,8 @@
         <div class="chat-input">
           <el-input v-model="inputText" placeholder="输入消息..." @keyup.enter="sendMessage" :disabled="loading">
             <template #append>
-              <el-button :icon="Promotion" @click="sendMessage" :disabled="loading || !inputText.trim()" />
+              <el-button v-if="!loading" :icon="Promotion" @click="sendMessage" :disabled="!inputText.trim()" />
+              <el-button v-else :icon="VideoPause" @click="stopGenerating" />
             </template>
           </el-input>
         </div>
@@ -43,8 +56,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
-import { ChatDotRound, Close, Delete, Promotion } from '@element-plus/icons-vue'
+import { ref, nextTick } from 'vue'
+import { ChatDotRound, Close, Delete, Promotion, VideoPause } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useUserStore } from '@/stores/user'
@@ -58,29 +71,61 @@ const loading = ref(false)
 const messages = ref([])
 const messagesContainer = ref(null)
 const sessionId = ref('')
+const hasStreamingContent = ref(false)
+
+let abortController = null
 
 function togglePanel() { visible.value = !visible.value }
+
+/**
+ * 从 AI 回复中解析引导提问块（:::suggest ... :::），返回建议列表
+ */
+function getSuggestions(content) {
+  if (!content) return []
+  const match = content.match(/:::suggest\n([\s\S]*?)\n:::/)
+  if (!match) return []
+  return match[1].split('\n').map(s => s.trim()).filter(Boolean)
+}
 
 function renderMarkdown(text) {
   if (!text) return ''
   let cleaned = text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
   cleaned = cleaned.replace(/<system-reminder>[\s\S]*$/, '')
+  // 移除引导提问块，不在正文渲染
+  cleaned = cleaned.replace(/:::suggest\n[\s\S]*?\n:::/g, '').trim()
   const html = marked.parse(cleaned)
-  return DOMPurify.sanitize(html, { ADD_TAGS: ['think', 'code', 'pre', 'span'], ADD_ATTR: ['class', 'language'] })
+  // FORBID_TAGS: ['del'] 禁用删除线（~~text~~），避免 AI 输出的 ~~ 被误渲染
+  return DOMPurify.sanitize(html, {
+    ADD_TAGS: ['think', 'code', 'pre', 'span'],
+    ADD_ATTR: ['class', 'language'],
+    FORBID_TAGS: ['del', 's', 'strike'],
+  })
 }
 
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
 
+  await doSend(text)
+}
+
+async function sendSuggestion(text) {
+  if (loading.value) return
+  await doSend(text)
+}
+
+async function doSend(text) {
   messages.value.push({ role: 'user', content: text })
   inputText.value = ''
   loading.value = true
+  hasStreamingContent.value = false
   await nextTick()
   scrollToBottom()
 
   messages.value.push({ role: 'assistant', content: '' })
   const msgIdx = messages.value.length - 1
+
+  abortController = new AbortController()
 
   try {
     if (!sessionId.value) {
@@ -95,10 +140,19 @@ async function sendMessage() {
         'Authorization': userStore.token ? 'Bearer ' + userStore.token : '',
       },
       body: JSON.stringify({ message: text }),
+      signal: abortController.signal,
     })
 
+    if (!response.ok) {
+      messages.value[msgIdx].content = `[请求失败（${response.status}），请稍后重试]`
+      return
+    }
+
     const reader = response.body?.getReader()
-    if (!reader) return
+    if (!reader) {
+      messages.value[msgIdx].content = '[连接异常，请稍后重试]'
+      return
+    }
 
     const decoder = new TextDecoder('utf-8')
     let accumulatedContent = ''
@@ -108,23 +162,50 @@ async function sendMessage() {
         if (done) break
         accumulatedContent += decoder.decode(value, { stream: true })
         messages.value[msgIdx].content = accumulatedContent
+        hasStreamingContent.value = true
         await nextTick()
         scrollToBottom()
       } catch (readError) {
+        if (readError.name === 'AbortError') break
         console.error('读取流错误:', readError)
         break
       }
     }
+    // 流结束后如果无任何内容，给出提示
+    if (!accumulatedContent.trim()) {
+      messages.value[msgIdx].content = '[未收到回复，请稍后重试]'
+    }
   } catch (e) {
-    messages.value[msgIdx].content += '\n\n[连接异常，请稍后重试]'
+    if (e.name === 'AbortError') {
+      // 用户主动停止，保留已接收内容
+      if (!messages.value[msgIdx].content.trim()) {
+        messages.value[msgIdx].content = '[已停止生成]'
+      }
+    } else {
+      messages.value[msgIdx].content += '\n\n[连接异常，请稍后重试]'
+    }
   } finally {
     loading.value = false
+    hasStreamingContent.value = false
+    abortController = null
     await nextTick()
     scrollToBottom()
   }
 }
 
+function stopGenerating() {
+  if (abortController) {
+    abortController.abort()
+  }
+}
+
 function clearChat() {
+  // 清空会话时重置所有状态，避免输入框卡在禁用状态
+  if (abortController) {
+    abortController.abort()
+  }
+  loading.value = false
+  hasStreamingContent.value = false
   messages.value = []
   if (sessionId.value) {
     fetch(`/api/meeting/chat/session/${sessionId.value}`, { method: 'DELETE' }).catch(() => {})
@@ -173,9 +254,9 @@ defineExpose({
 }
 .chat-empty p { font-size: 13px; text-align: center; margin: 0; }
 
-.chat-msg { display: flex; }
-.chat-msg.user { justify-content: flex-end; }
-.chat-msg.assistant { justify-content: flex-start; }
+.chat-msg { display: flex; flex-direction: column; gap: 6px; }
+.chat-msg.user { align-items: flex-end; }
+.chat-msg.assistant { align-items: flex-start; }
 
 .msg-bubble {
   max-width: 80%; padding: 10px 14px; border-radius: 12px;
@@ -191,6 +272,24 @@ defineExpose({
 }
 
 .msg-text { white-space: pre-wrap; }
+
+/* 流式输出光标 */
+.streaming-cursor {
+  display: inline-block; width: 7px; height: 14px; vertical-align: text-bottom;
+  margin-left: 2px; background: #667eea; border-radius: 1px;
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+/* 引导提问芯片 */
+.suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 80%; }
+.suggest-chips :deep(.el-button) {
+  font-size: 12px; padding: 4px 12px; height: auto;
+  background: rgba(102, 126, 234, 0.08); color: #667eea; border-color: transparent;
+}
+.suggest-chips :deep(.el-button:hover) {
+  background: rgba(102, 126, 234, 0.15); color: #5568d3;
+}
 
 /* Markdown 内容样式 */
 .markdown-content :deep(p) { margin: 0.35rem 0; }

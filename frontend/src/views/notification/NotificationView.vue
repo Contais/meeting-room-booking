@@ -35,7 +35,7 @@
               <el-tag size="small" :type="tagType(item.type)" effect="light">{{ typeLabel(item.type) }}</el-tag>
             </div>
             <div class="item-body">{{ item.content }}</div>
-            <div class="item-time">{{ item.createTime }}</div>
+            <div class="item-time">{{ formatDateTime(item.createTime) }}</div>
           </div>
           <div class="item-actions">
             <el-button v-if="item.isRead === 0" text size="small" @click="handleReadOne(item)">标为已读</el-button>
@@ -64,6 +64,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { BellFilled, Check, Calendar, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { getNotifications, deleteNotification, type NotificationItem } from '@/api/notification'
 import { useNotificationStore } from '@/stores/notification'
+import { formatDateTime } from '@/utils/datetime'
 
 const router = useRouter()
 const notificationStore = useNotificationStore()

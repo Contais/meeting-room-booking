@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, MeetingRoomReservation> implements ReservationService {
 
+    private static final DateTimeFormatter NOTIFY_DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserFeignClient userFeignClient;
@@ -117,7 +119,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                 notify.setType("RESERVATION_CREATED");
                 notify.setTitle("您被邀请参加会议：" + dto.getSubject());
                 notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
-                        + "\n时间：" + dto.getStartTime() + " ~ " + dto.getEndTime());
+                        + "\n时间：" + dto.getStartTime().format(NOTIFY_DATETIME_FMT) + " ~ " + dto.getEndTime().format(NOTIFY_DATETIME_FMT));
                 notify.setRefType("reservation");
                 notify.setRefId(reservation.getId());
                 sendNotificationSafe(dto.getAttendeeUserIds(), notify);
@@ -361,7 +363,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             attendeeNotify.setType("RESERVATION_APPROVED");
             attendeeNotify.setTitle("您被邀请参加会议：" + reservation.getSubject());
             attendeeNotify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode()
-                    + "\n时间：" + reservation.getStartTime() + " ~ " + reservation.getEndTime());
+                    + "\n时间：" + reservation.getStartTime().format(NOTIFY_DATETIME_FMT) + " ~ " + reservation.getEndTime().format(NOTIFY_DATETIME_FMT));
             attendeeNotify.setRefType("reservation");
             attendeeNotify.setRefId(reservationId);
             sendNotificationSafe(attendeeUserIds, attendeeNotify);

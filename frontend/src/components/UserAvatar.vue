@@ -1,13 +1,13 @@
 <template>
   <div class="user-avatar" :class="`avatar-${size}`" :style="avatarStyle">
-    <img v-if="isUrl" :src="avatar || ''" class="user-avatar-img" alt="头像" />
+    <img v-if="isUrl" :src="avatar || ''" class="user-avatar-img" alt="头像" @error="imgError = true" />
     <el-icon v-else-if="iconComponent" :size="iconSize"><component :is="iconComponent" /></el-icon>
     <template v-else>{{ initial }}</template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { isAvatarUrl } from '@/utils/avatar'
 
@@ -42,6 +42,9 @@ const avatarGradients = [
   'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
 ]
 
+const imgError = ref(false)
+watch(() => props.avatar, () => { imgError.value = false })
+
 const avatarData = computed(() => {
   if (!props.avatar) return { icon: '', gradient: 0 }
   try {
@@ -52,7 +55,7 @@ const avatarData = computed(() => {
   }
 })
 
-const isUrl = computed(() => isAvatarUrl(props.avatar))
+const isUrl = computed(() => isAvatarUrl(props.avatar) && !imgError.value)
 const iconComponent = computed(() => {
   const name = avatarData.value.icon
   return name ? iconComponents[name] || null : null

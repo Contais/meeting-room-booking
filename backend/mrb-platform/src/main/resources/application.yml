@@ -42,4 +42,5 @@ file:
       url-prefix: /api/file/static
     cos:
       # 预签名 URL 有效期（秒），私有桶按需授权访问
-      presigned-expire: 3600
+      # 设为 7 天，避免页面长时间停留后头像/图片 URL 过期失效
+      presigned-expire: 604800

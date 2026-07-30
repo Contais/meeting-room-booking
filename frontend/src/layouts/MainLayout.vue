@@ -62,7 +62,7 @@
           <el-dropdown trigger="hover" popper-class="user-dropdown-popper" placement="bottom-end">
             <div class="avatar-btn">
               <div class="avatar" :style="getAvatarStyle()">
-                <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="avatar-img" alt="头像" />
+                <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="avatar-img" alt="头像" @error="avatarImgError = true" />
                 <template v-else-if="avatarIcon">
                   <el-icon :size="18"><component :is="avatarIcon" /></el-icon>
                 </template>
@@ -80,7 +80,7 @@
               <div class="user-dropdown-panel">
                 <div class="dropdown-header">
                   <div class="dropdown-avatar" :style="getAvatarStyle()">
-                    <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="dropdown-avatar-img" alt="头像" />
+                    <img v-if="avatarIsUrl" :src="userStore.userInfo?.avatar" class="dropdown-avatar-img" alt="头像" @error="avatarImgError = true" />
                     <template v-else-if="avatarIcon">
                       <el-icon :size="22"><component :is="avatarIcon" /></el-icon>
                     </template>
@@ -201,7 +201,10 @@ const avatarIcon = computed(() => {
 })
 
 // 头像是否为图片 URL（文件上传后的地址），否则为图标 JSON
-const avatarIsUrl = computed(() => isAvatarUrl(userStore.userInfo?.avatar))
+// 签名 URL 过期导致图片加载失败时，降级为图标/首字母头像
+const avatarImgError = ref(false)
+watch(() => userStore.userInfo?.avatar, () => { avatarImgError.value = false })
+const avatarIsUrl = computed(() => isAvatarUrl(userStore.userInfo?.avatar) && !avatarImgError.value)
 
 function getAvatarStyle(): Record<string, string> {
   const gradient = avatarGradients[avatarData.value.gradient] || avatarGradients[0]
