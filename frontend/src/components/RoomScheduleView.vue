@@ -252,7 +252,7 @@
             <div v-if="currentDetail.attendees && currentDetail.attendees.length" class="detail-attendees">
               <div class="attendees-title">参会人 ({{ currentDetail.attendees.length }})</div>
               <div v-for="a in currentDetail.attendees" :key="a.userId" class="attendee-item">
-                <div class="attendee-avatar">{{ (a.realName || a.username || 'U').charAt(0) }}</div>
+                <div class="attendee-avatar"><UserAvatar :avatar="a.avatar" :username="a.realName || a.username" size="sm" /></div>
                 <div class="attendee-info">
                   <div class="attendee-name">{{ a.realName || a.username }}</div>
                   <div class="attendee-dept">{{ a.departmentName || '未分配部门' }}</div>
@@ -295,6 +295,7 @@ import { getRoomById } from '@/api/meeting'
 import { useUserStore } from '@/stores/user'
 import { formatTimeRange } from '@/utils/datetime'
 import BookingDialog from '@/components/BookingDialog.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const props = defineProps<{
@@ -1175,7 +1176,7 @@ defineExpose({ loadData })
 .detail-attendees { margin-top: 16px; }
 .attendees-title { font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
 .attendee-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-.attendee-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.attendee-avatar { width: 32px; height: 32px; flex-shrink: 0; }
 .attendee-info { flex: 1; min-width: 0; }
 .attendee-name { font-size: 13px; color: #303133; font-weight: 500; }
 .attendee-dept { font-size: 11px; color: #9ca3af; margin-top: 2px; }

@@ -149,6 +149,7 @@ public class ReservationAttendeeServiceImpl
                         vo.setEmail(u.getEmail());
                         vo.setDepartmentId(u.getDepartmentId());
                         vo.setDepartmentName(u.getDepartmentName());
+                        vo.setAvatar(u.getAvatar());
                     }
                     return vo;
                 })

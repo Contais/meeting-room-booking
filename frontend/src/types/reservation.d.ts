@@ -6,6 +6,8 @@ export interface Attendee {
   email: string
   departmentId?: number
   departmentName?: string
+  /** 头像（presigned URL） */
+  avatar?: string
   /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
   status: number
 }

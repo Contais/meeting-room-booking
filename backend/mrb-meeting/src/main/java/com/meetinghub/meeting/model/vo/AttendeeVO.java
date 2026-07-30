@@ -22,6 +22,8 @@ public class AttendeeVO implements Serializable {
     private Long departmentId;
     /** 部门名称 */
     private String departmentName;
+    /** 头像（presigned URL，由 mrb-user 签名后回填） */
+    private String avatar;
     /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
     private Integer status;
 }
