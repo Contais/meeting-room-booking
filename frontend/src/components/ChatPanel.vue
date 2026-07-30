@@ -16,14 +16,22 @@
             <p>你好！我是 AI 助手，可以帮你查询会议室、查看预约等。</p>
           </div>
           <div v-for="(msg, idx) in messages" :key="idx" class="chat-msg" :class="msg.role">
-            <div class="msg-bubble">
+            <div
+              class="msg-bubble"
+              :class="{ 'thinking-bubble': msg.role === 'assistant' && !msg.content && loading && idx === messages.length - 1 }"
+            >
               <div v-if="msg.role === 'user'" class="msg-text">{{ msg.content }}</div>
               <div v-else class="msg-text markdown-content">
-                <div v-html="renderMarkdown(msg.content)"></div>
-                <span v-if="loading && idx === messages.length - 1 && msg.content" class="streaming-cursor"></span>
+                <template v-if="msg.content">
+                  <div v-html="renderMarkdown(msg.content)"></div>
+                  <span v-if="loading && idx === messages.length - 1" class="streaming-cursor"></span>
+                </template>
+                <div v-else-if="loading && idx === messages.length - 1" class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
               </div>
             </div>
-            <div v-if="msg.role === 'assistant' && getSuggestions(msg.content).length" class="suggest-chips">
+            <div v-if="msg.role === 'assistant' && msg.content && getSuggestions(msg.content).length" class="suggest-chips">
               <el-button
                 v-for="(s, si) in getSuggestions(msg.content)"
                 :key="si"
@@ -33,22 +41,34 @@
               >{{ s }}</el-button>
             </div>
           </div>
-          <div v-if="loading && !hasStreamingContent" class="chat-msg assistant">
-            <div class="msg-bubble">
-              <div class="msg-text">
-                <div class="typing-indicator"><span></span><span></span><span></span></div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div class="chat-input">
-          <el-input v-model="inputText" placeholder="输入消息..." @keyup.enter="sendMessage" :disabled="loading">
-            <template #append>
-              <el-button v-if="!loading" :icon="Promotion" @click="sendMessage" :disabled="!inputText.trim()" />
-              <el-button v-else :icon="VideoPause" @click="stopGenerating" />
-            </template>
-          </el-input>
+          <div class="input-wrapper">
+            <el-input
+              v-model="inputText"
+              placeholder="输入消息，按 Enter 发送..."
+              :disabled="loading"
+              @keyup.enter="sendMessage"
+              class="chat-input-field"
+            />
+            <el-button
+              v-if="!loading"
+              class="send-btn"
+              type="primary"
+              :icon="Promotion"
+              circle
+              :disabled="!inputText.trim()"
+              @click="sendMessage"
+            />
+            <el-button
+              v-else
+              class="send-btn stop-btn"
+              :icon="VideoPause"
+              circle
+              @click="stopGenerating"
+            />
+          </div>
         </div>
       </div>
     </transition>
@@ -75,7 +95,14 @@ const hasStreamingContent = ref(false)
 
 let abortController = null
 
-function togglePanel() { visible.value = !visible.value }
+async function togglePanel() {
+  visible.value = !visible.value
+  // 打开窗口时默认滚动到最底部消息
+  if (visible.value) {
+    await nextTick()
+    scrollToBottom()
+  }
+}
 
 /**
  * 从 AI 回复中解析引导提问块（:::suggest ... :::），返回建议列表
@@ -229,7 +256,7 @@ defineExpose({
 
 .chat-panel {
   position: fixed; bottom: 24px; right: 24px;
-  width: 640px; height: 680px;
+  width: 520px; height: 640px;
   background: #fff; border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   display: flex; flex-direction: column;
@@ -282,9 +309,10 @@ defineExpose({
 @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
 
 /* 引导提问芯片 */
-.suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 80%; }
+.suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 80%; align-items: center; }
 .suggest-chips :deep(.el-button) {
   font-size: 12px; padding: 4px 12px; height: auto;
+  white-space: nowrap;
   background: rgba(102, 126, 234, 0.08); color: #667eea; border-color: transparent;
 }
 .suggest-chips :deep(.el-button:hover) {
@@ -307,14 +335,52 @@ defineExpose({
 .markdown-content :deep(blockquote) { margin: 0.4rem 0; padding-left: 0.75rem; border-left: 2px solid #d2d2d7; color: #86868b; }
 .markdown-content :deep(hr) { border: none; border-top: 1px solid #d2d2d7; margin: 0.5rem 0; }
 
-/* 打字动画 */
-.typing-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
-.typing-indicator span { width: 7px; height: 7px; border-radius: 50%; background: #86868b; animation: typing-bounce 1.2s ease-in-out infinite; }
-.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
-@keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+/* 思考中气泡：柔和渐变背景，区别于普通回复 */
+.chat-msg.assistant .thinking-bubble {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.10), rgba(118, 75, 162, 0.10));
+  border-bottom-left-radius: 4px;
+}
 
-.chat-input { padding: 12px 16px; border-top: 1px solid #f0f0f0; }
+/* 打字动画 */
+.typing-indicator { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.typing-indicator span {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #667eea;
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.18s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* 输入框：圆角容器 + 圆形发送按钮 */
+.chat-input { padding: 12px 16px; border-top: 1px solid #f0f0f0; background: #fff; }
+.input-wrapper {
+  display: flex; align-items: center; gap: 8px;
+  background: #f3f4f6; border-radius: 22px; padding: 5px 5px 5px 16px;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.input-wrapper:focus-within {
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+}
+.chat-input-field { flex: 1; }
+.chat-input-field :deep(.el-input__wrapper) {
+  background: transparent; box-shadow: none !important; padding: 0;
+}
+.chat-input-field :deep(.el-input__inner) {
+  border: none; background: transparent; font-size: 13px;
+  height: 32px; line-height: 32px; box-shadow: none !important;
+}
+.chat-input-field :deep(.el-input.is-disabled .el-input__inner) { background: transparent; }
+.send-btn {
+  flex-shrink: 0; width: 32px; height: 32px; min-height: 32px;
+  padding: 0; font-size: 14px;
+}
+.send-btn.stop-btn { background: #f56c6c; border-color: #f56c6c; color: #fff; }
+.send-btn.stop-btn:hover { background: #f23c3c; border-color: #f23c3c; }
 
 .chat-slide-enter-active, .chat-slide-leave-active { transition: all 0.3s ease; }
 .chat-slide-enter-from, .chat-slide-leave-to { opacity: 0; transform: translateY(20px); }
@@ -325,7 +391,14 @@ html.dark .chat-header { background: #161628; border-color: var(--border); }
 html.dark .chat-title { color: var(--text-primary); }
 html.dark .chat-empty { color: var(--text-muted); }
 html.dark .chat-msg.assistant .msg-bubble { background: #252542; color: var(--text-primary); }
-html.dark .chat-input { border-color: var(--border); }
+html.dark .chat-msg.assistant .thinking-bubble {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.22), rgba(118, 75, 162, 0.22));
+}
+html.dark .chat-input { border-color: var(--border); background: var(--bg-card); }
+html.dark .input-wrapper { background: #252542; }
+html.dark .input-wrapper:focus-within { background: #252542; box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.45); }
+html.dark .chat-input-field :deep(.el-input__inner) { color: var(--text-primary); }
+html.dark .chat-input-field :deep(.el-input__inner::placeholder) { color: var(--text-muted); }
 html.dark .markdown-content :deep(code) { background: rgba(255,255,255,0.1); }
 html.dark .markdown-content :deep(th), html.dark .markdown-content :deep(td) { border-color: var(--border); }
 html.dark .markdown-content :deep(th) { background: rgba(255,255,255,0.05); }
