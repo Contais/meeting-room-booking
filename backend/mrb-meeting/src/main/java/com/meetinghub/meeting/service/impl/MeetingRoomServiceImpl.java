@@ -1,13 +1,14 @@
 package com.meetinghub.meeting.service.impl;
 
+import cn.hutool.core.collection.ListUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.meeting.feign.FileFeignClient;
@@ -29,13 +30,7 @@ import org.springframework.util.StringUtils;
 
 import java.beans.PropertyDescriptor;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -70,7 +65,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        Map<String, String> imageSignMap = batchSignImageUrls(List.of(room.getImageUrl()));
+        Map<String, String> imageSignMap = batchSignImageUrls(ListUtil.of(room.getImageUrl()));
         MeetingRoomVO vo = toVO(room, imageSignMap);
         fillCurrentAvailable(List.of(vo));
         return vo;
