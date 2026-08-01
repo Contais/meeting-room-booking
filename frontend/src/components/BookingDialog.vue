@@ -640,8 +640,8 @@ async function handleSubmit() {
     const res = await createReservation({
       roomId,
       subject: form.subject,
-      startTime: `${dateStr}T${form.startMinute}:00`,
-      endTime: `${dateStr}T${form.endMinute}:00`,
+      startTime: `${dateStr} ${form.startMinute}:00`,
+      endTime: `${dateStr} ${form.endMinute}:00`,
       attendeeUserIds: form.attendeeUserIds,
       remark: form.remark,
     })

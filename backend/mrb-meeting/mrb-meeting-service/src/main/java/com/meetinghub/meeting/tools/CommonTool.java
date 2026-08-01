@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.tools;
 
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
@@ -15,9 +16,9 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 public class CommonTool {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    @Tool(description = "获取当前日期时间, 返回格式 yyyy-MM-dd HH:mm")
+    private static final DateTimeFormatter DATE_FMT = DateTimePatternConstant.DATE_FMT;
+    private static final DateTimeFormatter DATE_TIME_FMT = DateTimePatternConstant.DATETIME_FMT;
+    @Tool(description = "获取当前日期时间, 返回格式 yyyy-MM-dd HH:mm:ss")
     public String currentTime() {
         return LocalDateTime.now().format(DATE_TIME_FMT);
     }

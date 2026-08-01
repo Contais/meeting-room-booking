@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -32,10 +33,10 @@ public class JacksonConfig {
         mapper.registerModule(module);
 
         /**
-         * LocalDateTime 序列化/反序列化，ISO 格式
+         * LocalDateTime 序列化/反序列化，统一 yyyy-MM-dd HH:mm:ss 格式
          */
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        DateTimeFormatter formatter = DateTimePatternConstant.DATETIME_FMT;
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(formatter));
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(formatter));
         mapper.registerModule(javaTimeModule);

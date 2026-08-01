@@ -3,14 +3,14 @@ package com.meetinghub.meeting.schedule;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.constant.RedisKeyConstant;
 import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
-import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
-import com.meetinghub.platform.api.mq.producer.NotificationProducer;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationAttendeeService;
+import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
+import com.meetinghub.platform.api.mq.producer.NotificationProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,10 +19,11 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static com.meetinghub.common.constant.DateTimePatternConstant.DATETIME_FMT;
 
 /**
  * 预约状态闭环 + 提醒定时任务
@@ -44,7 +45,6 @@ public class ReservationScheduleTask {
     private static final long LOCK_TTL_SECONDS = 55L;
     private static final long REMIND_BEFORE_MINUTES = 15L;
     private static final long REMIND_FLAG_TTL_HOURS = 2L;
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
@@ -72,23 +72,23 @@ public class ReservationScheduleTask {
                 return;
             }
             log.info("[ReservationScheduleTask] 发现 {} 条超时未审批预约，开始自动拒绝", expired.size());
-            for (MeetingRoomReservation r : expired) {
+            for (MeetingRoomReservation reservation : expired) {
                 try {
                     MeetingRoomReservation update = new MeetingRoomReservation();
-                    update.setId(r.getId());
+                    update.setId(reservation.getId());
                     update.setStatus(ReservationStatusEnum.REJECTED.getCode());
                     update.setRejectReason(AUTO_REJECT_REASON);
                     // CAS 更新：WHERE status=PENDING，避免与并发审批操作冲突
                     int rows = reservationRepository.update(update,
                             new LambdaQueryWrapper<MeetingRoomReservation>()
-                                    .eq(MeetingRoomReservation::getId, r.getId())
+                                    .eq(MeetingRoomReservation::getId, reservation.getId())
                                     .eq(MeetingRoomReservation::getStatus, ReservationStatusEnum.PENDING.getCode())
                     );
                     if (rows > 0) {
-                        log.info("[ReservationScheduleTask] 预约 {} 已自动拒绝", r.getId());
+                        log.info("[ReservationScheduleTask] 预约 {} 已自动拒绝", reservation.getId());
                     }
                 } catch (Exception e) {
-                    log.error("[ReservationScheduleTask] 自动拒绝预约 {} 失败", r.getId(), e);
+                    log.error("[ReservationScheduleTask] 自动拒绝预约 {} 失败", reservation.getId(), e);
                 }
             }
         } finally {
@@ -150,7 +150,7 @@ public class ReservationScheduleTask {
         notify.setTitle("会议即将开始：" + r.getSubject());
         notify.setContent("会议主题：" + r.getSubject()
                 + "\n预约编号：" + r.getReservationCode()
-                + "\n时间：" + r.getStartTime().format(TIME_FMT) + " ~ " + r.getEndTime().format(TIME_FMT)
+                + "\n时间：" + r.getStartTime().format(DATETIME_FMT) + " ~ " + r.getEndTime().format(DATETIME_FMT)
                 + (roomName != null ? "\n会议室：" + roomName : ""));
         notify.setRefType("reservation");
         notify.setRefId(r.getId());

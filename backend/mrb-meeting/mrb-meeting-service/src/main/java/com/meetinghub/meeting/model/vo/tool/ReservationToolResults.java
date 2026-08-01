@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.model.vo.tool;
 
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
@@ -18,7 +19,7 @@ import java.util.Map;
  */
 public final class ReservationToolResults {
 
-    private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter DATE_TIME_FMT = DateTimePatternConstant.DATETIME_FMT;
 
     private ReservationToolResults() {
     }

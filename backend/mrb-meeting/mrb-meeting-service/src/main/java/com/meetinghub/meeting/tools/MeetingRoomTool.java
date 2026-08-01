@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
@@ -51,8 +52,8 @@ public class MeetingRoomTool {
     private final ReservationRepository reservationRepository;
     private final RoomResolver roomResolver;
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_FMT = DateTimePatternConstant.DATE_FMT;
+    private static final DateTimeFormatter TIME_FMT = DateTimePatternConstant.TIME_FMT;
 
     @Tool(description = "查询所有可用的会议室列表。返回 JSON 数组，每项字段：name 会议室名称、location 位置、capacity 容量、equipment 设备")
     public List<RoomSummary> listAvailableRooms() {
@@ -62,7 +63,7 @@ public class MeetingRoomTool {
         return rooms.stream().map(RoomResolver::toSummary).toList();
     }
 
-    @Tool(description = "查询指定日期某个会议室的预约情况。返回 JSON 对象，字段：roomName 会议室名称、date 日期、reservations 预约列表（含 reservationCode 预约编号、subject 主题、startTime/endTime 时间 yyyy-MM-dd HH:mm、status 状态中文）")
+    @Tool(description = "查询指定日期某个会议室的预约情况。返回 JSON 对象，字段：roomName 会议室名称、date 日期、reservations 预约列表（含 reservationCode 预约编号、subject 主题、startTime/endTime 时间 yyyy-MM-dd HH:mm:ss、status 状态中文）")
     public ToolResult queryRoomReservations(
             @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {

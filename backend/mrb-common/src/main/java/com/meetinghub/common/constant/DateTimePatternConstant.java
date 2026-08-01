@@ -13,6 +13,12 @@ public final class DateTimePatternConstant {
     private DateTimePatternConstant() {
     }
 
-    /** 标准日期时间格式：yyyy-MM-dd HH:mm（通知模板、AI 回复展示等通用场景） */
-    public static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    /** 标准日期时间格式：yyyy-MM-dd HH:mm:ss（API 字段、通知文本、AI 回复等统一场景） */
+    public static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /** 标准日期格式：yyyy-MM-dd */
+    public static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /** 标准时间格式：HH:mm */
+    public static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 }

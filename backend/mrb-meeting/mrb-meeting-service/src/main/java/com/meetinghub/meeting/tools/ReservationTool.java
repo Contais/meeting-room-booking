@@ -58,8 +58,8 @@ public class ReservationTool {
     private final RoomResolver roomResolver;
     private final DepartmentFeignClient departmentFeignClient;
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_FMT = DateTimePatternConstant.DATE_FMT;
+    private static final DateTimeFormatter TIME_FMT = DateTimePatternConstant.TIME_FMT;
     /** 历史预约最多展示条数，避免回复过长 */
     private static final int HISTORY_DISPLAY_LIMIT = 10;
 
