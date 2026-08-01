@@ -49,7 +49,9 @@
               v-model="inputText"
               placeholder="输入消息，按 Enter 发送..."
               :disabled="loading"
-              @keyup.enter="sendMessage"
+              @keydown.enter="onEnterPress"
+              @compositionstart="onCompositionStart"
+              @compositionend="onCompositionEnd"
               class="chat-input-field"
             />
             <el-button
@@ -92,8 +94,29 @@ const messages = ref([])
 const messagesContainer = ref(null)
 const sessionId = ref('')
 const hasStreamingContent = ref(false)
+// 中文输入法 composition 状态：true 表示正在选字，回车仅用于确认候选词，不应发送
+const isComposing = ref(false)
 
 let abortController = null
+
+function onCompositionStart() {
+  isComposing.value = true
+}
+
+function onCompositionEnd() {
+  isComposing.value = false
+}
+
+/**
+ * 回车发送：composition 中（中文输入法选字阶段）不发送，
+ * 仅在 composition 结束后才允许 Enter 触发发送。
+ * 使用 keydown 而非 keyup，避免候选词上屏与发送事件的时序错乱。
+ */
+function onEnterPress(e) {
+  if (isComposing.value) return
+  e.preventDefault()
+  sendMessage()
+}
 
 async function togglePanel() {
   visible.value = !visible.value
