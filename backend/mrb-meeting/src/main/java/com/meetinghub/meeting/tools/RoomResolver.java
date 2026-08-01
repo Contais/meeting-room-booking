@@ -3,7 +3,6 @@ package com.meetinghub.meeting.tools;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomListResult;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomSummary;
 import com.meetinghub.meeting.model.vo.tool.ToolResult;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
@@ -97,23 +96,23 @@ public class RoomResolver {
     }
 
     /**
-     * 将「非唯一匹配」结果转换为可直供格式化器渲染的 {@link ToolResult}：
-     * 未匹配 → 纯文本提示；多间匹配 → 会议室列表（提示用户明确指定）。
+     * 将「非唯一匹配」结果转换为 {@link ToolResult.ErrorResult}：
+     * 未匹配 → 提示未找到；多间匹配 → 列出名称提示用户明确指定。
      * <p>
      * 仅在匹配结果为 {@link RoomMatch.Ambiguous} 或 {@link RoomMatch.NotFound} 时调用，
      * 传入 {@link RoomMatch.Single} 将抛出 {@link IllegalArgumentException}。
      * </p>
      *
      * @param match 匹配结果（非唯一）
-     * @return 错误/歧义对应的工具结果
+     * @return 错误/歧义对应的错误结果
      */
-    public static ToolResult toErrorResult(RoomMatch match) {
+    public static ToolResult.ErrorResult toErrorResult(RoomMatch match) {
         if (match instanceof RoomMatch.NotFound n) {
-            return new ToolResult.TextResult("未找到名为「" + n.keyword() + "」的可用会议室");
+            return new ToolResult.ErrorResult("未找到名为「" + n.keyword() + "」的可用会议室");
         }
         if (match instanceof RoomMatch.Ambiguous a) {
-            List<RoomSummary> summaries = a.rooms().stream().map(RoomResolver::toSummary).toList();
-            return new RoomListResult("匹配到多个会议室，请明确指定：", summaries);
+            String names = a.rooms().stream().map(MeetingRoom::getName).collect(Collectors.joining("、"));
+            return new ToolResult.ErrorResult("匹配到多个会议室：" + names + "，请明确指定");
         }
         throw new IllegalArgumentException("唯一匹配无需错误结果: " + match);
     }

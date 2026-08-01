@@ -5,13 +5,11 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
-import com.meetinghub.meeting.model.vo.ReservationBriefVO;
+import com.meetinghub.meeting.model.vo.tool.ReservationToolResults;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.FreeSlotResult;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomListResult;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomRecommendResult;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomReservationResult;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomStat;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomStatsResult;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomSummary;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.TimeSlot;
 import com.meetinghub.meeting.model.vo.tool.ToolResult;
@@ -31,7 +29,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * AI 聊天助手工具类 - 会议室域。
@@ -40,8 +37,9 @@ import java.util.stream.Collectors;
  * 会议室推荐、空闲时段查询。预约/参会人/部门相关能力见 {@link ReservationTool}。
  * </p>
  * <p>
- * 方法体统一遵循「查询 → 组装 {@link ToolResult} → 交由 {@link ToolResponseFormatter} 格式化」的模式，
- * 不在工具内直接拼接展示字符串。
+ * 工具方法直接返回结构化 record / List，由 Spring AI 的
+ * {@code DefaultToolCallResultConverter} 序列化为 JSON 回传模型，
+ * 展示文案交由 system prompt 与模型组织，不在工具内拼接展示字符串。
  * </p>
  */
 @Slf4j
@@ -56,25 +54,21 @@ public class MeetingRoomTool {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    @Tool(description = "查询所有可用的会议室列表，返回名称、位置、容量、设备信息")
-    public String listAvailableRooms() {
+    @Tool(description = "查询所有可用的会议室列表。返回 JSON 数组，每项字段：name 会议室名称、location 位置、capacity 容量、equipment 设备")
+    public List<RoomSummary> listAvailableRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
         );
-        if (rooms.isEmpty()) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("当前没有可用的会议室"));
-        }
-        List<RoomSummary> summaries = rooms.stream().map(RoomResolver::toSummary).collect(Collectors.toList());
-        return ToolResponseFormatter.format(new RoomListResult("共 " + rooms.size() + " 间会议室：", summaries));
+        return rooms.stream().map(RoomResolver::toSummary).toList();
     }
 
-    @Tool(description = "查询指定日期某个会议室的预约情况")
-    public String queryRoomReservations(
+    @Tool(description = "查询指定日期某个会议室的预约情况。返回 JSON 对象，字段：roomName 会议室名称、date 日期、reservations 预约列表（含 reservationCode 预约编号、subject 主题、startTime/endTime 时间 yyyy-MM-dd HH:mm、status 状态中文）")
+    public ToolResult queryRoomReservations(
             @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {
         RoomMatch match = roomResolver.resolveByName(roomName);
         if (!(match instanceof RoomMatch.Single s)) {
-            return ToolResponseFormatter.format(RoomResolver.toErrorResult(match));
+            return RoomResolver.toErrorResult(match);
         }
         MeetingRoom room = s.room();
 
@@ -82,7 +76,7 @@ public class MeetingRoomTool {
         try {
             d = LocalDate.parse(date, DATE_FMT);
         } catch (Exception e) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("日期格式有误，请用 yyyy-MM-dd"));
+            return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
 
         List<MeetingRoomReservation> reservations = reservationRepository.selectList(
@@ -92,17 +86,13 @@ public class MeetingRoomTool {
                         .between(MeetingRoomReservation::getStartTime, d.atStartOfDay(), d.atTime(LocalTime.MAX))
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-        if (reservations.isEmpty()) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult(
-                    String.format("%s 在 %s 没有预约", room.getName(), date)));
-        }
-        List<ReservationBriefVO> briefs = ToolResponseFormatter.toBriefVOList(
+        List<ReservationToolResults.ReservationBrief> briefs = ReservationToolResults.toBriefList(
                 reservations, Map.of(room.getId(), room.getName()));
-        return ToolResponseFormatter.format(new RoomReservationResult(room.getName(), date, briefs));
+        return new RoomReservationResult(room.getName(), date, briefs);
     }
 
-    @Tool(description = "查询所有会议室今天的整体预约统计，返回每个会议室的预约数量")
-    public String todayReservationStats() {
+    @Tool(description = "查询所有会议室今天的整体预约统计。返回 JSON 数组，每项字段：name 会议室名称、count 当日预约数量")
+    public List<RoomStat> todayReservationStats() {
         LocalDate today = LocalDate.now();
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
@@ -117,24 +107,24 @@ public class MeetingRoomTool {
             );
             stats.add(new RoomStat(r.getName(), count));
         }
-        return ToolResponseFormatter.format(new RoomStatsResult(stats));
+        return stats;
     }
 
-    @Tool(description = "根据需求推荐可用会议室。传入日期、可选时段、人数、设备关键词，返回符合条件的空闲会议室列表。")
-    public String recommendRoom(
+    @Tool(description = "根据需求推荐可用会议室。传入日期、可选时段、人数、设备关键词，返回符合条件的空闲会议室列表。返回 JSON 对象，字段：date 日期、startTime/endTime 时段 HH:mm、rooms 会议室列表（name、location、capacity、equipment）")
+    public ToolResult recommendRoom(
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date,
             @ToolParam(description = "开始时间，格式 HH:mm", required = false) String startTime,
             @ToolParam(description = "结束时间，格式 HH:mm", required = false) String endTime,
             @ToolParam(description = "参会人数", required = false) Integer capacity,
             @ToolParam(description = "设备关键词，如 投影仪/白板", required = false) String equipment) {
         if (date == null) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("请提供日期"));
+            return new ToolResult.ErrorResult("请提供日期");
         }
         LocalDate d;
         try {
             d = LocalDate.parse(date, DATE_FMT);
         } catch (Exception e) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("日期格式有误，请用 yyyy-MM-dd"));
+            return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
 
         // 1. 按启用状态、容量、设备关键词筛选
@@ -147,9 +137,6 @@ public class MeetingRoomTool {
             wrapper.like(MeetingRoom::getEquipment, equipment);
         }
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(wrapper);
-        if (rooms.isEmpty()) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("未找到符合条件的会议室"));
-        }
 
         // 2. 若有时段，进一步过滤掉冲突的会议室
         LocalDateTime rangeStart = null;
@@ -159,7 +146,7 @@ public class MeetingRoomTool {
                 rangeStart = LocalDateTime.of(d, LocalTime.parse(startTime, TIME_FMT));
                 rangeEnd = LocalDateTime.of(d, LocalTime.parse(endTime, TIME_FMT));
             } catch (Exception e) {
-                return ToolResponseFormatter.format(new ToolResult.TextResult("时间格式有误，请用 HH:mm"));
+                return new ToolResult.ErrorResult("时间格式有误，请用 HH:mm");
             }
         }
 
@@ -180,24 +167,19 @@ public class MeetingRoomTool {
                 freeRooms.add(RoomResolver.toSummary(r));
             }
         }
-        if (freeRooms.isEmpty()) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult(
-                    String.format("在 %s %s~%s 没有符合条件的空闲会议室",
-                            date, startTime != null ? startTime : "", endTime != null ? endTime : "")));
-        }
-        return ToolResponseFormatter.format(new RoomRecommendResult(date, startTime, endTime, freeRooms));
+        return new RoomRecommendResult(date, startTime, endTime, freeRooms);
     }
 
-    @Tool(description = "查询某个会议室某天的空闲时段。返回该日所有空闲时间段列表。")
-    public String findFreeSlots(
+    @Tool(description = "查询某个会议室某天的空闲时段。返回 JSON 对象，字段：roomName 会议室名称、date 日期、slots 空闲时段列表（start/end 均为 HH:mm）")
+    public ToolResult findFreeSlots(
             @ToolParam(description = "会议室名称，支持模糊匹配") String roomName,
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date) {
         if (roomName == null || date == null) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("请提供会议室名称和日期"));
+            return new ToolResult.ErrorResult("请提供会议室名称和日期");
         }
         RoomMatch match = roomResolver.resolveByName(roomName);
         if (!(match instanceof RoomMatch.Single s)) {
-            return ToolResponseFormatter.format(RoomResolver.toErrorResult(match));
+            return RoomResolver.toErrorResult(match);
         }
         MeetingRoom room = s.room();
 
@@ -205,7 +187,7 @@ public class MeetingRoomTool {
         try {
             d = LocalDate.parse(date, DATE_FMT);
         } catch (Exception e) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult("日期格式有误，请用 yyyy-MM-dd"));
+            return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
 
         // 该日已生效的预约列表（按开始时间升序）
@@ -226,21 +208,18 @@ public class MeetingRoomTool {
         List<TimeSlot> slots = new ArrayList<>();
         for (MeetingRoomReservation r : reservations) {
             if (r.getStartTime().isAfter(cursor)) {
-                slots.add(new TimeSlot(cursor.toLocalTime(), r.getStartTime().toLocalTime()));
+                slots.add(new TimeSlot(cursor.toLocalTime().format(TIME_FMT),
+                        r.getStartTime().toLocalTime().format(TIME_FMT)));
             }
             if (r.getEndTime().isAfter(cursor)) {
                 cursor = r.getEndTime();
             }
         }
         if (cursor.isBefore(dayLimit)) {
-            slots.add(new TimeSlot(cursor.toLocalTime(), dayEnd));
+            slots.add(new TimeSlot(cursor.toLocalTime().format(TIME_FMT), dayEnd.format(TIME_FMT)));
         }
 
-        if (slots.isEmpty()) {
-            return ToolResponseFormatter.format(new ToolResult.TextResult(
-                    String.format("%s 在 %s 没有空闲时段", room.getName(), date)));
-        }
-        return ToolResponseFormatter.format(new FreeSlotResult(room.getName(), date, slots));
+        return new FreeSlotResult(room.getName(), date, slots);
     }
 
     /**
