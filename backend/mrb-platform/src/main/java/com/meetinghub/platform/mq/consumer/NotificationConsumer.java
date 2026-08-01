@@ -1,8 +1,8 @@
 package com.meetinghub.platform.mq.consumer;
 
-import com.meetinghub.common.constant.MqConstant;
+import com.meetinghub.platform.api.constant.MqConstant;
 import com.meetinghub.common.constant.RedisKeyConstant;
-import com.meetinghub.common.model.dto.NotificationMessage;
+import com.meetinghub.platform.api.model.dto.NotificationMessage;
 import com.meetinghub.platform.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

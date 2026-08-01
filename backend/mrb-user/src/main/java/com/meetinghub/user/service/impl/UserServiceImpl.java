@@ -11,7 +11,7 @@ import com.meetinghub.common.enums.RoleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.common.result.Result;
-import com.meetinghub.user.feign.FileFeignClient;
+import com.meetinghub.platform.api.feign.FileFeignClient;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;

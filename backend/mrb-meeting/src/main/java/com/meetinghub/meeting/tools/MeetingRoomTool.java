@@ -2,7 +2,7 @@ package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
-import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults;

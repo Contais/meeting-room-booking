@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.common.model.dto.NotificationSendDTO;
+import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
 import com.meetinghub.platform.model.entity.Notification;
 import com.meetinghub.platform.model.vo.NotificationVO;
 import com.meetinghub.platform.repository.NotificationRepository;

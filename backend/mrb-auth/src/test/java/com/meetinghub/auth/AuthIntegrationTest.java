@@ -1,8 +1,8 @@
 package com.meetinghub.auth;
 
 import cn.hutool.crypto.digest.BCrypt;
-import com.meetinghub.auth.feign.UserFeignClient;
-import com.meetinghub.common.model.dto.AuthUserDTO;
+import com.meetinghub.user.api.feign.UserFeignClient;
+import com.meetinghub.user.api.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -2,9 +2,9 @@ package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.constant.DateTimePatternConstant;
-import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
-import com.meetinghub.meeting.feign.DepartmentFeignClient;
+import com.meetinghub.user.api.feign.DepartmentFeignClient;
 import com.meetinghub.meeting.model.dto.ReservationCreateDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;

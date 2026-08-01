@@ -2,12 +2,12 @@ package com.meetinghub.meeting.schedule;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.constant.RedisKeyConstant;
-import com.meetinghub.common.enums.ReservationStatusEnum;
-import com.meetinghub.common.model.dto.NotificationSendDTO;
+import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
+import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
-import com.meetinghub.meeting.mq.producer.NotificationProducer;
+import com.meetinghub.platform.api.mq.producer.NotificationProducer;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationAttendeeService;

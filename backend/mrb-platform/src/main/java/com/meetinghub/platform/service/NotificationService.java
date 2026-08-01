@@ -2,7 +2,7 @@ package com.meetinghub.platform.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.meetinghub.common.model.dto.NotificationSendDTO;
+import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
 import com.meetinghub.platform.model.entity.Notification;
 import com.meetinghub.platform.model.vo.NotificationVO;
 

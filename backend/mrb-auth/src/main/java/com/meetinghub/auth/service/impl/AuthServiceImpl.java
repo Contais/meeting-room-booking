@@ -1,14 +1,14 @@
 package com.meetinghub.auth.service.impl;
 
 import cn.hutool.crypto.digest.BCrypt;
-import com.meetinghub.auth.feign.UserFeignClient;
+import com.meetinghub.user.api.feign.UserFeignClient;
 import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.auth.util.JwtUtils;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.common.model.dto.AuthUserDTO;
+import com.meetinghub.user.api.model.dto.AuthUserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

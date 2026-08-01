@@ -3,7 +3,7 @@ package com.meetinghub.user.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.context.UserContext;
-import com.meetinghub.common.model.dto.AuthUserDTO;
+import com.meetinghub.user.api.model.dto.AuthUserDTO;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.dto.ResetPasswordDTO;

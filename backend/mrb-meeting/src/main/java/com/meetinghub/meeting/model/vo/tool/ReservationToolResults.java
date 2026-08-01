@@ -1,6 +1,6 @@
 package com.meetinghub.meeting.model.vo.tool;
 
-import com.meetinghub.common.enums.ReservationStatusEnum;
+import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
 
