@@ -6,13 +6,14 @@
 
     <parent>
         <groupId>com.meetinghub</groupId>
-        <artifactId>mrb-backend</artifactId>
+        <artifactId>mrb-auth</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>mrb-meeting-api</artifactId>
-    <name>Meeting Room Booking - Meeting API</name>
-    <description>会议室域跨服务契约：跨服务枚举</description>
+    <artifactId>mrb-auth-api</artifactId>
+    <name>Meeting Room Booking - Auth API</name>
+    <description>鉴权域跨服务契约（预留：当前 auth 无对外 Feign 契约，模块作为结构占位）</description>
 
     <dependencies>
         <dependency>

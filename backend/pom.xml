@@ -14,11 +14,7 @@
     <modules>
         <module>mrb-common</module>
         <module>mrb-gateway</module>
-        <!-- api 契约模块（先于服务构建，供服务依赖） -->
-        <module>mrb-meeting-api</module>
-        <module>mrb-platform-api</module>
-        <module>mrb-user-api</module>
-        <!-- 服务模块 -->
+        <!-- 服务聚合器（各含 api + service 子模块，子模块内部声明构建顺序） -->
         <module>mrb-auth</module>
         <module>mrb-meeting</module>
         <module>mrb-platform</module>

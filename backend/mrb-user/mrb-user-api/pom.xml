@@ -6,8 +6,9 @@
 
     <parent>
         <groupId>com.meetinghub</groupId>
-        <artifactId>mrb-backend</artifactId>
+        <artifactId>mrb-user</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>mrb-user-api</artifactId>
