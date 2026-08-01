@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.meetinghub")
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.meetinghub")
 @EnableScheduling
 @MapperScan("com.meetinghub.meeting.repository")
 /**

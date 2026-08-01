@@ -14,7 +14,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  */
 @SpringBootApplication(scanBasePackages = "com.meetinghub")
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.meetinghub")
 @MapperScan("com.meetinghub.platform.repository")
 public class PlatformApplication {
 

@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication(scanBasePackages = "com.meetinghub")
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.meetinghub")
 @MapperScan("com.meetinghub.auth.repository")
 /**
  * 鉴权服务启动类

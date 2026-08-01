@@ -93,7 +93,8 @@ backend/
 
 ## 组件扫描与运行时说明
 
-- 所有 Application 类均 `scanBasePackages = "com.meetinghub"` + `@EnableFeignClients`（默认扫描 com.meetinghub），api 模块的 Feign 客户端与 `@Component`（NotificationSender/Producer）会被消费方自动扫描装配，无需改启动类配置。
+- 所有 Application 类均 `@SpringBootApplication(scanBasePackages = "com.meetinghub")`（组件扫描覆盖 com.meetinghub，含 api 模块的 `@Component`）。
+- **`@EnableFeignClients(basePackages = "com.meetinghub")` 必须显式指定**：`@EnableFeignClients` 默认只扫描 Application 类所在包（如 `com.meetinghub.meeting`），不覆盖 api 模块的 `com.meetinghub.user.api.feign`/`com.meetinghub.platform.api.feign`。重构后 Feign 客户端迁出服务自身包，必须显式指定 basePackages，否则启动报 `required a bean of type 'XxxFeignClient' that could not be found`。
 - `NotificationSender`/`NotificationProducer` 作为 `@Component` 落在 platform-api：依赖 platform-api 的服务（meeting/user/platform）均已有 rocketmq + feign 依赖，可正常装配。platform-service 与 user-service 会装配出未使用的 NotificationSender bean，无副作用（不调用即不触发）。
 - 运行时配置（application.yml/bootstrap.yml）随 src 迁入 service 子模块，路径变化不影响 Nacos 配置加载（配置中心按 dataId 拉取，与本地路径无关）。
 
@@ -109,8 +110,10 @@ backend/
 
 1. **全量编译**：`cd backend && mvn -q clean compile -DskipTests` 通过
 2. **测试编译**：`mvn -q test-compile -DskipTests` 通过（auth 测试引用迁移后的 UserFeignClient/AuthUserDTO）
-3. **无残留旧引用**：grep 确认服务模块中无 `com.meetinghub.common.{model.dto.AuthUserDTO,model.dto.NotificationSendDTO,model.dto.NotificationMessage,constant.MqConstant,enums.ReservationStatusEnum,enums.AttendeeStatusEnum}` 及 `meeting.feign./meeting.mq.producer./auth.feign./user.feign.` 残留
-4. **提交分阶段**：
+3. **运行时 Feign 装配**：4 个 Application 类的 `@EnableFeignClients` 显式指定 `basePackages = "com.meetinghub"`，确保 api 模块的 Feign 客户端被扫描装配（修复启动报 `UserFeignClient bean not found`）
+4. **无残留旧引用**：grep 确认服务模块中无 `com.meetinghub.common.{model.dto.AuthUserDTO,model.dto.NotificationSendDTO,model.dto.NotificationMessage,constant.MqConstant,enums.ReservationStatusEnum,enums.AttendeeStatusEnum}` 及 `meeting.feign./meeting.mq.producer./auth.feign./user.feign.` 残留
+5. **提交分阶段**：
    - Stage1：3 个 api 契约模块骨架（`8594bf2`）
    - Stage2：跨服务契约迁入 api 模块，消除 Feign 客户端重复定义（`c4bb076`）
    - Stage3：服务转为嵌套聚合器结构（`dd560e4`）—— `git mv` 迁移 src 树、重写 12 个 pom、根 pom 调整 modules
+   - Stage4：修复 `@EnableFeignClients` basePackages 扫描范围（运行时 Feign 装配）
