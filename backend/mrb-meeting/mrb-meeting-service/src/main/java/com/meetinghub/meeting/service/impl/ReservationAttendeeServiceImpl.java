@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.text.Collator;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,6 +46,10 @@ public class ReservationAttendeeServiceImpl
     private final ReservationRepository reservationRepository;
     private final UserFeignClient userFeignClient;
     private final NotificationSender notificationSender;
+
+    /** 中文拼音排序器（Collator 非线程安全，用 ThreadLocal 隔离） */
+    private static final ThreadLocal<Collator> ZH_COLLATOR =
+            ThreadLocal.withInitial(() -> Collator.getInstance(Locale.CHINA));
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -191,12 +196,12 @@ public class ReservationAttendeeServiceImpl
                     }
                     return vo;
                 })
-                // 二次排序：先按通知时间（createTime）升序，相同时按真实姓名升序（空值居后）
+                // 二次排序：先按通知时间（createTime）升序，相同时按真实姓名拼音升序（空值居后）
                 .sorted(Comparator
                         .comparing(AttendeeVO::getCreateTime,
                                 Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(AttendeeVO::getRealName,
-                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                                Comparator.nullsLast(ZH_COLLATOR.get())))
                 .collect(Collectors.toList());
     }
 
