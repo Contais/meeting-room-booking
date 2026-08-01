@@ -14,10 +14,15 @@
     <modules>
         <module>mrb-common</module>
         <module>mrb-gateway</module>
-        <module>mrb-user</module>
+        <!-- api 契约模块（先于服务构建，供服务依赖） -->
+        <module>mrb-meeting-api</module>
+        <module>mrb-platform-api</module>
+        <module>mrb-user-api</module>
+        <!-- 服务模块 -->
         <module>mrb-auth</module>
         <module>mrb-meeting</module>
         <module>mrb-platform</module>
+        <module>mrb-user</module>
     </modules>
 
     <properties>
