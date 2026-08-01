@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
@@ -14,8 +15,7 @@ import com.meetinghub.meeting.model.dto.ReservationPageQuery;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.feign.UserFeignClient;
-import com.meetinghub.meeting.feign.NotificationFeignClient;
-import com.meetinghub.meeting.mq.producer.NotificationProducer;
+import com.meetinghub.meeting.mq.producer.NotificationSender;
 import com.meetinghub.common.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.model.vo.ReservationVO;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
@@ -47,14 +47,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, MeetingRoomReservation> implements ReservationService {
 
-    private static final DateTimeFormatter NOTIFY_DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserFeignClient userFeignClient;
     private final ReservationAttendeeService attendeeService;
-    private final NotificationFeignClient notificationFeignClient;
-    private final NotificationProducer notificationProducer;
+    private final NotificationSender notificationSender;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -119,10 +116,10 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                 notify.setType("RESERVATION_CREATED");
                 notify.setTitle("您被邀请参加会议：" + dto.getSubject());
                 notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
-                        + "\n时间：" + dto.getStartTime().format(NOTIFY_DATETIME_FMT) + " ~ " + dto.getEndTime().format(NOTIFY_DATETIME_FMT));
+                        + "\n时间：" + dto.getStartTime().format(DateTimePatternConstant.DATETIME_FMT) + " ~ " + dto.getEndTime().format(DateTimePatternConstant.DATETIME_FMT));
                 notify.setRefType("reservation");
                 notify.setRefId(reservation.getId());
-                sendNotificationSafe(dto.getAttendeeUserIds(), notify);
+                notificationSender.sendSafe(dto.getAttendeeUserIds(), notify);
             }
         }
         return reservationCode;
@@ -209,7 +206,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode());
             notify.setRefType("reservation");
             notify.setRefId(reservationId);
-            sendNotificationSafe(attendeeIds, notify);
+            notificationSender.sendSafe(attendeeIds, notify);
         }
     }
 
@@ -350,7 +347,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode());
         notify.setRefType("reservation");
         notify.setRefId(reservationId);
-        sendNotificationSafe(List.of(reservation.getUserId()), notify);
+        notificationSender.sendSafe(List.of(reservation.getUserId()), notify);
 
         // 通知参会人：审批通过后向参会人发送会议邀请通知
         List<AttendeeVO> attendees = attendeeService.listAttendees(reservationId);
@@ -363,10 +360,10 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             attendeeNotify.setType("RESERVATION_APPROVED");
             attendeeNotify.setTitle("您被邀请参加会议：" + reservation.getSubject());
             attendeeNotify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode()
-                    + "\n时间：" + reservation.getStartTime().format(NOTIFY_DATETIME_FMT) + " ~ " + reservation.getEndTime().format(NOTIFY_DATETIME_FMT));
+                    + "\n时间：" + reservation.getStartTime().format(DateTimePatternConstant.DATETIME_FMT) + " ~ " + reservation.getEndTime().format(DateTimePatternConstant.DATETIME_FMT));
             attendeeNotify.setRefType("reservation");
             attendeeNotify.setRefId(reservationId);
-            sendNotificationSafe(attendeeUserIds, attendeeNotify);
+            notificationSender.sendSafe(attendeeUserIds, attendeeNotify);
         }
     }
 
@@ -401,7 +398,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                 + "\n拒绝原因：" + (reason != null && !reason.isBlank() ? reason : "管理员拒绝"));
         notify.setRefType("reservation");
         notify.setRefId(reservationId);
-        sendNotificationSafe(List.of(reservation.getUserId()), notify);
+        notificationSender.sendSafe(List.of(reservation.getUserId()), notify);
     }
 
     /**
@@ -410,25 +407,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     private boolean isDeletableStatus(Integer status) {
         return status != null && (status.equals(ReservationStatusEnum.CANCELLED.getCode())
                 || status.equals(ReservationStatusEnum.REJECTED.getCode()));
-    }
-
-    /**
-     * 发送站内信通知（容错：MQ 异步投递优先，失败降级 Feign 同步调用，再失败仅记录日志）
-     */
-    private void sendNotificationSafe(List<Long> userIds, NotificationSendDTO template) {
-        if (userIds == null || userIds.isEmpty()) {
-            return;
-        }
-        try {
-            notificationProducer.send(userIds, template);
-        } catch (Exception e) {
-            log.warn("MQ 投递失败，降级 Feign 同步发送, type={}", template.getType(), e);
-            try {
-                notificationFeignClient.sendBatch(userIds, template);
-            } catch (Exception ex) {
-                log.warn("降级 Feign 调用也失败, userIds={}, type={}", userIds, template.getType(), ex);
-            }
-        }
     }
 
     private boolean checkTimeConflict(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {

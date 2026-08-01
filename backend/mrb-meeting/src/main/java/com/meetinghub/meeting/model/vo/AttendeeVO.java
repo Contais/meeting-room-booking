@@ -2,6 +2,7 @@ package com.meetinghub.meeting.model.vo;
 
 import lombok.Data;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 参会人视图对象（用于跨服务回填用户信息后展示）
@@ -26,4 +27,6 @@ public class AttendeeVO implements Serializable {
     private String avatar;
     /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
     private Integer status;
+    /** 邀请时间（attendee 记录创建时间，用于列表排序与展示） */
+    private LocalDateTime createTime;
 }

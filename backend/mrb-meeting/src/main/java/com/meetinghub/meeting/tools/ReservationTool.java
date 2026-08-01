@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.tools;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.meeting.feign.DepartmentFeignClient;
@@ -59,7 +60,6 @@ public class ReservationTool {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter DATE_TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     /** 历史预约最多展示条数，避免回复过长 */
     private static final int HISTORY_DISPLAY_LIMIT = 10;
 
@@ -107,7 +107,7 @@ public class ReservationTool {
         reservationService.createReservation(userId, dto);
         return new OperationResult(true,
                 String.format("预约创建成功：%s %s ~ %s「%s」",
-                        room.getName(), start.format(DATE_TIME_FMT), end.format(DATE_TIME_FMT), subject));
+                        room.getName(), start.format(DateTimePatternConstant.DATETIME_FMT), end.format(DateTimePatternConstant.DATETIME_FMT), subject));
     }
 
     @Tool(description = "取消本人的会议室预约，传入预约记录ID。仅可取消本人创建的预约，无法取消他人的预约。返回 JSON 对象：success 是否成功、message 结果描述")

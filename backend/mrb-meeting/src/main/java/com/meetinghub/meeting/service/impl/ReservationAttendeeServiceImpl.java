@@ -2,14 +2,18 @@ package com.meetinghub.meeting.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.common.enums.AttendeeStatusEnum;
+import com.meetinghub.common.enums.ReservationStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
+import com.meetinghub.common.model.dto.NotificationSendDTO;
 import com.meetinghub.meeting.feign.UserFeignClient;
 import com.meetinghub.meeting.feign.dto.UserBriefDTO;
-import com.meetinghub.meeting.model.entity.ReservationAttendee;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
+import com.meetinghub.meeting.model.entity.ReservationAttendee;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
+import com.meetinghub.meeting.mq.producer.NotificationSender;
 import com.meetinghub.meeting.repository.ReservationAttendeeRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationAttendeeService;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +44,7 @@ public class ReservationAttendeeServiceImpl
     private final ReservationAttendeeRepository attendeeRepository;
     private final ReservationRepository reservationRepository;
     private final UserFeignClient userFeignClient;
+    private final NotificationSender notificationSender;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -52,6 +58,19 @@ public class ReservationAttendeeServiceImpl
 
         // 校验预约存在且归属邀请人
         checkReservationOwnership(reservationId, inviterId);
+
+        // 状态约束：仅 PENDING / CONFIRMED 可邀人（已取消/已拒绝/已结束不可邀）
+        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
+        Integer status = reservation.getStatus();
+        if (!ReservationStatusEnum.PENDING.getCode().equals(status)
+                && !ReservationStatusEnum.CONFIRMED.getCode().equals(status)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "预约已取消或已拒绝，无法邀请参会人");
+        }
+        if (ReservationStatusEnum.CONFIRMED.getCode().equals(status)
+                && reservation.getEndTime() != null
+                && reservation.getEndTime().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "会议已结束，无法邀请参会人");
+        }
 
         // 查询已存在的参会人，去重
         List<ReservationAttendee> existing = attendeeRepository.selectList(
@@ -68,7 +87,7 @@ public class ReservationAttendeeServiceImpl
                 .filter(uid -> !existingUserIds.contains(uid))
                 .filter(uid -> !uid.equals(inviterId))
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
         if (toAdd.isEmpty()) {
             return 0;
         }
@@ -84,6 +103,24 @@ public class ReservationAttendeeServiceImpl
         // 批量插入（IService.saveBatch 默认 1000 条一批）
         saveBatch(records);
         log.info("邀请参会人, reservationId={}, inviterId={}, added={}", reservationId, inviterId, records.size());
+
+        // 修改预约的参会人数
+        reservation.setAttendeeCount(reservation.getAttendeeCount() + toAdd.size());
+        reservationRepository.updateById(reservation);
+
+        // 通知参会人：仅当免审批（立即确认）时才在此处通知；
+        // 需审批的预约在 approveReservation 中审批通过后通知参会人
+        if (reservation.getStatus().equals(ReservationStatusEnum.CONFIRMED.getCode())) {
+            NotificationSendDTO notify = new NotificationSendDTO();
+            notify.setType("RESERVATION_CREATED");
+            notify.setTitle("您被邀请参加会议：" + reservation.getSubject());
+            notify.setContent("会议主题：" + reservation.getSubject() + "\n预约编号：" + reservation.getReservationCode()
+                    + "\n时间：" + reservation.getStartTime().format(DateTimePatternConstant.DATETIME_FMT)
+                    + " ~ " + reservation.getEndTime().format(DateTimePatternConstant.DATETIME_FMT));
+            notify.setRefType("reservation");
+            notify.setRefId(reservation.getId());
+            notificationSender.sendSafe(toAdd, notify);
+        }
         return records.size();
     }
 
@@ -141,6 +178,7 @@ public class ReservationAttendeeServiceImpl
                     AttendeeVO vo = new AttendeeVO();
                     vo.setUserId(a.getUserId());
                     vo.setStatus(a.getStatus());
+                    vo.setCreateTime(a.getCreateTime());
                     UserBriefDTO u = userMap.get(a.getUserId());
                     if (u != null) {
                         vo.setUsername(u.getUsername());
@@ -153,6 +191,12 @@ public class ReservationAttendeeServiceImpl
                     }
                     return vo;
                 })
+                // 二次排序：先按通知时间（createTime）升序，相同时按真实姓名升序（空值居后）
+                .sorted(Comparator
+                        .comparing(AttendeeVO::getCreateTime,
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(AttendeeVO::getRealName,
+                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .collect(Collectors.toList());
     }
 
