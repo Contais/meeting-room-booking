@@ -6,6 +6,7 @@ import com.meetinghub.platform.api.model.dto.NotificationSendDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +19,14 @@ import java.util.UUID;
  * 各业务模块通过本生产者将通知投递至 {@link MqConstant#TOPIC_NOTIFICATION}，
  * 由 mrb-platform 异步消费落库 + WebSocket 推送，实现主业务与通知发送解耦。
  * </p>
+ * <p>
+ * 仅在配置了 {@code rocketmq.name-server} 的服务中装配（与 RocketMQAutoConfiguration 条件一致），
+ * 避免未配置 RocketMQ 的服务启动时因缺少 {@link RocketMQTemplate} bean 而失败。
+ * </p>
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "rocketmq", name = "name-server")
 @RequiredArgsConstructor
 public class NotificationProducer {
 

@@ -95,7 +95,7 @@ backend/
 
 - 所有 Application 类均 `@SpringBootApplication(scanBasePackages = "com.meetinghub")`（组件扫描覆盖 com.meetinghub，含 api 模块的 `@Component`）。
 - **`@EnableFeignClients(basePackages = "com.meetinghub")` 必须显式指定**：`@EnableFeignClients` 默认只扫描 Application 类所在包（如 `com.meetinghub.meeting`），不覆盖 api 模块的 `com.meetinghub.user.api.feign`/`com.meetinghub.platform.api.feign`。重构后 Feign 客户端迁出服务自身包，必须显式指定 basePackages，否则启动报 `required a bean of type 'XxxFeignClient' that could not be found`。
-- `NotificationSender`/`NotificationProducer` 作为 `@Component` 落在 platform-api：依赖 platform-api 的服务（meeting/user/platform）均已有 rocketmq + feign 依赖，可正常装配。platform-service 与 user-service 会装配出未使用的 NotificationSender bean，无副作用（不调用即不触发）。
+- `NotificationSender` 作为 `@Component` 落在 platform-api：依赖 platform-api 的服务（meeting/user/platform）均可装配。`NotificationProducer` 加 `@ConditionalOnProperty(prefix = "rocketmq", name = "name-server")`，仅在配置了 RocketMQ 的服务（meeting/platform）中创建；未配置 RocketMQ 的服务（如 user）不创建 Producer，`NotificationSender` 通过 `ObjectProvider<NotificationProducer>` 弱依赖，缺失时直接走 Feign 降级，不启动报错。
 - 运行时配置（application.yml/bootstrap.yml）随 src 迁入 service 子模块，路径变化不影响 Nacos 配置加载（配置中心按 dataId 拉取，与本地路径无关）。
 
 ## 冲突与风险
