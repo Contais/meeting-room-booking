@@ -10,6 +10,8 @@ export interface Attendee {
   avatar?: string
   /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
   status: number
+  /** 邀请时间（attendee 记录创建时间，用于列表排序与展示） */
+  createTime?: string
 }
 
 export interface Reservation {

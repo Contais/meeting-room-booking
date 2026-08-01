@@ -81,7 +81,13 @@
 
         <!-- 参会人员列表（按参会状态分组、可折叠） -->
         <div v-if="reservation" class="attendee-section">
-          <div class="section-title">参会人员</div>
+          <div class="section-title-bar">
+            <span class="section-title">参会人员</span>
+            <el-button v-if="canInvite" type="primary" plain size="small" @click="openInviteDialog">
+              <el-icon><Plus /></el-icon>
+              <span>邀请参会人</span>
+            </el-button>
+          </div>
           <template v-if="reservation.attendees && reservation.attendees.length">
             <el-collapse v-model="activeGroups" class="attendee-collapse">
               <el-collapse-item
@@ -110,6 +116,9 @@
                       <span v-if="!row.phone && !row.email" style="color: var(--el-text-color-secondary)">-</span>
                     </template>
                   </el-table-column>
+                  <el-table-column label="邀请时间" width="170" align="center">
+                    <template #default="{ row }">{{ row.createTime ? formatDateTime(row.createTime) : '-' }}</template>
+                  </el-table-column>
                   <el-table-column label="参会状态" width="100" align="center">
                     <template #default="{ row }">
                       <el-tag :type="attendeeStatusType(row.status)" size="small">{{ attendeeStatusText(row.status) }}</el-tag>
@@ -125,6 +134,81 @@
         <el-empty v-else description="暂无数据" />
       </div>
     </div>
+
+    <!-- 邀请参会人弹窗 -->
+    <el-dialog
+      v-model="inviteDialogVisible"
+      title="邀请参会人"
+      width="680px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <el-tabs v-model="activeInviteTab">
+        <el-tab-pane label="按用户" name="user">
+          <div class="invite-toolbar">
+            <el-input
+              v-model="userKeyword"
+              placeholder="搜索用户名/真实姓名"
+              clearable
+              style="width: 260px"
+              @keyup.enter="searchUsers"
+              @clear="searchUsers"
+            >
+              <template #append>
+                <el-button :icon="Search" @click="searchUsers" />
+              </template>
+            </el-input>
+            <span class="invite-tip">已邀请的用户不可重复选择</span>
+          </div>
+          <el-table
+            :data="userList"
+            v-loading="userLoading"
+            size="small"
+            border
+            max-height="340"
+            row-key="id"
+            @selection-change="onSelectionChange"
+          >
+            <el-table-column type="selection" width="42" :selectable="canSelectUser" />
+            <el-table-column label="姓名" min-width="120">
+              <template #default="{ row }">{{ row.realName || row.username }}</template>
+            </el-table-column>
+            <el-table-column label="用户名" min-width="120" prop="username" />
+            <el-table-column label="部门" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.departmentName || '未分配' }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="isExistingAttendee(row.id)" type="info" size="small">已邀请</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="按部门" name="department">
+          <div class="invite-toolbar">
+            <el-select
+              v-model="selectedDepartmentId"
+              placeholder="选择部门"
+              style="width: 280px"
+              filterable
+              clearable
+            >
+              <el-option
+                v-for="d in departmentList"
+                :key="d.id"
+                :label="d.name"
+                :value="d.id"
+              />
+            </el-select>
+            <span class="invite-tip">将邀请所选部门的所有成员（已邀请的会自动跳过）</span>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+      <template #footer>
+        <el-button @click="inviteDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="inviteSubmitting" @click="confirmInvite">确定邀请</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -132,7 +216,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Check, Close, Delete } from '@element-plus/icons-vue'
+import { ArrowLeft, Check, Close, Delete, Plus, Search } from '@element-plus/icons-vue'
 import {
   getMyReservationDetail,
   getReservationDetail,
@@ -142,10 +226,14 @@ import {
   deleteReservation,
   adminDeleteReservation,
 } from '@/api/reservation'
-import { respondInvitation } from '@/api/attendee'
+import { respondInvitation, inviteAttendees, inviteDepartment } from '@/api/attendee'
+import { listContacts } from '@/api/user'
+import { listDepartments } from '@/api/department'
 import { useUserStore } from '@/stores/user'
 import { formatDateTime } from '@/utils/datetime'
 import type { Reservation, Attendee } from '@/types/reservation'
+import type { UserInfo } from '@/types/user'
+import type { Department } from '@/types/department'
 
 const route = useRoute()
 const router = useRouter()
@@ -189,6 +277,20 @@ const canDecline = computed(() => {
   if (isCreator) return false
   const me = reservation.value.attendees?.find(a => a.userId === userStore.userInfo?.id)
   return me != null && me.status !== 2
+})
+
+/**
+ * 邀请参会人条件（用户模式）：
+ * - 非管理员模式
+ * - 当前用户是预约创建者
+ * - 预约状态为待确认(0) 或 已确认(1)
+ * - 会议尚未结束
+ */
+const canInvite = computed(() => {
+  if (isAdminMode.value || !reservation.value) return false
+  if (reservation.value.userId !== userStore.userInfo?.id) return false
+  if (reservation.value.status !== 0 && reservation.value.status !== 1) return false
+  return new Date(reservation.value.endTime) > new Date()
 })
 
 // 参会人按状态分组（排序：待查阅 → 已查阅 → 已拒绝）
@@ -324,6 +426,111 @@ async function handleDelete() {
   }
 }
 
+// ============ 邀请参会人 ============
+const inviteDialogVisible = ref(false)
+const activeInviteTab = ref<'user' | 'department'>('user')
+const inviteSubmitting = ref(false)
+const userKeyword = ref('')
+const userList = ref<UserInfo[]>([])
+const userLoading = ref(false)
+const selectedUsers = ref<UserInfo[]>([])
+const departmentList = ref<Department[]>([])
+const selectedDepartmentId = ref<number | null>(null)
+
+/** 已存在的参会人 + 预约创建者，均不可重复邀请 */
+const existingAttendeeIds = computed(() => {
+  const set = new Set<number>()
+  if (reservation.value?.userId) set.add(reservation.value.userId)
+  for (const a of reservation.value?.attendees || []) {
+    set.add(a.userId)
+  }
+  return set
+})
+
+function isExistingAttendee(userId: number) {
+  return existingAttendeeIds.value.has(userId)
+}
+
+function canSelectUser(row: UserInfo) {
+  return !isExistingAttendee(row.id)
+}
+
+async function openInviteDialog() {
+  inviteDialogVisible.value = true
+  activeInviteTab.value = 'user'
+  userKeyword.value = ''
+  userList.value = []
+  selectedUsers.value = []
+  selectedDepartmentId.value = null
+  // 默认拉一次用户列表（不带关键字，返回全部）
+  await searchUsers()
+  // 部门列表懒加载
+  if (departmentList.value.length === 0) {
+    try {
+      const res = await listDepartments()
+      departmentList.value = res.data || []
+    } catch {
+      // 部门加载失败不阻塞用户切到按部门 Tab
+    }
+  }
+}
+
+async function searchUsers() {
+  userLoading.value = true
+  try {
+    const res = await listContacts({ keyword: userKeyword.value.trim() || undefined })
+    userList.value = res.data || []
+  } catch {
+    ElMessage.error('查询用户失败')
+  } finally {
+    userLoading.value = false
+  }
+}
+
+function onSelectionChange(rows: UserInfo[]) {
+  selectedUsers.value = rows
+}
+
+async function confirmInvite() {
+  if (!reservation.value) return
+  if (activeInviteTab.value === 'user') {
+    if (selectedUsers.value.length === 0) {
+      ElMessage.warning('请选择要邀请的用户')
+      return
+    }
+    inviteSubmitting.value = true
+    try {
+      const res = await inviteAttendees(
+        reservation.value.id,
+        selectedUsers.value.map(u => u.id)
+      )
+      ElMessage.success(`已成功邀请 ${res.data} 位参会人`)
+      inviteDialogVisible.value = false
+      loadDetail()
+    } catch (error: any) {
+      ElMessage.error(error?.message || '邀请失败')
+    } finally {
+      inviteSubmitting.value = false
+    }
+  } else {
+    if (!selectedDepartmentId.value) {
+      ElMessage.warning('请选择部门')
+      return
+    }
+    inviteSubmitting.value = true
+    try {
+      const res = await inviteDepartment(reservation.value.id, selectedDepartmentId.value)
+      ElMessage.success(`已成功邀请 ${res.data} 位部门成员`)
+      inviteDialogVisible.value = false
+      loadDetail()
+    } catch (error: any) {
+      ElMessage.error(error?.message || '邀请失败')
+    } finally {
+      inviteSubmitting.value = false
+    }
+  }
+}
+
 // 站内信点击跳转相同路由不同 id 时，组件不会重新挂载，需监听 id 变化重新加载
 watch(id, (newId, oldId) => {
   if (newId !== oldId) loadDetail()
@@ -334,10 +541,13 @@ onMounted(loadDetail)
 
 <style scoped>
 .attendee-section { margin-top: 20px; }
-.section-title { font-size: 15px; font-weight: 600; color: var(--el-text-color-primary); margin-bottom: 12px; padding-left: 8px; border-left: 3px solid var(--el-color-primary); }
+.section-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-title { font-size: 15px; font-weight: 600; color: var(--el-text-color-primary); padding-left: 8px; border-left: 3px solid var(--el-color-primary); }
 .attendee-collapse { border: none; }
 .attendee-collapse :deep(.el-collapse-item__header) { padding-left: 4px; border-bottom: 1px solid var(--border-light); }
 .attendee-collapse :deep(.el-collapse-item__content) { padding-bottom: 8px; }
 .group-header { display: flex; align-items: center; gap: 8px; }
 .group-count { font-size: 13px; color: var(--text-muted); }
+.invite-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.invite-tip { font-size: 12px; color: var(--el-text-color-secondary); }
 </style>
