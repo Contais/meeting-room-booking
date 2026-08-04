@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.schedule;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.constant.DateTimePatternConstant;
 import com.meetinghub.common.constant.RedisKeyConstant;
 import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
@@ -22,8 +23,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static com.meetinghub.common.constant.DateTimePatternConstant.DATETIME_FMT;
 
 /**
  * 预约状态闭环 + 提醒定时任务
@@ -150,7 +149,7 @@ public class ReservationScheduleTask {
         notify.setTitle("会议即将开始：" + r.getSubject());
         notify.setContent("会议主题：" + r.getSubject()
                 + "\n预约编号：" + r.getReservationCode()
-                + "\n时间：" + r.getStartTime().format(DATETIME_FMT) + " ~ " + r.getEndTime().format(DATETIME_FMT)
+                + "\n时间：" + r.getStartTime().format(DateTimePatternConstant.DATETIME_FMT) + " ~ " + r.getEndTime().format(DateTimePatternConstant.DATETIME_FMT)
                 + (roomName != null ? "\n会议室：" + roomName : ""));
         notify.setRefType("reservation");
         notify.setRefId(r.getId());

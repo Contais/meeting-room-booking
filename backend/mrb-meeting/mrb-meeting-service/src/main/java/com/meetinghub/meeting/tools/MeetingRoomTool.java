@@ -7,12 +7,7 @@ import com.meetinghub.meeting.api.enums.ReservationStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.FreeSlotResult;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomRecommendResult;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomReservationResult;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomStat;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomSummary;
-import com.meetinghub.meeting.model.vo.tool.RoomToolResults.TimeSlot;
+import com.meetinghub.meeting.model.vo.tool.RoomToolResults.*;
 import com.meetinghub.meeting.model.vo.tool.ToolResult;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
@@ -26,7 +21,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +46,6 @@ public class MeetingRoomTool {
     private final ReservationRepository reservationRepository;
     private final RoomResolver roomResolver;
 
-    private static final DateTimeFormatter DATE_FMT = DateTimePatternConstant.DATE_FMT;
-    private static final DateTimeFormatter TIME_FMT = DateTimePatternConstant.TIME_FMT;
-
     @Tool(description = "查询所有可用的会议室列表。返回 JSON 数组，每项字段：name 会议室名称、location 位置、capacity 容量、equipment 设备")
     public List<RoomSummary> listAvailableRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
@@ -75,7 +66,7 @@ public class MeetingRoomTool {
 
         LocalDate d;
         try {
-            d = LocalDate.parse(date, DATE_FMT);
+            d = LocalDate.parse(date, DateTimePatternConstant.DATE_FMT);
         } catch (Exception e) {
             return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
@@ -123,7 +114,7 @@ public class MeetingRoomTool {
         }
         LocalDate d;
         try {
-            d = LocalDate.parse(date, DATE_FMT);
+            d = LocalDate.parse(date, DateTimePatternConstant.DATE_FMT);
         } catch (Exception e) {
             return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
@@ -144,8 +135,8 @@ public class MeetingRoomTool {
         LocalDateTime rangeEnd = null;
         if (startTime != null && endTime != null && !startTime.isBlank() && !endTime.isBlank()) {
             try {
-                rangeStart = LocalDateTime.of(d, LocalTime.parse(startTime, TIME_FMT));
-                rangeEnd = LocalDateTime.of(d, LocalTime.parse(endTime, TIME_FMT));
+                rangeStart = LocalDateTime.of(d, LocalTime.parse(startTime, DateTimePatternConstant.TIME_FMT));
+                rangeEnd = LocalDateTime.of(d, LocalTime.parse(endTime, DateTimePatternConstant.TIME_FMT));
             } catch (Exception e) {
                 return new ToolResult.ErrorResult("时间格式有误，请用 HH:mm");
             }
@@ -186,7 +177,7 @@ public class MeetingRoomTool {
 
         LocalDate d;
         try {
-            d = LocalDate.parse(date, DATE_FMT);
+            d = LocalDate.parse(date, DateTimePatternConstant.DATE_FMT);
         } catch (Exception e) {
             return new ToolResult.ErrorResult("日期格式有误，请用 yyyy-MM-dd");
         }
@@ -209,15 +200,15 @@ public class MeetingRoomTool {
         List<TimeSlot> slots = new ArrayList<>();
         for (MeetingRoomReservation r : reservations) {
             if (r.getStartTime().isAfter(cursor)) {
-                slots.add(new TimeSlot(cursor.toLocalTime().format(TIME_FMT),
-                        r.getStartTime().toLocalTime().format(TIME_FMT)));
+                slots.add(new TimeSlot(cursor.toLocalTime().format(DateTimePatternConstant.TIME_FMT),
+                        r.getStartTime().toLocalTime().format(DateTimePatternConstant.TIME_FMT)));
             }
             if (r.getEndTime().isAfter(cursor)) {
                 cursor = r.getEndTime();
             }
         }
         if (cursor.isBefore(dayLimit)) {
-            slots.add(new TimeSlot(cursor.toLocalTime().format(TIME_FMT), dayEnd.format(TIME_FMT)));
+            slots.add(new TimeSlot(cursor.toLocalTime().format(DateTimePatternConstant.TIME_FMT), dayEnd.format(DateTimePatternConstant.TIME_FMT)));
         }
 
         return new FreeSlotResult(room.getName(), date, slots);
@@ -231,7 +222,7 @@ public class MeetingRoomTool {
             return defaultValue;
         }
         try {
-            return LocalTime.parse(text, TIME_FMT);
+            return LocalTime.parse(text, DateTimePatternConstant.TIME_FMT);
         } catch (Exception e) {
             return defaultValue;
         }

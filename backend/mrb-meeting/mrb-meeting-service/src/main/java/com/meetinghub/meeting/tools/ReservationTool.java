@@ -31,7 +31,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,8 +57,6 @@ public class ReservationTool {
     private final RoomResolver roomResolver;
     private final DepartmentFeignClient departmentFeignClient;
 
-    private static final DateTimeFormatter DATE_FMT = DateTimePatternConstant.DATE_FMT;
-    private static final DateTimeFormatter TIME_FMT = DateTimePatternConstant.TIME_FMT;
     /** 历史预约最多展示条数，避免回复过长 */
     private static final int HISTORY_DISPLAY_LIMIT = 10;
 
@@ -89,9 +86,9 @@ public class ReservationTool {
         LocalDateTime start;
         LocalDateTime end;
         try {
-            LocalDate d = LocalDate.parse(date, DATE_FMT);
-            LocalTime st = LocalTime.parse(startTime, TIME_FMT);
-            LocalTime et = LocalTime.parse(endTime, TIME_FMT);
+            LocalDate d = LocalDate.parse(date, DateTimePatternConstant.DATE_FMT);
+            LocalTime st = LocalTime.parse(startTime, DateTimePatternConstant.TIME_FMT);
+            LocalTime et = LocalTime.parse(endTime, DateTimePatternConstant.TIME_FMT);
             start = LocalDateTime.of(d, st);
             end = LocalDateTime.of(d, et);
         } catch (Exception e) {
@@ -240,7 +237,7 @@ public class ReservationTool {
             return null;
         }
         try {
-            return LocalDate.parse(date, DATE_FMT).atStartOfDay();
+            return LocalDate.parse(date, DateTimePatternConstant.DATE_FMT).atStartOfDay();
         } catch (Exception e) {
             return null;
         }
@@ -254,7 +251,7 @@ public class ReservationTool {
             return null;
         }
         try {
-            return LocalDate.parse(date, DATE_FMT).atTime(LocalTime.MAX);
+            return LocalDate.parse(date, DateTimePatternConstant.DATE_FMT).atTime(LocalTime.MAX);
         } catch (Exception e) {
             return null;
         }

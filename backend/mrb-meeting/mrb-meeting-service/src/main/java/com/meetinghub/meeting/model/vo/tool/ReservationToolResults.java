@@ -6,7 +6,6 @@ import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -18,8 +17,6 @@ import java.util.Map;
  * </p>
  */
 public final class ReservationToolResults {
-
-    private static final DateTimeFormatter DATE_TIME_FMT = DateTimePatternConstant.DATETIME_FMT;
 
     private ReservationToolResults() {
     }
@@ -186,7 +183,7 @@ public final class ReservationToolResults {
     }
 
     private static String formatDateTime(LocalDateTime dt) {
-        return dt != null ? dt.format(DATE_TIME_FMT) : null;
+        return dt != null ? dt.format(DateTimePatternConstant.DATETIME_FMT) : null;
     }
 
     private static String attendeeStatusText(Integer status) {
