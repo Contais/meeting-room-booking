@@ -5,6 +5,7 @@ import com.meetinghub.user.api.feign.UserFeignClient;
 import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.auth.util.JwtUtils;
+import com.meetinghub.common.constant.RedisKeyConstant;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
@@ -15,8 +16,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
-
-import static com.meetinghub.common.constant.RedisKeyConstant.USER_TOKEN;
 
 /**
  * 鉴权服务实现
@@ -52,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtUtils.generateToken(user.getId(), user.getUsername(), user.getRole());
 
-        String redisKey = USER_TOKEN + user.getId();
+        String redisKey = RedisKeyConstant.USER_TOKEN + user.getId();
         redisTemplate.opsForValue().set(redisKey, token, 24, TimeUnit.HOURS);
 
         LoginVO loginVO = new LoginVO();
@@ -77,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
 
         String newToken = jwtUtils.generateToken(userId, username, role);
 
-        String redisKey = USER_TOKEN + userId;
+        String redisKey = RedisKeyConstant.USER_TOKEN + userId;
         redisTemplate.opsForValue().set(redisKey, newToken, 24, TimeUnit.HOURS);
 
         log.info("Token 刷新成功: userId={}", userId);
@@ -90,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
         Long userId = jwtUtils.getUserIdFromToken(token);
-        String redisKey = USER_TOKEN + userId;
+        String redisKey = RedisKeyConstant.USER_TOKEN + userId;
         redisTemplate.delete(redisKey);
         log.info("用户登出: userId={}", userId);
     }
