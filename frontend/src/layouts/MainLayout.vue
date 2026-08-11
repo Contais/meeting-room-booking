@@ -115,6 +115,9 @@
       <el-main class="layout-main">
         <router-view />
       </el-main>
+      <footer class="layout-footer">
+        <IcpFooter />
+      </footer>
     </el-container>
   </el-container>
   <ChatPanel ref="chatPanelRef" />
@@ -132,6 +135,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { getMyMenus } from '@/api/menu'
 import ChatPanel from '@/components/ChatPanel.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
+import IcpFooter from '@/components/IcpFooter.vue'
 import { isAvatarUrl } from '@/utils/avatar'
 import type { MenuItem } from '@/types/menu'
 
@@ -702,6 +706,15 @@ watch(() => notificationStore.latestNotification, (n) => {
   background: var(--bg-page);
   padding: 20px;
   overflow-y: auto;
+}
+
+.layout-footer {
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-light);
 }
 
 /* 菜单折叠模式：确保折叠时图标居中 */

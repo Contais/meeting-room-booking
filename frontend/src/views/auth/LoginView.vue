@@ -66,6 +66,9 @@
         </div>
       </div>
     </div>
+    <div class="icp-wrap">
+      <IcpFooter />
+    </div>
   </div>
 </template>
 
@@ -77,6 +80,7 @@ import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import IcpFooter from '@/components/IcpFooter.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -166,5 +170,6 @@ async function handleLogin() {
 .login-btn:active { transform: translateY(0); }
 .form-footer { text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #f0f0f0; }
 .footer-text { font-size: 12px; color: #bbb; letter-spacing: 1px; }
+.icp-wrap { position: absolute; bottom: 16px; left: 0; right: 0; color: rgba(255, 255, 255, 0.6); z-index: 1; }
 @media (max-width: 768px) { .login-wrapper { flex-direction: column; width: 90%; min-height: auto; margin: 20px; } .brand-panel { padding: 40px 30px; } .form-panel { padding: 40px 30px; } .brand-title { font-size: 24px; } }
 </style>
