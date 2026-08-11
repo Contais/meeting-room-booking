@@ -13,7 +13,7 @@ CREATE DATABASE IF NOT EXISTS `mrb_meeting` DEFAULT CHARACTER SET utf8mb4 COLLAT
 USE `mrb_user`;
 
 CREATE TABLE IF NOT EXISTS `user` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+    `id` BIGINT NOT NULL COMMENT '用户ID',
     `username` VARCHAR(64) NOT NULL COMMENT '用户名',
     `password` VARCHAR(128) NOT NULL COMMENT '密码（BCrypt哈希）',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `department` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '部门ID',
+    `id` BIGINT NOT NULL COMMENT '部门ID',
     `name` VARCHAR(64) NOT NULL COMMENT '部门名称',
     `parent_id` BIGINT DEFAULT 0 COMMENT '父部门ID, 0为顶级',
     `sort_order` INT DEFAULT 0 COMMENT '排序号',
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `department` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
 
 CREATE TABLE IF NOT EXISTS `notification` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '通知ID',
+    `id` BIGINT NOT NULL COMMENT '通知ID',
     `user_id` BIGINT NOT NULL COMMENT '接收人ID',
     `type` VARCHAR(32) NOT NULL COMMENT '类型: RESERVATION_CREATED/APPROVED/REJECTED/CANCELLED/SYSTEM',
     `title` VARCHAR(128) NOT NULL COMMENT '标题',
@@ -78,7 +78,7 @@ USE `mrb_auth`;
 USE `mrb_meeting`;
 
 CREATE TABLE IF NOT EXISTS `meeting_room` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '会议室ID',
+    `id` BIGINT NOT NULL COMMENT '会议室ID',
     `name` VARCHAR(64) NOT NULL COMMENT '会议室名称',
     `location` VARCHAR(128) DEFAULT NULL COMMENT '位置',
     `capacity` INT DEFAULT NULL COMMENT '容纳人数',
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室表';
 
 CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '预约ID',
+    `id` BIGINT NOT NULL COMMENT '预约ID',
     `reservation_code` VARCHAR(20) DEFAULT NULL COMMENT '预约编号: B + yyyyMMdd + 6位序列',
     `room_id` BIGINT NOT NULL COMMENT '会议室ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
@@ -125,7 +125,7 @@ INSERT INTO `meeting_room` (`name`, `location`, `capacity`, `equipment`, `descri
 
 
 CREATE TABLE IF NOT EXISTS `menu` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '菜单ID',
+    `id` BIGINT NOT NULL COMMENT '菜单ID',
     `name` VARCHAR(64) NOT NULL COMMENT '菜单名称',
     `path` VARCHAR(128) DEFAULT NULL COMMENT '路由路径',
     `icon` VARCHAR(64) DEFAULT NULL COMMENT '图标名称',
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `menu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单表';
 
 CREATE TABLE IF NOT EXISTS `role` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+    `id` BIGINT NOT NULL COMMENT '角色ID',
     `role_code` VARCHAR(50) NOT NULL COMMENT '角色编码',
     `role_name` VARCHAR(100) NOT NULL COMMENT '角色名称',
     `description` VARCHAR(500) DEFAULT NULL COMMENT '角色描述',
@@ -160,10 +160,12 @@ INSERT INTO `role` (`role_code`, `role_name`, `description`, `status`, `is_syste
 ('ROLE_USER', '普通用户', '基础功能权限', 1, 1, 2);
 
 CREATE TABLE IF NOT EXISTS `role_menu` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    `id` BIGINT NOT NULL COMMENT 'ID',
     `role` VARCHAR(20) NOT NULL COMMENT '角色编码',
     `menu_id` BIGINT NOT NULL COMMENT '菜单ID',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_role_menu` (`role`, `menu_id`),
     KEY `idx_menu_id` (`menu_id`)
