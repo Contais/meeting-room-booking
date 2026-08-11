@@ -32,3 +32,8 @@ spring:
             - Path=/api/meeting/**
           filters:
             - StripPrefix=1
+
+# CORS 允许的来源（逗号分隔）
+# Chrome 73+ 对同源 POST 请求也会发送 Origin 头，需将生产域名加入白名单，否则网关返回 403
+cors:
+  allowed-origins: http://localhost:*,http://127.0.0.1:*,https://mrb.mreasonchan.cn
