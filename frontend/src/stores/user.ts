@@ -45,15 +45,5 @@ export const useUserStore = defineStore('user', () => {
     removeToken()
   }
 
-  /**
-   * 仅清除本地认证状态，不调用后端 logout API。
-   * 用于 401 拦截器：token 已失效时调 logout API 会再次 401，导致循环。
-   */
-  function clearLocalAuth() {
-    token.value = ''
-    userInfo.value = null
-    removeToken()
-  }
-
-  return { token, userInfo, setUserToken, setUserInfo, isAdmin, fetchUserInfo, logout, clearLocalAuth }
+  return { token, userInfo, setUserToken, setUserInfo, isAdmin, fetchUserInfo, logout }
 })
