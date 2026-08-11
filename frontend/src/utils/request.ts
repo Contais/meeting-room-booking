@@ -33,7 +33,8 @@ service.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const userStore = useUserStore()
-      userStore.logout()
+      // token 已失效，直接清本地状态，不调 logout API（会再次 401 导致循环）
+      userStore.clearLocalAuth()
       router.push('/login')
       ElMessage.error('登录已过期，请重新登录')
     } else {
