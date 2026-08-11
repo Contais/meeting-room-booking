@@ -23,7 +23,7 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
-      id-type: auto
+      id-type: assign_id
 
   ai:
     deepseek:
@@ -38,4 +38,3 @@ rocketmq:
   name-server: 106.53.178.198:9876
   producer:
     group: mrb-meeting-producer
-

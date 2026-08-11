@@ -1,18 +1,15 @@
 package com.meetinghub.platform.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 站内信通知实体
  */
 @Data
 @TableName("notification")
-public class Notification {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Notification extends BaseEntity {
 
     /** 接收人ID */
     private Long userId;
@@ -35,12 +32,4 @@ public class Notification {
     /** 是否已读: 0-未读, 1-已读 */
     private Integer isRead;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

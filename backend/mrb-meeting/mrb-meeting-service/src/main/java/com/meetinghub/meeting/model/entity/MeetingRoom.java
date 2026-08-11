@@ -1,21 +1,15 @@
 package com.meetinghub.meeting.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 会议室实体
  */
 @Data
 @TableName("meeting_room")
-public class MeetingRoom {
-
-    /**
-     * 主键ID
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class MeetingRoom extends BaseEntity {
 
     /**
      * 会议室名称
@@ -77,21 +71,4 @@ public class MeetingRoom {
      */
     private Integer needApproval;
 
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    /**
-     * 逻辑删除: 0-否, 1-是
-     */
-    @TableLogic
-    private Integer deleted;
 }

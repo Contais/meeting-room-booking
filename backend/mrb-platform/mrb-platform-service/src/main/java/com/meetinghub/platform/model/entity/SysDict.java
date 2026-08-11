@@ -1,9 +1,8 @@
 package com.meetinghub.platform.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * 字典表实体
@@ -13,10 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_dict")
-public class SysDict {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class SysDict extends BaseEntity {
 
     /** 字典编码（唯一，如 gender、reservation_status） */
     private String code;
@@ -30,12 +26,4 @@ public class SysDict {
     /** 状态：0-禁用，1-启用 */
     private Integer status;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

@@ -1,9 +1,8 @@
 package com.meetinghub.platform.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * 系统配置表实体
@@ -13,10 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("sys_config")
-public class SysConfig {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class SysConfig extends BaseEntity {
 
     /** 配置键（唯一，如 file.presigned.expire） */
     private String configKey;
@@ -27,12 +23,4 @@ public class SysConfig {
     /** 描述 */
     private String description;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

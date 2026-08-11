@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS "user" (
-    "id" BIGINT NOT NULL AUTO_INCREMENT,
+    "id" BIGINT NOT NULL,
     "username" VARCHAR(64) NOT NULL,
     "password" VARCHAR(128) NOT NULL,
     "phone" VARCHAR(20) DEFAULT NULL,

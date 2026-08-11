@@ -1,19 +1,15 @@
 package com.meetinghub.platform.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * 字典项表实体
  */
 @Data
 @TableName("sys_dict_item")
-public class SysDictItem {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class SysDictItem extends BaseEntity {
 
     /** 所属字典 ID */
     private Long dictId;
@@ -33,12 +29,4 @@ public class SysDictItem {
     /** 状态：0-禁用，1-启用 */
     private Integer status;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

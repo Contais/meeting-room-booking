@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -9,13 +10,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("meeting_room_reservation")
-public class MeetingRoomReservation {
-
-    /**
-     * 主键ID
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class MeetingRoomReservation extends BaseEntity {
 
     /**
      * 预约编号: B + yyyyMMdd + 6位序列
@@ -67,21 +62,4 @@ public class MeetingRoomReservation {
      */
     private String rejectReason;
 
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    /**
-     * 逻辑删除: 0-否, 1-是
-     */
-    @TableLogic
-    private Integer deleted;
 }

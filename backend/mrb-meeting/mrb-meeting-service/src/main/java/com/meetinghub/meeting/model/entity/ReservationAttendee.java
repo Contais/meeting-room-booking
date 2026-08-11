@@ -1,18 +1,15 @@
 package com.meetinghub.meeting.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 预约参会人关联实体
  */
 @Data
 @TableName("reservation_attendee")
-public class ReservationAttendee {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class ReservationAttendee extends BaseEntity {
 
     /** 预约ID */
     private Long reservationId;
@@ -23,12 +20,4 @@ public class ReservationAttendee {
     /** 查阅状态: 0-待查阅, 1-已查阅, 2-已拒绝 */
     private Integer status;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

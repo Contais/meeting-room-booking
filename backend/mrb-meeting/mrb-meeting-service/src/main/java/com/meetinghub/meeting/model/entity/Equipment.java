@@ -1,19 +1,16 @@
 package com.meetinghub.meeting.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * 设备实体
  */
 @Data
 @TableName("equipment")
-public class Equipment {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Equipment extends BaseEntity {
 
     /** 设备编码 */
     private String code;
@@ -39,12 +36,4 @@ public class Equipment {
     /** 设备描述 */
     private String description;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

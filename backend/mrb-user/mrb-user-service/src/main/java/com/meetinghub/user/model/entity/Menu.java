@@ -1,18 +1,15 @@
 package com.meetinghub.user.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.meetinghub.common.model.BaseEntity;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 菜单实体
  */
 @Data
 @TableName("menu")
-public class Menu {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Menu extends BaseEntity {
 
     private String name;
 
@@ -28,12 +25,4 @@ public class Menu {
 
     private Integer status;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }
