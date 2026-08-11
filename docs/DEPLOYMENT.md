@@ -139,7 +139,7 @@ spring:
       port: 6379
 
 jwt:
-  secret: 用一个复杂的随机字符串
+  secret: 用一个复杂的随机字符串（网关 mrb-gateway-prod.yml 必须配置相同的 secret）
   expiration: 86400000
 ```
 
@@ -152,6 +152,14 @@ spring:
       server-addr: 你的Nacos:8848
       discovery:
         namespace: 你的namespace
+  data:
+    redis:
+      host: 你的Redis
+      port: 6379
+
+# 必须与 mrb-auth-prod.yml 的 jwt.secret 完全一致，网关用它验签并比对 Redis token
+jwt:
+  secret: 与 mrb-auth-prod.yml 保持一致
 ```
 
 #### 启动脚本 `/opt/mrb/start.sh`

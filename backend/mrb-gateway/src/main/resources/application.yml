@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: mrb-gateway
+  data:
+    redis:
+      host: localhost
+      port: 6379
   # 允许上传请求体在内存中缓冲到 10MB（默认 256KB 会拒绝大文件上传）
   codec:
     max-in-memory-size: 10MB
@@ -40,3 +44,7 @@ spring:
           uri: lb:ws://mrb-platform
           predicates:
             - Path=/ws/**
+
+jwt:
+  # 与 mrb-auth-service 保持一致，生产环境请通过 mrb-gateway-prod.yml 覆盖为随机密钥
+  secret: mrb-meeting-room-booking-jwt-secret-key-2024

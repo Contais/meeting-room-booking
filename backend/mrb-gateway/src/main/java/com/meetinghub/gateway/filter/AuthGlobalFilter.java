@@ -1,35 +1,58 @@
 package com.meetinghub.gateway.filter;
 
+import com.meetinghub.gateway.security.TokenClaims;
+import com.meetinghub.gateway.security.TokenValidationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * 全局认证过滤器：校验Token、传递用户信息
+ * 全局认证过滤器：验签 + Redis 校验 Token，校验通过后注入用户信息头
+ * <p>
+ * 仅在验签和 Redis 一致性校验全部通过后，才将 JWT claims 写入 X-User-* 头；
+ * 同时覆盖客户端自带的 X-User-* 头，防止下游服务信任伪造身份。
+ * </p>
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
     private static final String TOKEN_HEADER = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
 
+    private static final String X_USER_ID = "X-User-Id";
+    private static final String X_USER_ROLE = "X-User-Role";
+    private static final String X_USER_USERNAME = "X-User-Username";
+
     private static final List<String> WHITE_LIST = List.of(
             "/api/auth/login",
             "/api/auth/register",
             "/api/uc/user/register",
-            // 本地存储模式下文件静态资源对外公开读（与 COS 公开读一致），上传接口仍需鉴权
+            // 本地存储模式下文件静态资源对外公开读（与 COS 公开读一致），
+            // 上传接口仍需鉴权
             "/api/file/static/"
     );
+
+    private static final String UNAUTHORIZED_BODY =
+            "{\"code\":401,\"message\":\"未授权或Token无效\"," +
+                    "\"data\":null}";
+
+    private final TokenValidationService tokenValidationService;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -51,54 +74,44 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             }
         }
         if (!StringUtils.hasText(token) || !token.startsWith(TOKEN_PREFIX)) {
-            log.warn("请求缺少有效Token: path={}", path);
-            exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            return rejectUnauthorized(exchange, "请求缺少有效Token");
         }
 
-        String payload = extractPayload(token.replace(TOKEN_PREFIX, ""));
-        String role = extractJsonField(payload, "role");
-        String userId = extractJsonField(payload, "sub");
-        String username = extractJsonField(payload, "username");
+        String bearerToken = token;
+        String rawToken = bearerToken.substring(TOKEN_PREFIX.length());
+        return tokenValidationService.validate(rawToken)
+                .flatMap(claimsOptional -> {
+                    if (claimsOptional.isEmpty()) {
+                        return rejectUnauthorized(exchange, "Token验签或Redis校验未通过");
+                    }
 
-        ServerHttpRequest request = exchange.getRequest().mutate()
-                .header(TOKEN_HEADER, token)
-                .header("X-User-Role", role != null ? role : "")
-                .header("X-User-Id", userId != null ? userId : "")
-                .header("X-User-Username", username != null ? username : "")
-                .build();
-        return chain.filter(exchange.mutate().request(request).build());
+                    TokenClaims claims = claimsOptional.get();
+                    ServerHttpRequest request = exchange.getRequest().mutate()
+                            .headers(headers -> {
+                                headers.remove(X_USER_ID);
+                                headers.remove(X_USER_ROLE);
+                                headers.remove(X_USER_USERNAME);
+                            })
+                            .header(TOKEN_HEADER, bearerToken)
+                            .header(X_USER_ID, String.valueOf(claims.userId()))
+                            .header(X_USER_ROLE, claims.role() != null ? claims.role() : "")
+                            .header(X_USER_USERNAME, claims.username() != null ? claims.username() : "")
+                            .build();
+                    return chain.filter(exchange.mutate().request(request).build());
+                });
     }
 
-    private String extractPayload(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length != 3) return null;
-            return new String(Base64.getUrlDecoder().decode(parts[1]));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String extractJsonField(String json, String field) {
-        if (json == null) return null;
-        String pattern = "\"" + field + "\":\"";
-        int idx = json.indexOf(pattern);
-        if (idx < 0) {
-            // 数值型 (如 sub)
-            pattern = "\"" + field + "\":";
-            idx = json.indexOf(pattern);
-            if (idx < 0) return null;
-            int start = idx + pattern.length();
-            int end = start;
-            while (end < json.length() && json.charAt(end) != ',' && json.charAt(end) != '}') {
-                end++;
-            }
-            return json.substring(start, end);
-        }
-        int start = idx + pattern.length();
-        int end = json.indexOf("\"", start);
-        return json.substring(start, end);
+    /**
+     * 返回 401 并写入符合 {code, message, data} 结构的 JSON 响应体
+     */
+    private Mono<Void> rejectUnauthorized(ServerWebExchange exchange, String reason) {
+        log.warn("鉴权失败: path={}, reason={}", exchange.getRequest().getURI().getPath(), reason);
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        byte[] body = UNAUTHORIZED_BODY.getBytes(StandardCharsets.UTF_8);
+        DataBuffer buffer = response.bufferFactory().wrap(body);
+        return response.writeWith(Mono.just(buffer));
     }
 
     @Override
