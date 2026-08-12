@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.constant.DateTimePatternConstant;
+import com.meetinghub.common.constant.RedisKeyConstant;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
@@ -25,12 +26,15 @@ import com.meetinghub.meeting.service.ReservationAttendeeService;
 import com.meetinghub.meeting.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 import com.meetinghub.meeting.model.vo.ScheduleReservationVO;
 import com.meetinghub.meeting.model.vo.ScheduleRoomVO;
 import com.meetinghub.meeting.model.vo.ScheduleVO;
@@ -47,11 +51,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, MeetingRoomReservation> implements ReservationService {
 
+    private static final long RESERVATION_CODE_SEQ_TTL_HOURS = 48L;
+    private static final long MAX_DAILY_SEQUENCE = 999_999L;
+
     private final ReservationRepository reservationRepository;
     private final MeetingRoomRepository meetingRoomRepository;
     private final UserFeignClient userFeignClient;
     private final ReservationAttendeeService attendeeService;
     private final NotificationSender notificationSender;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -97,8 +105,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setStatus(initialStatus);
         save(reservation);
 
-        // 6. 生成预约编号：B + yyyyMMdd + 6位自增序列（基于主键 id，保证唯一）
-        String reservationCode = generateReservationCode(reservation.getId());
+        // 6. 生成预约编号：B + yyyyMMdd + 6位序列（Redis 按天自增，保证当日唯一）
+        String reservationCode = generateReservationCode();
         reservation.setReservationCode(reservationCode);
         updateById(reservation);
         log.info("预约创建成功, userId={}, roomId={}, code={}, status={}", userId, dto.getRoomId(), reservationCode, initialStatus);
@@ -127,11 +135,28 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
 
     /**
      * 生成预约编号: B + yyyyMMdd + 6位序列
-     * 序列使用自增主键，避免并发冲突与外部依赖（如 Redis）
+     * 序列使用 Redis 按天自增（key 前缀 mrb:），多实例原子自增，保证当日唯一、连续可读
      */
-    private String generateReservationCode(Long id) {
+    private String generateReservationCode() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return "B" + datePart + String.format("%06d", id);
+        String seqKey = RedisKeyConstant.RESERVATION_CODE_SEQ + datePart;
+        Long seq;
+        try {
+            seq = stringRedisTemplate.opsForValue().increment(seqKey);
+        } catch (DataAccessException ex) {
+            log.error("预约编号自增序列获取失败, date={}", datePart, ex);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR.getCode(), "预约编号生成失败，请稍后重试");
+        }
+        if (seq == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR.getCode(), "预约编号生成失败，请稍后重试");
+        }
+        if (seq == 1L) {
+            stringRedisTemplate.expire(seqKey, RESERVATION_CODE_SEQ_TTL_HOURS, TimeUnit.HOURS);
+        }
+        if (seq > MAX_DAILY_SEQUENCE) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR.getCode(), "当日预约量已达上限，请稍后再试");
+        }
+        return "B" + datePart + String.format("%06d", seq);
     }
 
     private void validateRoomRules(MeetingRoom room, ReservationCreateDTO dto) {

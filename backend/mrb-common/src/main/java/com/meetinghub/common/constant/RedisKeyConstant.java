@@ -22,6 +22,9 @@ public final class RedisKeyConstant {
     // 预约幂等
     public static final String RESERVATION_IDEMPOTENT = PREFIX + "reservation:idempotent:";
 
+    // 预约编号按天自增序列
+    public static final String RESERVATION_CODE_SEQ = PREFIX + "reservation:code:seq:";
+
     // MQ 消费幂等去重
     public static final String MQ_DEDUP = PREFIX + "mq:dedup:";
 

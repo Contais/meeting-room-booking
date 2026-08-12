@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  */
 @Data
 public class ReservationBriefVO implements Serializable {
-    /** 预约编号：B + yyyyMMdd + 6位序列 */
+    /** 预约编号：B + yyyyMMdd + 6 位序列（Redis 按天自增） */
     private String reservationCode;
     /** 会议主题 */
     private String subject;

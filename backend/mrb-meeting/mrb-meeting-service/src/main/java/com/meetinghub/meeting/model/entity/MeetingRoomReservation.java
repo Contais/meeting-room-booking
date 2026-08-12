@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class MeetingRoomReservation extends BaseEntity {
 
     /**
-     * 预约编号: B + yyyyMMdd + 6位序列
+     * 预约编号: B + yyyyMMdd + 6位序列（Redis 按天自增）
      */
     private String reservationCode;
 
