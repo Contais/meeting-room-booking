@@ -61,11 +61,10 @@ public class ReservationAttendeeServiceImpl
             return 0;
         }
 
-        // 校验预约存在且归属邀请人
-        checkReservationOwnership(reservationId, inviterId);
+        // 校验预约存在且归属邀请人，复用查询结果避免重复查库
+        MeetingRoomReservation reservation = checkReservationOwnership(reservationId, inviterId);
 
         // 状态约束：仅 PENDING / CONFIRMED 可邀人（已取消/已拒绝/已结束不可邀）
-        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
         Integer status = reservation.getStatus();
         if (!ReservationStatusEnum.PENDING.getCode().equals(status)
                 && !ReservationStatusEnum.CONFIRMED.getCode().equals(status)) {
@@ -212,7 +211,7 @@ public class ReservationAttendeeServiceImpl
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "参数不能为空");
         }
         // 校验操作权限：仅预约创建者可移除参会人
-        checkReservationOwnership(reservationId, operatorId);
+        MeetingRoomReservation reservation = checkReservationOwnership(reservationId, operatorId);
 
         int deleted = attendeeRepository.delete(
                 new LambdaQueryWrapper<ReservationAttendee>()
@@ -222,12 +221,19 @@ public class ReservationAttendeeServiceImpl
         if (deleted == 0) {
             throw new BusinessException(ErrorCode.ATTENDEE_NOT_INVITED);
         }
+
+        // 同步递减参会人数，保证冗余计数与实际参会人行数一致（谁删除行谁减）
+        int currentCount = reservation.getAttendeeCount() != null ? reservation.getAttendeeCount() : 0;
+        reservation.setAttendeeCount(Math.max(0, currentCount - deleted));
+        reservationRepository.updateById(reservation);
     }
 
     /**
      * 校验预约存在且归属当前用户
+     *
+     * @return 校验通过的预约实体
      */
-    private void checkReservationOwnership(Long reservationId, Long operatorId) {
+    private MeetingRoomReservation checkReservationOwnership(Long reservationId, Long operatorId) {
         MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
         if (reservation == null) {
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
@@ -235,6 +241,7 @@ public class ReservationAttendeeServiceImpl
         if (!reservation.getUserId().equals(operatorId)) {
             throw new BusinessException(ErrorCode.RESERVATION_ACCESS_DENIED);
         }
+        return reservation;
     }
 
     /**
