@@ -92,10 +92,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         reservation.setRoomId(dto.getRoomId());
         reservation.setUserId(userId);
         reservation.setSubject(dto.getSubject());
-        // 参会人数 = 邀请的参会人 + 创建者自身
-        int invitedCount = dto.getAttendeeUserIds() != null ? dto.getAttendeeUserIds().size() : 0;
-        int attendeeCount = invitedCount + 1;
-        reservation.setAttendeeCount(attendeeCount);
+        // 参会人数：先初始化为创建者自身 1 人；
+        // 被邀请参会人由 inviteAttendees 按实际插入行数累加（已去重、排除创建者），避免重复计算
+        reservation.setAttendeeCount(1);
         reservation.setRemark(dto.getRemark());
         reservation.setStartTime(dto.getStartTime());
         reservation.setEndTime(dto.getEndTime());
