@@ -36,6 +36,13 @@
           <button v-if="isAdmin" class="seg-btn" :class="{ active: tab === 'room' }" @click="switchTab('room')">会议室日历</button>
         </div>
 
+        <!-- 颜色图例（我的日历） -->
+        <div v-if="tab === 'my'" class="calendar-legend">
+          <span class="legend-item"><i class="legend-dot s0"></i>我预约·待确认</span>
+          <span class="legend-item"><i class="legend-dot s1"></i>我预约·已确认</span>
+          <span class="legend-item"><i class="legend-dot s-attendee"></i>我参会·已确认</span>
+        </div>
+
         <!-- 工作时段开关 -->
         <div class="filter-row">
           <el-switch v-model="workHoursOnly" size="small" />
@@ -121,7 +128,7 @@
                   </div>
                   <!-- 事件块 -->
                   <div v-for="r in myDayReservations" :key="r.id"
-                    class="my-agenda-event evt-block" :class="'s' + r.status"
+                    class="my-agenda-event evt-block" :class="blockClass(r)"
                     :style="myAgendaEventStyle(r)" @click.stop="onEventClick(r)">
                     <div class="evt-bar"></div>
                     <div class="evt-body">
@@ -224,7 +231,7 @@
                 <el-tooltip v-for="r in weekReservations" :key="r.id"
                   :content="`${r.roomName || ''} | ${r.subject || '未命名'}\n${formatTime(r.startTime)}-${formatTime(r.endTime)}\n${r.userName || ''}`"
                   placement="top" raw-content>
-                  <div class="week-event evt-block" :class="'s' + r.status"
+                  <div class="week-event evt-block" :class="blockClass(r)"
                     :style="weekEventStyle(r)" @click.stop="onEventClick(r)">
                     <div class="evt-inner">
                       <div class="evt-title">{{ r.subject || '未命名' }}</div>
@@ -251,7 +258,7 @@
             <div class="mc-date">{{ day.date }}</div>
             <div class="mc-events">
               <div v-for="r in getDayReservations(day)" :key="r.id"
-                class="mc-event evt-block" :class="'s' + r.status"
+                class="mc-event evt-block" :class="blockClass(r)"
                 @click.stop="onEventClick(r)">
                 <span class="mc-event-time">{{ formatTime(r.startTime) }}</span>
                 <span class="mc-event-title">{{ r.subject || '未命名' }}</span>
@@ -267,7 +274,7 @@
                 <div class="mc-pop-list">
                   <div class="mc-pop-head">{{ day.dateStr }} · 共 {{ day.reservations.length }} 场</div>
                   <div v-for="r in day.reservations" :key="r.id"
-                    class="mc-pop-item evt-block" :class="'s' + r.status"
+                    class="mc-pop-item evt-block" :class="blockClass(r)"
                     @click="onPopoverEventClick(r)">
                     <span class="mc-pop-time">{{ formatTime(r.startTime) }}</span>
                     <span class="mc-pop-title">{{ r.subject || '未命名' }}</span>
@@ -377,7 +384,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } 
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ArrowRight, Plus, Close, Clock, OfficeBuilding, User, UserFilled, Document, WarningFilled, Calendar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getSchedule, listMyReservations, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
+import { getSchedule, getMyCalendar, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { useUserStore } from '@/stores/user'
 import BookingDialog from '@/components/BookingDialog.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
@@ -623,6 +630,11 @@ function formatDate(dt: Date) { return `${dt.getFullYear()}-${String(dt.getMonth
 function formatTime(t: string) { return t ? t.substring(11, 16) : '' }
 function formatDayLabel(dt: Date) { return `${dt.getMonth() + 1}/${dt.getDate()}` }
 function isCurrentHour(h: number) { return new Date().getHours() === h }
+// 数据块颜色：我的日历按来源着色（我预约的按状态，我参会的统一蓝色）；会议室日历仅已确认，按状态着色
+function blockClass(r: any) {
+  if (tab.value === 'room') return 's' + r.status
+  return r.userId === userStore.userInfo?.id ? 's' + r.status : 's-attendee'
+}
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
 function attendeeStatusText(s: number) { return { 0: '待查阅', 1: '已查阅', 2: '已拒绝' }[s] || '未知' }
 function attendeeStatusType(s: number) { return ({ 0: 'info', 1: 'success', 2: 'danger' } as const)[s] || 'info' }
@@ -792,7 +804,7 @@ async function loadData() {
       const me = new Date(ms); me.setDate(me.getDate() + 41)
       p.startTime = formatDate(ms); p.endTime = formatDate(me) + ' 23:59:59'
     }
-    try { const r = await listMyReservations(p as any); myReservations.value = (r.data.records || []).filter((x: any) => x.status === 0 || x.status === 1) } catch { myReservations.value = [] }
+    try { const r = await getMyCalendar(p as any); myReservations.value = (r.data || []) } catch { myReservations.value = [] }
   } else {
     const p: Record<string, string> = {}
     if (viewMode.value === 'day') p.date = formatDate(d)
@@ -914,8 +926,8 @@ function onBookingSuccess() { loadData(); fetchTodayData() }
 async function fetchTodayData() {
   const today = formatDate(new Date())
   try {
-    const r = await listMyReservations({ page: 1, size: 500, startTime: today, endTime: today + ' 23:59:59' })
-    todayReservations.value = (r.data.records || []).filter((x: any) => x.status === 0 || x.status === 1)
+    const r = await getMyCalendar({ page: 1, size: 500, startTime: today, endTime: today + ' 23:59:59' })
+    todayReservations.value = (r.data || [])
   } catch { todayReservations.value = [] }
 }
 
@@ -1100,6 +1112,13 @@ onBeforeUnmount(() => {
 .evt-block.s1 { background: linear-gradient(135deg, #10b981, #059669); }
 .evt-block.s2 { background: linear-gradient(135deg, #9ca3af, #6b7280); }
 .evt-block.s3 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.evt-block.s-attendee { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.calendar-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 0 12px 12px; font-size: 12px; color: #606266; }
+.legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.legend-dot.s0 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.legend-dot.s1 { background: linear-gradient(135deg, #10b981, #059669); }
+.legend-dot.s-attendee { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .evt-title { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .evt-time { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
 .evt-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

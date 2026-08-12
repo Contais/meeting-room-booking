@@ -22,6 +22,10 @@ export function listMyMeetings(params: ReservationPageQuery): Promise<Result<Res
   return request.get('/api/meeting/reservation/my-meetings', { params })
 }
 
+export function getMyCalendar(params: ReservationPageQuery): Promise<Result<Reservation[]>> {
+  return request.get('/api/meeting/reservation/my-calendar', { params })
+}
+
 export function listByRoomAndDate(roomId: string, date: string): Promise<Result<Reservation[]>> {
   return request.get(`/api/meeting/reservation/room/${roomId}/date/${date}`)
 }
