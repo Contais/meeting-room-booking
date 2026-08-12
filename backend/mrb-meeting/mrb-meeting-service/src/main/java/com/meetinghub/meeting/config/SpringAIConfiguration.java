@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.config;
 
 import com.meetinghub.meeting.tools.CommonTool;
+import com.meetinghub.meeting.tools.LoggingToolCallbackProvider;
 import com.meetinghub.meeting.tools.MeetingRoomTool;
 import com.meetinghub.meeting.tools.ReservationTool;
 import org.springframework.ai.chat.client.ChatClient;
@@ -55,7 +56,7 @@ public class SpringAIConfiguration {
                                  @Value("classpath:prompt/chatbot-system-prompt.md") Resource systemPrompt) throws IOException {
         return ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt.getContentAsString(StandardCharsets.UTF_8))
-                .defaultTools(meetingRoomTool, reservationTool, commonTool)
+                .defaultToolCallbacks(new LoggingToolCallbackProvider(meetingRoomTool, reservationTool, commonTool))
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory).build()
                 )

@@ -4,6 +4,7 @@ import com.meetinghub.common.context.UserContext;
 import com.meetinghub.meeting.model.dto.ChatRequest;
 import com.meetinghub.meeting.tools.ToolAuthHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import java.util.Map;
  * - AI 可通过 Function Calling 自动调用后端接口
  * </p>
  */
+@Slf4j
 @RestController
 @RequestMapping("/meeting/chat")
 @RequiredArgsConstructor
@@ -53,16 +55,30 @@ public class ChatController {
         // 在请求线程捕获用户身份（拦截器已设置 ThreadLocal），随后显式传入 Reactor 管道
         Long userId = UserContext.getCurrentUserId();
         String role = UserContext.getCurrentRole();
+        String message = request.getMessage();
+        log.info("AI 对话开始, conversationId={}, userId={}, message={}",
+                cid, userId, truncate(message, 200));
         Map<String, Object> toolContext = new HashMap<>();
         toolContext.put(ToolAuthHelper.KEY_USER_ID, userId);
         toolContext.put(ToolAuthHelper.KEY_ROLE, role);
 
         return chatClient.prompt()
-                .user(request.getMessage())
+                .user(message)
                 .toolContext(toolContext)
                 .advisors(advice -> advice.param(ChatMemory.CONVERSATION_ID, cid))
                 .stream()
-                .content();
+                .content()
+                .doOnComplete(() -> log.info("AI 对话结束, conversationId={}, userId={}", cid, userId))
+                .doOnError(e -> log.error("AI 对话异常, conversationId={}, userId={}", cid, userId, e));
+    }
+
+    private static String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "null";
+        }
+        return text.length() <= maxLength
+                ? text
+                : text.substring(0, maxLength) + "...(已截断, 共" + text.length() + "字符)";
     }
 
     /**
