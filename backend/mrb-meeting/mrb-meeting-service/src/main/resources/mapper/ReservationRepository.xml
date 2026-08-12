@@ -109,4 +109,28 @@
         ORDER BY r.start_time DESC
     </select>
 
+    <!--
+        我的日历（日程视图）查询：我创建的（待确认/已确认） ∪ 我参会的（仅已确认）
+        说明：预约人默认也是参会人（addCreatorAsAttendee），故参会分支用 EXISTS 去重；
+              时间过滤沿用完全包含语义，与「我的预约」一致。
+    -->
+    <select id="selectMyCalendarPage" resultMap="ReservationVOMap">
+        SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
+               r.remark, r.start_time, r.end_time,
+               r.status, r.create_time, mr.name AS room_name
+        FROM meeting_room_reservation r
+        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
+        WHERE r.deleted = 0
+          AND (
+              (r.user_id = #{userId} AND r.status IN (0, 1))
+              OR
+              (r.status = 1 AND EXISTS (
+                  SELECT 1 FROM reservation_attendee ra
+                  WHERE ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
+              ))
+          )
+          <include refid="commonFilters"/>
+        ORDER BY r.start_time ASC
+    </select>
+
 </mapper>

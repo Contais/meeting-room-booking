@@ -45,6 +45,15 @@ public interface ReservationService extends IService<MeetingRoomReservation> {
     IPage<ReservationVO> listMyMeetings(Long userId, ReservationPageQuery query);
 
     /**
+     * 我的日历（日程视图）：我创建的（待确认/已确认） + 我参会的（仅已确认）
+     *
+     * @param userId 当前用户ID
+     * @param query  查询参数（时间范围等）
+     * @return 预约列表，按开始时间升序
+     */
+    List<ReservationVO> listMyCalendar(Long userId, ReservationPageQuery query);
+
+    /**
      * 按会议室+日期查询预约（详情页今日预约）
      */
     List<ReservationVO> listByRoomAndDate(Long roomId, String date);

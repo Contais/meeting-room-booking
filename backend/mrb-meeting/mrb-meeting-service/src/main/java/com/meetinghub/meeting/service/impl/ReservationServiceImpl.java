@@ -259,6 +259,14 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     }
 
     @Override
+    public List<ReservationVO> listMyCalendar(Long userId, ReservationPageQuery query) {
+        Page<ReservationVO> page = new Page<>(query.getPage(), query.getSize());
+        IPage<ReservationVO> result = reservationRepository.selectMyCalendarPage(page, query, userId);
+        fillUsernames(result.getRecords());
+        return result.getRecords();
+    }
+
+    @Override
     public List<ReservationVO> listByRoomAndDate(Long roomId, String date) {
         LocalDate targetDate = LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
         LocalDateTime dayStart = targetDate.atStartOfDay();

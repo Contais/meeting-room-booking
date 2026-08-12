@@ -44,4 +44,15 @@ public interface ReservationRepository extends BaseMapper<MeetingRoomReservation
     IPage<ReservationVO> selectMyMeetingsPage(IPage<ReservationVO> page,
                                                @Param("query") ReservationPageQuery query,
                                                @Param("userId") Long userId);
+
+    /**
+     * 我的日历查询（我创建的待确认/已确认 + 我参会的已确认）
+     *
+     * @param page   分页参数
+     * @param query  过滤条件
+     * @param userId 当前用户ID
+     */
+    IPage<ReservationVO> selectMyCalendarPage(IPage<ReservationVO> page,
+                                               @Param("query") ReservationPageQuery query,
+                                               @Param("userId") Long userId);
 }
