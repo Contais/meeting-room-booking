@@ -114,21 +114,10 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 7. 预约人默认加入参会人列表（状态为已接受）
         attendeeService.addCreatorAsAttendee(reservation.getId(), userId);
 
-        // 8. 保存其他参会人
+        // 8. 保存其他参会人（inviteAttendees 内部负责发送 RESERVATION_CREATED 通知：
+        //    仅当免审批（立即确认）时通知；需审批的预约在 approveReservation 审批通过后通知）
         if (dto.getAttendeeUserIds() != null && !dto.getAttendeeUserIds().isEmpty()) {
             attendeeService.inviteAttendees(reservation.getId(), userId, dto.getAttendeeUserIds());
-            // 9. 通知参会人：仅当免审批（立即确认）时才在此处通知；
-            //    需审批的预约在 approveReservation 中审批通过后通知参会人
-            if (initialStatus.equals(ReservationStatusEnum.CONFIRMED.getCode())) {
-                NotificationSendDTO notify = new NotificationSendDTO();
-                notify.setType("RESERVATION_CREATED");
-                notify.setTitle("您被邀请参加会议：" + dto.getSubject());
-                notify.setContent("会议主题：" + dto.getSubject() + "\n预约编号：" + reservationCode
-                        + "\n时间：" + dto.getStartTime().format(DateTimePatternConstant.DATETIME_FMT) + " ~ " + dto.getEndTime().format(DateTimePatternConstant.DATETIME_FMT));
-                notify.setRefType("reservation");
-                notify.setRefId(reservation.getId());
-                notificationSender.sendSafe(dto.getAttendeeUserIds(), notify);
-            }
         }
         return reservationCode;
     }
