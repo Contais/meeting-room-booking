@@ -21,6 +21,11 @@ export function formatTime(t?: string | null): string {
   return t.replace('T', ' ').substring(11, 16)
 }
 
+/** 兼容两种分隔符解析为 Date（Safari 不识别空格分隔，需归一化为 ISO） */
+export function toDate(t?: string | null): Date {
+  return new Date((t || '').replace(' ', 'T'))
+}
+
 /**
  * 时间段智能显示：
  * - 同一天：2026-07-22 21:36～22:00（日期一次，时间范围紧凑，全角波浪号）

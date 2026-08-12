@@ -293,7 +293,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSchedule, getMyReservationDetail, getReservationDetail, cancelReservation } from '@/api/reservation'
 import { getRoomById } from '@/api/meeting'
 import { useUserStore } from '@/stores/user'
-import { formatTimeRange } from '@/utils/datetime'
+import { formatDate as formatDateStr, formatTimeRange, toDate } from '@/utils/datetime'
 import BookingDialog from '@/components/BookingDialog.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import type { MeetingRoom } from '@/types/meeting'
@@ -637,7 +637,7 @@ const weekDays = computed(() => {
   })
 })
 
-const weekReservations = computed(() => reservations.value.filter(r => weekDays.value.some(d => d.dateStr === r.startTime.split('T')[0])))
+const weekReservations = computed(() => reservations.value.filter(r => weekDays.value.some(d => d.dateStr === formatDateStr(r.startTime))))
 
 const monthDays = ref<any[]>([])
 const morePopoverDay = ref<string>('')
@@ -673,12 +673,12 @@ async function loadData() {
 // ====== 日视图 ======
 const dayReservations = computed(() => {
   const today = formatDate(currentDate.value)
-  return reservations.value.filter(r => r.startTime.split('T')[0] === today)
+  return reservations.value.filter(r => formatDateStr(r.startTime) === today)
 })
 
 function dayEventStyle(r: any) {
-  const start = new Date(r.startTime)
-  const end = new Date(r.endTime)
+  const start = toDate(r.startTime)
+  const end = toDate(r.endTime)
   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const leftPx = dayEdgeGap.value + (startMinutes / (TOTAL_HOURS * 60)) * gridWidth.value
@@ -700,10 +700,10 @@ function onDayEventClick(r: any) {
 
 // ====== 周视图 ======
 function weekEventStyle(r: any) {
-  const di = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
+  const di = weekDays.value.findIndex(d => d.dateStr === formatDateStr(r.startTime))
   if (di < 0) return { display: 'none' }
-  const start = new Date(r.startTime)
-  const end = new Date(r.endTime)
+  const start = toDate(r.startTime)
+  const end = toDate(r.endTime)
   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const topPx = weekEdgeGap + (startMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight
@@ -734,7 +734,7 @@ function onPopoverEventClick(r: any) { morePopoverDay.value = ''; showDetail(r) 
 function buildMonthDays() {
   const d = currentDate.value, m = d.getMonth(), today = formatDate(new Date())
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
-  monthDays.value = Array.from({ length: 42 }, (_, i) => { const dt = new Date(ms); dt.setDate(dt.getDate() + i); const ds = formatDate(dt); return { date: dt.getDate(), dateStr: ds, currentMonth: dt.getMonth() === m, isToday: ds === today, reservations: reservations.value.filter(r => r.startTime.split('T')[0] === ds) } })
+  monthDays.value = Array.from({ length: 42 }, (_, i) => { const dt = new Date(ms); dt.setDate(dt.getDate() + i); const ds = formatDate(dt); return { date: dt.getDate(), dateStr: ds, currentMonth: dt.getMonth() === m, isToday: ds === today, reservations: reservations.value.filter(r => formatDateStr(r.startTime) === ds) } })
 }
 function onMonthCellClick(day: any) {
   bookingDate.value = day.dateStr

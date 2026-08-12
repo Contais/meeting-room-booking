@@ -381,7 +381,7 @@ import { getSchedule, listMyReservations, getMyReservationDetail, getReservation
 import { useUserStore } from '@/stores/user'
 import BookingDialog from '@/components/BookingDialog.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { formatTimeRange } from '@/utils/datetime'
+import { formatDate as formatDateStr, formatTimeRange, toDate } from '@/utils/datetime'
 import type { Reservation } from '@/types/reservation'
 
 const router = useRouter()
@@ -506,12 +506,12 @@ const weekDays = computed(() => {
 // 当前视图下的所有预约（合并 my/room Tab）
 const allReservations = computed(() => tab.value === 'my' ? myReservations.value : roomReservations.value)
 
-const weekReservations = computed(() => allReservations.value.filter(r => weekDays.value.some(d => d.dateStr === r.startTime.split('T')[0])))
+const weekReservations = computed(() => allReservations.value.filter(r => weekDays.value.some(d => d.dateStr === formatDateStr(r.startTime))))
 
 // 我的日历 - 日视图
 const myDayReservations = computed(() => {
   const today = formatDate(currentDate.value)
-  return myReservations.value.filter(r => r.startTime.split('T')[0] === today)
+  return myReservations.value.filter(r => formatDateStr(r.startTime) === today)
 })
 
 // 今日数据（独立加载，用于今日卡片，不受当前视图范围影响）
@@ -519,12 +519,12 @@ const todayCount = computed(() => todayReservations.value.length)
 const todayNext = computed(() => {
   const now = nowTimestamp.value
   return todayReservations.value
-    .filter(r => new Date(r.endTime).getTime() > now)
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0]
+    .filter(r => toDate(r.endTime).getTime() > now)
+    .sort((a, b) => toDate(a.startTime).getTime() - toDate(b.startTime).getTime())[0]
 })
 const todayEndedCount = computed(() => {
   const now = nowTimestamp.value
-  return todayReservations.value.filter(r => new Date(r.endTime).getTime() <= now).length
+  return todayReservations.value.filter(r => toDate(r.endTime).getTime() <= now).length
 })
 
 // 月视图
@@ -536,29 +536,29 @@ const weekEventLayoutMap = computed(() => {
   const layout = new Map<string, { columnIndex: number; totalColumns: number }>()
   const eventsByDay = new Map<string, any[]>()
   for (const r of weekReservations.value) {
-    const dayStr = r.startTime.split('T')[0]
+    const dayStr = formatDateStr(r.startTime)
     if (!eventsByDay.has(dayStr)) eventsByDay.set(dayStr, [])
     eventsByDay.get(dayStr)!.push(r)
   }
   for (const [, dayEvents] of eventsByDay) {
     if (dayEvents.length === 0) continue
     dayEvents.sort((a, b) => {
-      const aStart = new Date(a.startTime).getTime()
-      const bStart = new Date(b.startTime).getTime()
+      const aStart = toDate(a.startTime).getTime()
+      const bStart = toDate(b.startTime).getTime()
       if (aStart !== bStart) return aStart - bStart
-      const aDur = new Date(a.endTime).getTime() - aStart
-      const bDur = new Date(b.endTime).getTime() - bStart
+      const aDur = toDate(a.endTime).getTime() - aStart
+      const bDur = toDate(b.endTime).getTime() - bStart
       return bDur - aDur
     })
     const eventColumns: number[] = []
     const columnEnds: number[] = []
     for (const event of dayEvents) {
-      const eStart = new Date(event.startTime).getTime()
+      const eStart = toDate(event.startTime).getTime()
       let placed = false
       for (let ci = 0; ci < columnEnds.length; ci++) {
-        if (eStart >= columnEnds[ci]) { columnEnds[ci] = new Date(event.endTime).getTime(); eventColumns.push(ci); placed = true; break }
+        if (eStart >= columnEnds[ci]) { columnEnds[ci] = toDate(event.endTime).getTime(); eventColumns.push(ci); placed = true; break }
       }
-      if (!placed) { eventColumns.push(columnEnds.length); columnEnds.push(new Date(event.endTime).getTime()) }
+      if (!placed) { eventColumns.push(columnEnds.length); columnEnds.push(toDate(event.endTime).getTime()) }
     }
     const n = dayEvents.length
     const parent = Array.from({ length: n }, (_, i) => i)
@@ -566,8 +566,8 @@ const weekEventLayoutMap = computed(() => {
     function union(i: number, j: number) { parent[find(i)] = find(j) }
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
-        const iEnd = new Date(dayEvents[i].endTime).getTime()
-        const jStart = new Date(dayEvents[j].startTime).getTime()
+        const iEnd = toDate(dayEvents[i].endTime).getTime()
+        const jStart = toDate(dayEvents[j].startTime).getTime()
         if (jStart < iEnd) { union(i, j) } else { break }
       }
     }
@@ -584,22 +584,22 @@ const myDayLayoutMap = computed(() => {
   const events = [...myDayReservations.value]
   if (events.length === 0) return layout
   events.sort((a, b) => {
-    const aStart = new Date(a.startTime).getTime()
-    const bStart = new Date(b.startTime).getTime()
+    const aStart = toDate(a.startTime).getTime()
+    const bStart = toDate(b.startTime).getTime()
     if (aStart !== bStart) return aStart - bStart
-    const aDur = new Date(a.endTime).getTime() - aStart
-    const bDur = new Date(b.endTime).getTime() - bStart
+    const aDur = toDate(a.endTime).getTime() - aStart
+    const bDur = toDate(b.endTime).getTime() - bStart
     return bDur - aDur
   })
   const eventColumns: number[] = []
   const columnEnds: number[] = []
   for (const event of events) {
-    const eStart = new Date(event.startTime).getTime()
+    const eStart = toDate(event.startTime).getTime()
     let placed = false
     for (let ci = 0; ci < columnEnds.length; ci++) {
-      if (eStart >= columnEnds[ci]) { columnEnds[ci] = new Date(event.endTime).getTime(); eventColumns.push(ci); placed = true; break }
+      if (eStart >= columnEnds[ci]) { columnEnds[ci] = toDate(event.endTime).getTime(); eventColumns.push(ci); placed = true; break }
     }
-    if (!placed) { eventColumns.push(columnEnds.length); columnEnds.push(new Date(event.endTime).getTime()) }
+    if (!placed) { eventColumns.push(columnEnds.length); columnEnds.push(toDate(event.endTime).getTime()) }
   }
   const n = events.length
   const parent = Array.from({ length: n }, (_, i) => i)
@@ -607,8 +607,8 @@ const myDayLayoutMap = computed(() => {
   function union(i: number, j: number) { parent[find(i)] = find(j) }
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      const iEnd = new Date(events[i].endTime).getTime()
-      const jStart = new Date(events[j].startTime).getTime()
+      const iEnd = toDate(events[i].endTime).getTime()
+      const jStart = toDate(events[j].startTime).getTime()
       if (jStart < iEnd) { union(i, j) } else { break }
     }
   }
@@ -764,7 +764,7 @@ const miniDays = computed(() => {
   const first = new Date(y, m, 1)
   const start = new Date(first); start.setDate(start.getDate() - start.getDay())
   const today = formatDate(new Date())
-  const allDates = new Set(allReservations.value.map(r => r.startTime.split('T')[0]))
+  const allDates = new Set(allReservations.value.map(r => formatDateStr(r.startTime)))
   return Array.from({ length: 42 }, (_, i) => {
     const dt = new Date(start); dt.setDate(dt.getDate() + i)
     const ds = formatDate(dt)
@@ -813,16 +813,16 @@ async function loadData() {
 // ====== 日/周/月视图辅助 ======
 function getRoomReservations(roomId: string) {
   const today = formatDate(currentDate.value)
-  return roomReservations.value.filter(r => r.roomId === roomId && r.startTime.split('T')[0] === today)
+  return roomReservations.value.filter(r => r.roomId === roomId && formatDateStr(r.startTime) === today)
 }
 function dayEventStyle(r: any) {
-  const start = new Date(r.startTime), end = new Date(r.endTime)
+  const start = toDate(r.startTime), end = toDate(r.endTime)
   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   return { left: (dayEdgeGap.value + (startMinutes / (TOTAL_HOURS * 60)) * gridWidth.value) + 'px', width: ((durationMinutes / (TOTAL_HOURS * 60)) * gridWidth.value) + 'px' }
 }
 function myAgendaEventStyle(r: any) {
-  const start = new Date(r.startTime), end = new Date(r.endTime)
+  const start = toDate(r.startTime), end = toDate(r.endTime)
   const startMinutes = start.getHours() * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const topPx = (startMinutes / 60) * MY_HOUR_HEIGHT
@@ -838,9 +838,9 @@ function myAgendaEventStyle(r: any) {
   return { top: topPx + 'px', height: heightPx + 'px', left: '8px', right: '8px' }
 }
 function weekEventStyle(r: any) {
-  const di = weekDays.value.findIndex(d => d.dateStr === r.startTime.split('T')[0])
+  const di = weekDays.value.findIndex(d => d.dateStr === formatDateStr(r.startTime))
   if (di < 0) return { display: 'none' }
-  const start = new Date(r.startTime), end = new Date(r.endTime)
+  const start = toDate(r.startTime), end = toDate(r.endTime)
   const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes()
   const durationMinutes = (end.getTime() - start.getTime()) / 60000
   const topPx = weekEdgeGap + (startMinutes / (TOTAL_HOURS * 60)) * weekHoursHeight
@@ -860,7 +860,7 @@ function buildMonthDays() {
   const ms = new Date(d.getFullYear(), m, 1); ms.setDate(ms.getDate() - ms.getDay())
   monthDays.value = Array.from({ length: 42 }, (_, i) => {
     const dt = new Date(ms); dt.setDate(dt.getDate() + i); const ds = formatDate(dt)
-    return { date: dt.getDate(), dateStr: ds, currentMonth: dt.getMonth() === m, isToday: ds === today, reservations: allReservations.value.filter(r => r.startTime.split('T')[0] === ds) }
+    return { date: dt.getDate(), dateStr: ds, currentMonth: dt.getMonth() === m, isToday: ds === today, reservations: allReservations.value.filter(r => formatDateStr(r.startTime) === ds) }
   })
 }
 
