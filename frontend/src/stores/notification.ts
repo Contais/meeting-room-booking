@@ -37,14 +37,24 @@ export const useNotificationStore = defineStore('notification', () => {
   function start() {
     fetchUnreadCount()
     connectWebSocket()
+    window.addEventListener('pageshow', onPageShow)
   }
 
   /** 停止（登出/卸载时调用） */
   function stop() {
     cleanupWebSocket()
     cleanupPolling()
+    window.removeEventListener('pageshow', onPageShow)
     unreadCount.value = 0
     reconnectAttempts = 0
+  }
+
+  /** 页面从 Back-Forward Cache 恢复时重连 WebSocket（bfcache 中 onclose 不触发） */
+  function onPageShow(event: PageTransitionEvent) {
+    if (event.persisted) {
+      cleanupWebSocket()
+      connectWebSocket()
+    }
   }
 
   /** 建立 WebSocket 连接 */

@@ -50,7 +50,6 @@
           :page-size="size"
           :total="total"
           layout="prev, pager, next"
-          @current-change="loadList"
         />
       </div>
     </div>
@@ -58,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { BellFilled, Check, Calendar, CircleCheck, CircleClose } from '@element-plus/icons-vue'
@@ -94,9 +93,15 @@ async function loadList() {
   }
 }
 
+// 页码变化时自动重新加载（替代废弃的 @current-change）
+watch(page, () => loadList())
+
 function handleFilterChange() {
-  page.value = 1
-  loadList()
+  if (page.value === 1) {
+    loadList()
+  } else {
+    page.value = 1  // watch(page) 会自动触发 loadList
+  }
 }
 
 async function handleClickItem(item: NotificationItem) {

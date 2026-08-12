@@ -42,7 +42,7 @@
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column label="会议主题" min-width="150">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="goDetail(row.id)">{{ row.subject }}</el-link>
+            <el-link type="primary" underline="never" @click="goDetail(row.id)">{{ row.subject }}</el-link>
           </template>
         </el-table-column>
         <el-table-column prop="roomName" label="会议室" min-width="110" />

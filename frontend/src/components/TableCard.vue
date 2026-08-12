@@ -14,15 +14,13 @@
         :page-sizes="pageSizes"
         background
         layout="prev, pager, next, sizes, jumper"
-        @size-change="$emit('size-change', $event)"
-        @current-change="$emit('current-change', $event)"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   total: number
@@ -52,4 +50,9 @@ const sizeModel = computed({
   get: () => props.size,
   set: (val: number) => emit('update:size', val),
 })
+
+// v-model:current-page / v-model:page-size 已处理双向绑定，
+// 此处通过 watch 向父组件透传 current-change / size-change 事件
+watch(pageModel, (val) => emit('current-change', val))
+watch(sizeModel, (val) => emit('size-change', val))
 </script>
