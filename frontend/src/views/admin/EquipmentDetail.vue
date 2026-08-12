@@ -147,7 +147,7 @@ const categories = ['投影仪', '白板', '电视', '音响', '视频会议', '
 const editDialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive({
-  id: undefined as number | undefined,
+  id: undefined as string | undefined,
   code: '',
   name: '',
   category: '',
@@ -165,12 +165,12 @@ const rules: FormRules = {
 const assignDialogVisible = ref(false)
 const assigning = ref(false)
 const roomOptions = ref<MeetingRoom[]>([])
-const selectedRoomIds = ref<number[]>([])
+const selectedRoomIds = ref<string[]>([])
 
 async function loadDetail() {
   loading.value = true
   try {
-    const res = await getEquipmentDetail(Number(route.params.id))
+    const res = await getEquipmentDetail(String(route.params.id))
     equipment.value = res.data
   } catch { /* */ } finally {
     loading.value = false

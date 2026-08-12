@@ -147,20 +147,20 @@ const router = useRouter()
 
 const loading = ref(false)
 const room = ref<MeetingRoom | null>(null)
-const id = Number(route.params.id)
+const id = String(route.params.id)
 
 // 关联设备
 const equipments = ref<Equipment[]>([])
 const equipmentDialogVisible = ref(false)
 const equipmentOptions = ref<Equipment[]>([])
-const selectedEquipmentIds = ref<number[]>([])
+const selectedEquipmentIds = ref<string[]>([])
 const assigning = ref(false)
 
 // 编辑弹窗
 const editDialogVisible = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
-const form = reactive({ id: undefined as number | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
+const form = reactive({ id: undefined as string | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 async function loadDetail() {

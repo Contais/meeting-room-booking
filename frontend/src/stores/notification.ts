@@ -134,7 +134,7 @@ export const useNotificationStore = defineStore('notification', () => {
   }
 
   /** 标记单条已读并刷新角标 */
-  async function readOne(id: number) {
+  async function readOne(id: string) {
     try {
       await markAsRead(id)
       if (unreadCount.value > 0) unreadCount.value--

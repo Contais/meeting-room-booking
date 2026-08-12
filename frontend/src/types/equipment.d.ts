@@ -1,17 +1,17 @@
 export interface RoomBrief {
-  id: number
+  id: string
   name: string
   location: string
   quantity: number
 }
 
 export interface RoomEquipmentItem {
-  roomId: number
+  roomId: string
   quantity: number
 }
 
 export interface Equipment {
-  id: number
+  id: string
   code: string
   name: string
   category?: string
@@ -33,7 +33,7 @@ export interface EquipmentPageQuery {
   category?: string
   brand?: string
   status?: number
-  roomId?: number
+  roomId?: string
   createTimeStart?: string
   createTimeEnd?: string
 }

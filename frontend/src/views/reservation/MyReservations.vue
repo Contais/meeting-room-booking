@@ -175,7 +175,7 @@ async function loadData() {
     total.value = Number(res.data.total) || 0
   } catch { /* */ } finally { loading.value = false }
 }
-function goDetail(id: number) {
+function goDetail(id: string) {
   router.push({ path: `/reservation/my/${id}`, query: { from: '/reservation/my', fromTitle: '我的预约', dt: '预约详情' } })
 }
 

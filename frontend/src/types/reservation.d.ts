@@ -1,10 +1,10 @@
 export interface Attendee {
-  userId: number
+  userId: string
   username: string
   realName: string
   phone: string
   email: string
-  departmentId?: number
+  departmentId?: string
   departmentName?: string
   /** 头像（presigned URL） */
   avatar?: string
@@ -15,11 +15,11 @@ export interface Attendee {
 }
 
 export interface Reservation {
-  id: number
+  id: string
   reservationCode: string
-  roomId: number
+  roomId: string
   roomName: string
-  userId: number
+  userId: string
   username: string
   subject: string
   attendeeCount: number
@@ -36,10 +36,10 @@ export interface Reservation {
 }
 
 export interface ReservationCreateParams {
-  roomId: number
+  roomId: string
   subject: string
   /** 参会人用户ID列表 */
-  attendeeUserIds?: number[]
+  attendeeUserIds?: string[]
   remark?: string
   startTime: string
   endTime: string
@@ -50,8 +50,8 @@ export interface ReservationPageQuery {
   size?: number
   keyword?: string
   subject?: string
-  roomId?: number
-  userId?: number
+  roomId?: string
+  userId?: string
   status?: number
   startTime?: string
   endTime?: string

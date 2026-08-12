@@ -414,7 +414,7 @@ const detailTimeText = computed(() => {
 
 // ====== 预约弹窗 ======
 const bookingVisible = ref(false)
-const bookingRoomId = ref<number | undefined>(undefined)
+const bookingRoomId = ref<string | undefined>(undefined)
 const bookingDate = ref('')
 const bookingStartTime = ref('')
 const bookingEndTime = ref('')
@@ -533,7 +533,7 @@ const morePopoverDay = ref<string>('')
 
 // 周视图重叠布局
 const weekEventLayoutMap = computed(() => {
-  const layout = new Map<number, { columnIndex: number; totalColumns: number }>()
+  const layout = new Map<string, { columnIndex: number; totalColumns: number }>()
   const eventsByDay = new Map<string, any[]>()
   for (const r of weekReservations.value) {
     const dayStr = r.startTime.split('T')[0]
@@ -580,7 +580,7 @@ const weekEventLayoutMap = computed(() => {
 
 // 我的日历 - 日视图重叠布局（并排分栏，复用周视图并查集算法）
 const myDayLayoutMap = computed(() => {
-  const layout = new Map<number, { columnIndex: number; totalColumns: number }>()
+  const layout = new Map<string, { columnIndex: number; totalColumns: number }>()
   const events = [...myDayReservations.value]
   if (events.length === 0) return layout
   events.sort((a, b) => {
@@ -811,7 +811,7 @@ async function loadData() {
 }
 
 // ====== 日/周/月视图辅助 ======
-function getRoomReservations(roomId: number) {
+function getRoomReservations(roomId: string) {
   const today = formatDate(currentDate.value)
   return roomReservations.value.filter(r => r.roomId === roomId && r.startTime.split('T')[0] === today)
 }

@@ -98,14 +98,14 @@ const router = useRouter()
 
 const loading = ref(false)
 const user = ref<UserInfo | null>(null)
-const id = Number(route.params.id)
+const id = String(route.params.id)
 
 // 编辑弹窗
 const editDialogVisible = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const deptTree = ref<Department[]>([])
-const form = reactive({ id: undefined as number | undefined, username: '', realName: '', phone: '', email: '', role: 'ROLE_USER', departmentId: undefined as number | undefined })
+const form = reactive({ id: undefined as string | undefined, username: '', realName: '', phone: '', email: '', role: 'ROLE_USER', departmentId: undefined as string | undefined })
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }]

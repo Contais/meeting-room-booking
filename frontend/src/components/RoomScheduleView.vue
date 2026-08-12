@@ -299,7 +299,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import type { MeetingRoom } from '@/types/meeting'
 
 const props = defineProps<{
-  roomId: number
+  roomId: string
 }>()
 
 const emit = defineEmits<{

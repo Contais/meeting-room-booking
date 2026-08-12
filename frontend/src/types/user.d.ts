@@ -1,5 +1,5 @@
 export interface UserInfo {
-  id: number
+  id: string
   username: string
   phone: string
   realName: string
@@ -7,7 +7,7 @@ export interface UserInfo {
   status: number
   createTime: string
   updateTime?: string
-  departmentId?: number
+  departmentId?: string
   departmentName?: string
   email?: string
   avatar?: string

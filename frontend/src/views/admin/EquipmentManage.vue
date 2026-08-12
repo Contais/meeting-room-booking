@@ -156,7 +156,7 @@ const query = reactive({
 })
 
 const form = reactive({
-  id: undefined as number | undefined,
+  id: undefined as string | undefined,
   code: '',
   name: '',
   category: '',
@@ -165,7 +165,7 @@ const form = reactive({
   status: 1,
   purchaseDate: '',
   description: '',
-  roomIds: [] as number[],
+  roomIds: [] as string[],
 })
 
 const rules: FormRules = {

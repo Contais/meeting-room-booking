@@ -7,7 +7,7 @@ export function listEquipments(params: EquipmentPageQuery): Promise<Result<Equip
   return request.get('/api/meeting/equipment/admin/list', { params })
 }
 
-export function getEquipmentDetail(id: number): Promise<Result<Equipment>> {
+export function getEquipmentDetail(id: string): Promise<Result<Equipment>> {
   return request.get(`/api/meeting/equipment/admin/detail/${id}`)
 }
 
@@ -15,7 +15,7 @@ export function listActiveEquipments(): Promise<Result<Equipment[]>> {
   return request.get('/api/meeting/equipment/admin/active')
 }
 
-export function listEquipmentsByRoom(roomId: number): Promise<Result<Equipment[]>> {
+export function listEquipmentsByRoom(roomId: string): Promise<Result<Equipment[]>> {
   return request.get(`/api/meeting/equipment/admin/room/${roomId}`)
 }
 
@@ -27,21 +27,20 @@ export function updateEquipment(data: Partial<Equipment>): Promise<Result<void>>
   return request.put('/api/meeting/equipment/admin/update', data)
 }
 
-export function toggleEquipmentStatus(id: number): Promise<Result<void>> {
+export function toggleEquipmentStatus(id: string): Promise<Result<void>> {
   return request.put(`/api/meeting/equipment/admin/toggle-status/${id}`)
 }
 
-export function deleteEquipment(id: number): Promise<Result<void>> {
+export function deleteEquipment(id: string): Promise<Result<void>> {
   return request.delete(`/api/meeting/equipment/admin/delete/${id}`)
 }
 
-export function assignRooms(equipmentId: number, rooms: RoomEquipmentItem[]): Promise<Result<void>> {
+export function assignRooms(equipmentId: string, rooms: RoomEquipmentItem[]): Promise<Result<void>> {
   return request.put(`/api/meeting/equipment/admin/${equipmentId}/assign-rooms`, rooms)
 }
 
-export function assignEquipments(roomId: number, equipmentIds: number[]): Promise<Result<void>> {
+export function assignEquipments(roomId: string, equipmentIds: string[]): Promise<Result<void>> {
   return request.put(`/api/meeting/equipment/admin/room/${roomId}/assign-equipments`, equipmentIds)
 }
 
 export type { Equipment, RoomBrief, RoomEquipmentItem }
-

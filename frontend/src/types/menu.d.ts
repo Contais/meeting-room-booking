@@ -1,9 +1,9 @@
 export interface MenuItem {
-  id: number
+  id: string
   name: string
   path: string
   icon: string
-  parentId: number
+  parentId: string
   sortOrder: number
   visible: number
   status: number

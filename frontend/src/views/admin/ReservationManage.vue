@@ -139,7 +139,7 @@ const timeRange = ref<string[]>([])
 const createTimeRange = ref<string[]>([])
 
 function statusText(s: number) { return { 0: '待确认', 1: '已确认', 2: '已取消', 3: '已拒绝' }[s] || '未知' }
-function goDetail(id: number) {
+function goDetail(id: string) {
   router.push({ path: `/admin/reservations/${id}`, query: { from: '/admin/reservations', fromTitle: '预约管理', dt: '预约详情' } })
 }
 function statusType(s: number) { return { 0: 'warning', 1: 'success', 2: 'info', 3: 'danger' }[s] as any || 'info' }
@@ -195,7 +195,7 @@ async function loadData() {
     total.value = Number(res.data.total) || 0
   } catch { /* */ } finally { loading.value = false }
 }
-async function handleApprove(id: number) { try { await approveReservation(id); ElMessage.success('通过'); loadData() } catch { /* */ } }
+async function handleApprove(id: string) { try { await approveReservation(id); ElMessage.success('通过'); loadData() } catch { /* */ } }
 async function handleReject(row: Reservation) {
   try {
     const { value } = await ElMessageBox.prompt('请输入拒绝原因（可选）', `拒绝预约"${row.subject}"`, {

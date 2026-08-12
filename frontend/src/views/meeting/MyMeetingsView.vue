@@ -137,7 +137,7 @@ function reviewStatusType(s?: number): any {
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
-function goDetail(id: number) {
+function goDetail(id: string) {
   router.push({ path: `/reservation/my/${id}`, query: { from: '/my-meetings', fromTitle: '我的会议', dt: '会议详情' } })
 }
 function onSearchInput() {

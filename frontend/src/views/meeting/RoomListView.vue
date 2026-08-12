@@ -105,7 +105,7 @@ const filteredRooms = computed(() => rooms.value.filter(room => {
   return true
 }))
 
-function goDetail(id: number) { router.push({ path: `/meeting/rooms/${id}`, query: { from: '/meeting/rooms', fromTitle: '会议室列表', dt: '会议室详情' } }) }
+function goDetail(id: string) { router.push({ path: `/meeting/rooms/${id}`, query: { from: '/meeting/rooms', fromTitle: '会议室列表', dt: '会议室详情' } }) }
 
 function roomStatusClass(room: MeetingRoom): string {
   if (room.status !== 1) return 'inactive'

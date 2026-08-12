@@ -6,11 +6,11 @@ export function createReservation(data: ReservationCreateParams): Promise<Result
   return request.post('/api/meeting/reservation/create', data)
 }
 
-export function cancelReservation(id: number): Promise<Result<void>> {
+export function cancelReservation(id: string): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/cancel/${id}`)
 }
 
-export function deleteReservation(id: number): Promise<Result<void>> {
+export function deleteReservation(id: string): Promise<Result<void>> {
   return request.delete(`/api/meeting/reservation/${id}`)
 }
 
@@ -22,11 +22,11 @@ export function listMyMeetings(params: ReservationPageQuery): Promise<Result<Res
   return request.get('/api/meeting/reservation/my-meetings', { params })
 }
 
-export function listByRoomAndDate(roomId: number, date: string): Promise<Result<Reservation[]>> {
+export function listByRoomAndDate(roomId: string, date: string): Promise<Result<Reservation[]>> {
   return request.get(`/api/meeting/reservation/room/${roomId}/date/${date}`)
 }
 
-export function getMyReservationDetail(id: number): Promise<Result<Reservation>> {
+export function getMyReservationDetail(id: string): Promise<Result<Reservation>> {
   return request.get(`/api/meeting/reservation/detail/${id}`)
 }
 
@@ -35,19 +35,19 @@ export function listAllReservations(params: ReservationPageQuery): Promise<Resul
   return request.get('/api/meeting/reservation/admin/list', { params })
 }
 
-export function getReservationDetail(id: number): Promise<Result<Reservation>> {
+export function getReservationDetail(id: string): Promise<Result<Reservation>> {
   return request.get(`/api/meeting/reservation/admin/detail/${id}`)
 }
 
-export function approveReservation(id: number): Promise<Result<void>> {
+export function approveReservation(id: string): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/approve/${id}`)
 }
 
-export function rejectReservation(id: number, reason?: string): Promise<Result<void>> {
+export function rejectReservation(id: string, reason?: string): Promise<Result<void>> {
   return request.put(`/api/meeting/reservation/admin/reject/${id}`, { reason: reason || '' })
 }
 
-export function adminDeleteReservation(id: number): Promise<Result<void>> {
+export function adminDeleteReservation(id: string): Promise<Result<void>> {
   return request.delete(`/api/meeting/reservation/admin/${id}`)
 }
 

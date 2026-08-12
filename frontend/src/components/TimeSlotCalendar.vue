@@ -46,7 +46,7 @@ import { listByRoomAndDate } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
 const props = defineProps<{
-  roomId: number
+  roomId: string
   bookableStart?: string
   bookableEnd?: string
   selectedDate?: string

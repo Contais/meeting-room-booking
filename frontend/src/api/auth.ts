@@ -8,7 +8,7 @@ export interface LoginParams {
 
 export interface LoginVO {
   token: string
-  userId: number
+  userId: string
   username: string
   role: string
 }

@@ -241,7 +241,7 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const reservation = ref<Reservation | null>(null)
-const id = computed(() => Number(route.params.id))
+const id = computed(() => String(route.params.id))
 // 默认展开所有参会状态分组
 const activeGroups = ref<number[]>([0, 1, 2])
 
@@ -435,11 +435,11 @@ const userList = ref<UserInfo[]>([])
 const userLoading = ref(false)
 const selectedUsers = ref<UserInfo[]>([])
 const departmentList = ref<Department[]>([])
-const selectedDepartmentId = ref<number | null>(null)
+const selectedDepartmentId = ref<string | null>(null)
 
 /** 已存在的参会人 + 预约创建者，均不可重复邀请 */
 const existingAttendeeIds = computed(() => {
-  const set = new Set<number>()
+  const set = new Set<string>()
   if (reservation.value?.userId) set.add(reservation.value.userId)
   for (const a of reservation.value?.attendees || []) {
     set.add(a.userId)
@@ -447,7 +447,7 @@ const existingAttendeeIds = computed(() => {
   return set
 })
 
-function isExistingAttendee(userId: number) {
+function isExistingAttendee(userId: string) {
   return existingAttendeeIds.value.has(userId)
 }
 

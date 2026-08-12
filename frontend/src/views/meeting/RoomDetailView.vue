@@ -113,7 +113,7 @@ function onBookingSuccess() {
 
 onMounted(async () => {
   loading.value = true
-  try { const res = await getRoomById(Number(route.params.id)); room.value = res.data } catch { /* */ } finally { loading.value = false }
+  try { const res = await getRoomById(String(route.params.id)); room.value = res.data } catch { /* */ } finally { loading.value = false }
 })
 </script>
 

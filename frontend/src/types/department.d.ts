@@ -1,7 +1,7 @@
 export interface Department {
-  id: number
+  id: string
   name: string
-  parentId: number
+  parentId: string
   sortOrder: number
   status: number
   createTime: string

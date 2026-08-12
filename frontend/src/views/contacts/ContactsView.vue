@@ -170,7 +170,7 @@ import type { UserInfo } from '@/types/user'
 import type { Department } from '@/types/department'
 
 /** 未分配人员的特殊标识 */
-const UNASSIGNED = -1
+const UNASSIGNED = 'unassigned'
 
 const loading = ref(false)
 /** 全部启用用户，仅在挂载时加载一次，用于部门人数统计与前端过滤 */
@@ -178,13 +178,13 @@ const allUsers = ref<UserInfo[]>([])
 const deptTree = ref<Department[]>([])
 const deptTreeRef = ref<InstanceType<typeof ElTree>>()
 const keyword = ref('')
-/** null=全部；UNASSIGNED(-1)=未分配人员；number=指定部门(含子部门) */
-const selectedDeptId = ref<number | null>(null)
+/** null=全部；UNASSIGNED=未分配人员；string=指定部门(含子部门) */
+const selectedDeptId = ref<string | null>(null)
 const currentDeptName = ref('')
 /** 视图模式：card-卡片 / list-列表 */
 const viewMode = ref<'card' | 'list'>('card')
 /** 已折叠的分组 deptId 集合 */
-const collapsedGroups = ref<Set<number>>(new Set())
+const collapsedGroups = ref<Set<string>>(new Set())
 
 const avatarGradients = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -237,7 +237,7 @@ function getInitial(user: UserInfo): string {
 }
 
 /** 在部门树中查找指定节点 */
-function findDeptNode(nodes: Department[], id: number): Department | null {
+function findDeptNode(nodes: Department[], id: string): Department | null {
   for (const node of nodes) {
     if (node.id === id) return node
     if (node.children) {
@@ -249,10 +249,10 @@ function findDeptNode(nodes: Department[], id: number): Department | null {
 }
 
 /** 收集指定部门及其所有子部门的 ID（点击父级包含所有子级） */
-function collectDeptIds(id: number): number[] {
+function collectDeptIds(id: string): string[] {
   const node = findDeptNode(deptTree.value, id)
   if (!node) return [id]
-  const ids: number[] = [node.id]
+  const ids: string[] = [node.id]
   const walk = (n: Department) => {
     if (n.children) {
       for (const child of n.children) {
@@ -286,7 +286,7 @@ function selectUnassigned() {
 
 /** 部门人数统计映射（基于全部用户，不受搜索/筛选影响，始终稳定显示） */
 const deptUserCountMap = computed(() => {
-  const map = new Map<number, number>()
+  const map = new Map<string, number>()
   for (const u of allUsers.value) {
     if (u.departmentId != null) {
       map.set(u.departmentId, (map.get(u.departmentId) || 0) + 1)
@@ -295,13 +295,13 @@ const deptUserCountMap = computed(() => {
   return map
 })
 
-function getDeptUserCount(deptId: number): number {
+function getDeptUserCount(deptId: string): number {
   return deptUserCountMap.value.get(deptId) || 0
 }
 
 /** 部门完整路径映射（id -> "父部门 / 子部门 / ..."），用于分组标题展示层级关系 */
 const deptPathMap = computed(() => {
-  const map = new Map<number, string>()
+  const map = new Map<string, string>()
   const build = (nodes: Department[], ancestors: string[]) => {
     for (const node of nodes) {
       map.set(node.id, [...ancestors, node.name].join(' / '))
@@ -347,9 +347,9 @@ const filteredContacts = computed(() => {
 })
 
 const groupedUsers = computed(() => {
-  const groups: Map<number, { deptId: number; deptName: string; users: UserInfo[] }> = new Map()
+  const groups: Map<string, { deptId: string; deptName: string; users: UserInfo[] }> = new Map()
   for (const user of filteredContacts.value) {
-    const deptId = user.departmentId || 0
+    const deptId = user.departmentId || '0'
     const deptName = user.departmentId
       ? (deptPathMap.value.get(user.departmentId) || user.departmentName || '未知部门')
       : '未分配人员'
@@ -360,14 +360,14 @@ const groupedUsers = computed(() => {
   }
   // 未分配人员分组排在最后
   return Array.from(groups.values()).sort((a, b) => {
-    if (a.deptId === 0) return 1
-    if (b.deptId === 0) return -1
-    return a.deptId - b.deptId
+    if (a.deptId === '0') return 1
+    if (b.deptId === '0') return -1
+    return Number(a.deptId) - Number(b.deptId)
   })
 })
 
 /** 折叠/展开分组 */
-function toggleGroup(deptId: number) {
+function toggleGroup(deptId: string) {
   if (collapsedGroups.value.has(deptId)) {
     collapsedGroups.value.delete(deptId)
   } else {
@@ -377,7 +377,7 @@ function toggleGroup(deptId: number) {
   collapsedGroups.value = new Set(collapsedGroups.value)
 }
 
-function isGroupCollapsed(deptId: number): boolean {
+function isGroupCollapsed(deptId: string): boolean {
   return collapsedGroups.value.has(deptId)
 }
 

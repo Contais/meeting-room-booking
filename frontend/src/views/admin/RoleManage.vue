@@ -157,8 +157,10 @@ const roleColors = [
   '#fa709a', '#a8edea', '#ff9a9e', '#ffecd2',
   '#a1c4fd', '#d299c2', '#89f7fe', '#fddb92',
 ]
-function getRoleColor(id: number): string {
-  return roleColors[id % roleColors.length]
+function getRoleColor(id: string): string {
+  let hash = 0
+  for (const ch of id) hash = (hash + ch.charCodeAt(0)) % roleColors.length
+  return roleColors[hash]
 }
 
 async function loadRoles() {
@@ -202,7 +204,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 const formData = reactive({
-  id: 0,
+  id: undefined as string | undefined,
   roleCode: '',
   roleName: '',
   description: '',
@@ -216,7 +218,7 @@ const formRules: FormRules = {
 
 function handleCreate() {
   isEdit.value = false
-  formData.id = 0
+  formData.id = undefined
   formData.roleCode = ''
   formData.roleName = ''
   formData.description = ''
@@ -241,7 +243,7 @@ async function handleSubmit() {
   try {
     if (isEdit.value) {
       await updateRole({
-        id: formData.id,
+        id: formData.id!,
         roleName: formData.roleName,
         description: formData.description,
         sort: formData.sort,
@@ -310,7 +312,7 @@ async function loadMenuTree() {
   } catch { /* */ }
 }
 
-async function loadRoleMenus(roleId: number) {
+async function loadRoleMenus(roleId: string) {
   try {
     const res = await getRoleMenuIds(roleId)
     const menuIds = res.data || []

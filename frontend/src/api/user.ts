@@ -2,7 +2,7 @@ import request from '@/utils/request'
 import type { Result } from '@/types/api'
 import type { UserInfo, UserPageQuery, UserPageResult } from '@/types/user'
 
-export function getUserById(id: number): Promise<Result<UserInfo>> {
+export function getUserById(id: string): Promise<Result<UserInfo>> {
   return request.get(`/api/uc/user/${id}`)
 }
 
@@ -19,7 +19,7 @@ export function changePassword(data: { oldPassword: string; newPassword: string 
 }
 
 // 通讯录
-export function listContacts(params?: { keyword?: string; departmentId?: number }): Promise<Result<UserInfo[]>> {
+export function listContacts(params?: { keyword?: string; departmentId?: string }): Promise<Result<UserInfo[]>> {
   return request.get('/api/uc/user/contacts', { params })
 }
 
@@ -28,7 +28,7 @@ export function listUsers(params: UserPageQuery): Promise<Result<UserPageResult>
   return request.get('/api/uc/user/admin/list', { params })
 }
 
-export function getUserDetail(id: number): Promise<Result<UserInfo>> {
+export function getUserDetail(id: string): Promise<Result<UserInfo>> {
   return request.get(`/api/uc/user/admin/detail/${id}`)
 }
 
@@ -40,14 +40,14 @@ export function updateUser(data: Partial<UserInfo>): Promise<Result<void>> {
   return request.put('/api/uc/user/admin/update', data)
 }
 
-export function toggleUserStatus(id: number): Promise<Result<void>> {
+export function toggleUserStatus(id: string): Promise<Result<void>> {
   return request.put(`/api/uc/user/admin/toggle-status/${id}`)
 }
 
-export function deleteUser(id: number): Promise<Result<void>> {
+export function deleteUser(id: string): Promise<Result<void>> {
   return request.delete(`/api/uc/user/admin/delete/${id}`)
 }
 
-export function resetPassword(id: number, newPassword: string): Promise<Result<void>> {
+export function resetPassword(id: string, newPassword: string): Promise<Result<void>> {
   return request.put(`/api/uc/user/admin/reset-password/${id}`, { newPassword })
 }

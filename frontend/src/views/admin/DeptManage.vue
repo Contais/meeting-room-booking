@@ -93,7 +93,7 @@ const filterName = ref('')
 const createTimeRange = ref<string[]>([])
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 function onSearchInput() { if (searchTimer) clearTimeout(searchTimer); searchTimer = setTimeout(applyFilter, 300) }
-const form = reactive({ id: undefined as number | undefined, name: '', parentId: undefined as number | undefined, sortOrder: 0 })
+const form = reactive({ id: undefined as string | undefined, name: '', parentId: undefined as string | undefined, sortOrder: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
 
 /**
@@ -137,10 +137,10 @@ async function loadData() {
   try { const res = await getDepartmentTree(); treeData.value = res.data }
   catch { /* */ } finally { loading.value = false }
 }
-function showCreateDialog(parentId?: number) { isEdit.value = false; Object.assign(form, { id: undefined, name: '', parentId: parentId || undefined, sortOrder: 0 }); dialogVisible.value = true }
-function showEditDialog(row: Department) { isEdit.value = true; const pidNum = Number(row.parentId); Object.assign(form, { id: row.id, name: row.name, parentId: !row.parentId || pidNum === 0 ? undefined : row.parentId, sortOrder: row.sortOrder }); dialogVisible.value = true }
-async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateDepartment({ id: form.id!, name: form.name, parentId: form.parentId || 0, sortOrder: form.sortOrder }); ElMessage.success('更新成功') } else { await createDepartment({ name: form.name, parentId: form.parentId || 0, sortOrder: form.sortOrder }); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
-async function handleDelete(id: number) { try { await ElMessageBox.confirm('确定删除该部门?', '提示', { type: 'warning' }); await deleteDepartment(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
+function showCreateDialog(parentId?: string) { isEdit.value = false; Object.assign(form, { id: undefined, name: '', parentId: parentId || undefined, sortOrder: 0 }); dialogVisible.value = true }
+function showEditDialog(row: Department) { isEdit.value = true; Object.assign(form, { id: row.id, name: row.name, parentId: !row.parentId || row.parentId === '0' ? undefined : row.parentId, sortOrder: row.sortOrder }); dialogVisible.value = true }
+async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { await updateDepartment({ id: form.id!, name: form.name, parentId: form.parentId || '0', sortOrder: form.sortOrder }); ElMessage.success('更新成功') } else { await createDepartment({ name: form.name, parentId: form.parentId || '0', sortOrder: form.sortOrder }); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
+async function handleDelete(id: string) { try { await ElMessageBox.confirm('确定删除该部门?', '提示', { type: 'warning' }); await deleteDepartment(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
 onMounted(loadData)
 </script>
 

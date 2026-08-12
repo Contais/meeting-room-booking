@@ -1,5 +1,5 @@
 export interface MeetingRoom {
-  id: number
+  id: string
   name: string
   location: string
   capacity: number

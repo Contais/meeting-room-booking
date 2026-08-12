@@ -169,7 +169,7 @@ const props = defineProps<{
   modelValue: boolean
   room?: MeetingRoom | null
   rooms?: MeetingRoom[]
-  roomId?: number
+  roomId?: string
   date?: string
   startTime?: string
   endTime?: string
@@ -189,12 +189,12 @@ const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const timeStep = ref(30)
 const bookedReservations = ref<any[]>([])
-const selectedRoomId = ref<number | undefined>(props.roomId)
+const selectedRoomId = ref<string | undefined>(props.roomId)
 const timelineRef = ref<HTMLElement | null>(null)
 const contacts = ref<UserInfo[]>([])
 const contactsLoading = ref(false)
 const deptTree = ref<Department[]>([])
-const filterDeptId = ref<number | null>(null)
+const filterDeptId = ref<string | null>(null)
 // 自动拉取的会议室列表（当外部未传入 rooms 时使用）
 const fetchedRooms = ref<MeetingRoom[]>([])
 
@@ -219,7 +219,7 @@ const form = reactive({
   selectedDate: '',
   startMinute: '',
   endMinute: '',
-  attendeeUserIds: [] as number[],
+  attendeeUserIds: [] as string[],
   remark: ''
 })
 
@@ -511,7 +511,7 @@ async function loadDeptTree() {
 
 /** 扁平化部门列表（含完整路径），用于部门筛选下拉 */
 const flatDepartments = computed(() => {
-  const result: { id: number; path: string }[] = []
+  const result: { id: string; path: string }[] = []
   const walk = (nodes: Department[], ancestors: string[]) => {
     for (const node of nodes) {
       result.push({ id: node.id, path: [...ancestors, node.name].join(' / ') })
@@ -524,7 +524,7 @@ const flatDepartments = computed(() => {
 
 /** 部门完整路径映射（id -> "父部门 / 子部门 / ..."） */
 const deptPathMap = computed(() => {
-  const map = new Map<number, string>()
+  const map = new Map<string, string>()
   const build = (nodes: Department[], ancestors: string[]) => {
     for (const node of nodes) {
       map.set(node.id, [...ancestors, node.name].join(' / '))
@@ -536,8 +536,8 @@ const deptPathMap = computed(() => {
 })
 
 /** 收集指定部门及其所有子部门的 ID */
-function collectDeptIds(id: number): number[] {
-  const result: number[] = []
+function collectDeptIds(id: string): string[] {
+  const result: string[] = []
   const findAndCollect = (nodes: Department[]): boolean => {
     for (const node of nodes) {
       if (node.id === id) {
@@ -570,9 +570,9 @@ const filteredContacts = computed(() => {
 
 /** 按部门分组的联系人列表 */
 const groupedContacts = computed(() => {
-  const groups: Map<number, { deptId: number; deptName: string; users: UserInfo[] }> = new Map()
+  const groups: Map<string, { deptId: string; deptName: string; users: UserInfo[] }> = new Map()
   for (const user of filteredContacts.value) {
-    const deptId = user.departmentId || 0
+    const deptId = user.departmentId || '0'
     const deptName = user.departmentId
       ? (deptPathMap.value.get(user.departmentId) || user.departmentName || '未知部门')
       : '未分配人员'
@@ -582,9 +582,9 @@ const groupedContacts = computed(() => {
     groups.get(deptId)!.users.push(user)
   }
   return Array.from(groups.values()).sort((a, b) => {
-    if (a.deptId === 0) return 1
-    if (b.deptId === 0) return -1
-    return a.deptId - b.deptId
+    if (a.deptId === '0') return 1
+    if (b.deptId === '0') return -1
+    return Number(a.deptId) - Number(b.deptId)
   })
 })
 

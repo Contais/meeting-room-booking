@@ -2,12 +2,12 @@ import request from '@/utils/request'
 import type { Result } from '@/types/api'
 
 export interface NotificationItem {
-  id: number
+  id: string
   type: string
   title: string
   content: string
   refType?: string
-  refId?: number
+  refId?: string
   isRead: number
   createTime: string
 }
@@ -32,7 +32,7 @@ export function getUnreadCount(): Promise<Result<number>> {
   return request.get('/api/platform/notification/unread-count')
 }
 
-export function markAsRead(id: number): Promise<Result<void>> {
+export function markAsRead(id: string): Promise<Result<void>> {
   return request.post(`/api/platform/notification/read/${id}`)
 }
 
@@ -40,6 +40,6 @@ export function markAllAsRead(): Promise<Result<void>> {
   return request.post('/api/platform/notification/read-all')
 }
 
-export function deleteNotification(id: number): Promise<Result<void>> {
+export function deleteNotification(id: string): Promise<Result<void>> {
   return request.delete(`/api/platform/notification/${id}`)
 }

@@ -69,7 +69,7 @@ import { listByRoomAndDate } from '@/api/reservation'
 import type { Reservation } from '@/types/reservation'
 
 const props = defineProps<{
-  roomId: number
+  roomId: string
   bookableStart?: string
   bookableEnd?: string
 }>()
@@ -234,7 +234,7 @@ async function loadReservations() {
       const endRes = await listByRoomAndDate(props.roomId, endDate)
       const allReservations = [...startRes.data, ...endRes.data]
       // 去重
-      const uniqueIds = new Set<number>()
+      const uniqueIds = new Set<string>()
       reservations.value = allReservations.filter(r => {
         if (uniqueIds.has(r.id)) return false
         uniqueIds.add(r.id)
