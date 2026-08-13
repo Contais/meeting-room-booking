@@ -43,6 +43,7 @@ public class ChatController {
      * 执行时，通过 {@link com.meetinghub.meeting.tools.support.ToolAuthHelper} 从
      * {@link org.springframework.ai.chat.model.ToolContext} 读取用户身份，
      * 避免依赖 ThreadLocal（工具回调线程与请求线程不同，无法可靠传播）。
+     * 会话记忆按 userId 隔离，Redis key 形如 {@code mrb:chat:memory:{userId}:{clientSessionId}}。
      * </p>
      */
     @PostMapping(value = "/stream", produces = "text/plain;charset=UTF-8")
@@ -51,10 +52,11 @@ public class ChatController {
         if (conversationId == null || conversationId.isEmpty()) {
             conversationId = java.util.UUID.randomUUID().toString();
         }
-        final String cid = conversationId;
+        Long userId = UserContext.getCurrentUserId();
+        // 会话记忆按用户隔离，避免跨用户复用会话 ID 读取他人上下文
+        final String cid = scopedConversationId(userId, conversationId);
 
         // 在请求线程捕获用户身份（拦截器已设置 ThreadLocal），随后显式传入 Reactor 管道
-        Long userId = UserContext.getCurrentUserId();
         String role = UserContext.getCurrentRole();
         String message = request.getMessage();
         log.info("AI 对话开始, conversationId={}, userId={}, message={}",
@@ -89,7 +91,18 @@ public class ChatController {
      */
     @DeleteMapping("/session/{sessionId}")
     public void clearSession(@PathVariable String sessionId) {
-        chatMemory.clear(sessionId);
-        log.info("清空AI会话记忆, sessionId={}", sessionId);
+        Long userId = UserContext.getCurrentUserId();
+        chatMemory.clear(scopedConversationId(userId, sessionId));
+        log.info("清空AI会话记忆, userId={}, sessionId={}", userId, sessionId);
+    }
+
+    /**
+     * 将会话 ID 限定到当前用户，形成 {@code {userId}:{clientSessionId}}
+     * <p>
+     * 使 Redis key 可直接识别会话归属，同时隔离不同用户的会话上下文。
+     * </p>
+     */
+    private String scopedConversationId(Long userId, String conversationId) {
+        return userId + ":" + conversationId;
     }
 }

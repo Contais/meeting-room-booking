@@ -87,13 +87,14 @@ import { useUserStore } from '@/stores/user'
 marked.setOptions({ breaks: true, gfm: true })
 
 const userStore = useUserStore()
-const SESSION_STORAGE_KEY = 'mrb_chat_session_id'
+const SESSION_ID_STORAGE_KEY = 'mrb_chat_session_id'
 const visible = ref(false)
 const inputText = ref('')
 const loading = ref(false)
 const messages = ref([])
 const messagesContainer = ref(null)
-const sessionId = ref(localStorage.getItem(SESSION_STORAGE_KEY) || '')
+// sessionStorage：误刷新不丢会话；关闭标签页/浏览器后重新进入即为新会话
+const sessionId = ref(sessionStorage.getItem(SESSION_ID_STORAGE_KEY) || '')
 const hasStreamingContent = ref(false)
 // 中文输入法 composition 状态：true 表示正在选字，回车仅用于确认候选词，不应发送
 const isComposing = ref(false)
@@ -184,7 +185,7 @@ async function doSend(text) {
   try {
     if (!sessionId.value) {
       sessionId.value = Math.random().toString(36).substring(2, 15)
-      localStorage.setItem(SESSION_STORAGE_KEY, sessionId.value)
+      sessionStorage.setItem(SESSION_ID_STORAGE_KEY, sessionId.value)
     }
 
     const response = await fetch('/api/meeting/chat/stream', {
@@ -266,7 +267,7 @@ function clearChat() {
     fetch(`/api/meeting/chat/session/${sessionId.value}`, { method: 'DELETE' }).catch(() => {})
     sessionId.value = ''
   }
-  localStorage.removeItem(SESSION_STORAGE_KEY)
+  sessionStorage.removeItem(SESSION_ID_STORAGE_KEY)
 }
 
 function scrollToBottom() {

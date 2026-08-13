@@ -13,7 +13,9 @@ Boot 3.2.5 + Spring Cloud Alibaba 2023.0.1.0 技术栈不兼容，故在现有 1
 
 ### 存储结构
 
-- Key：`mrb:chat:memory:{conversationId}`（复用 mrb-common `RedisKeyConstant`，符合红线前缀 `mrb:`）
+- Key：`mrb:chat:memory:{userId}:{clientSessionId}`（复用 mrb-common `RedisKeyConstant`，符合红线前缀 `mrb:`）
+  - 后端在 `ChatController` 将客户端会话 ID 拼接为 `{userId}:{clientSessionId}` 再交给 Advisor，
+    使 Redis key 可直接识别会话归属，并隔离不同用户的会话上下文
 - Value：JSON 数组，元素 `{"type":"USER|ASSISTANT|SYSTEM|TOOL","content":"..."}`
 - TTL：7 天（`Duration.ofDays(7)`），每次 `saveAll` 重写 Key 时自动续期，无需定时清理任务
 
@@ -44,9 +46,11 @@ public class RedisChatMemoryRepository implements ChatMemoryRepository {
 
 - `SpringAIConfiguration.chatMemory()` 改为注入 `ChatMemoryRepository`（即 Redis 实现），
   保持 `MessageWindowChatMemory.maxMessages=20` 窗口策略不变
-- `ChatController` 注入 `ChatMemory`，`clearSession` 调用 `chatMemory.clear(sessionId)`
-- `ChatPanel.vue`：sessionId 改为 localStorage 读写（key: `mrb_chat_session_id`），
-  `clearChat` 同时移除 localStorage 并调用 DELETE
+- `ChatController` 注入 `ChatMemory`，`clearSession` 调用
+  `chatMemory.clear(scopedConversationId(userId, sessionId))`
+- `ChatPanel.vue`：sessionId 改为 sessionStorage 读写（key: `mrb_chat_session_id`）——
+  误刷新不丢会话，关闭标签页/浏览器后重进即为新会话（符合"一次来访 = 一次会话"的产品语义）；
+  `clearChat` 同时移除本地会话 ID 并调用 DELETE
 
 ## 失败策略
 

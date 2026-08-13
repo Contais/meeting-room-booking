@@ -1,5 +1,6 @@
 package com.meetinghub.meeting.controller;
 
+import com.meetinghub.common.context.UserContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -20,10 +21,15 @@ class ChatControllerTest {
 
     @Test
     void should_clearMemory_when_clearSession() {
-        ChatController controller = new ChatController(chatClient, chatMemory);
+        UserContext.set(UserContext.of("100", "ROLE_USER", "alice"));
+        try {
+            ChatController controller = new ChatController(chatClient, chatMemory);
 
-        controller.clearSession("session-1");
+            controller.clearSession("session-1");
 
-        verify(chatMemory).clear("session-1");
+            verify(chatMemory).clear("100:session-1");
+        } finally {
+            UserContext.clear();
+        }
     }
 }
