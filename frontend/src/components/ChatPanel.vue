@@ -88,10 +88,11 @@ marked.setOptions({ breaks: true, gfm: true })
 
 const userStore = useUserStore()
 const SESSION_ID_STORAGE_KEY = 'mrb_chat_session_id'
+const CHAT_MESSAGES_STORAGE_KEY = 'mrb_chat_messages'
 const visible = ref(false)
 const inputText = ref('')
 const loading = ref(false)
-const messages = ref([])
+const messages = ref(loadMessages())
 const messagesContainer = ref(null)
 // sessionStorage：误刷新不丢会话；关闭标签页/浏览器后重新进入即为新会话
 const sessionId = ref(sessionStorage.getItem(SESSION_ID_STORAGE_KEY) || '')
@@ -100,6 +101,31 @@ const hasStreamingContent = ref(false)
 const isComposing = ref(false)
 
 let abortController = null
+
+/**
+ * 从 sessionStorage 恢复聊天窗口消息（误刷新后界面与 AI 上下文一起恢复）
+ */
+function loadMessages() {
+  try {
+    const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch (e) {
+    console.warn('聊天记录恢复失败:', e)
+    return []
+  }
+}
+
+/**
+ * 将聊天窗口消息写入 sessionStorage；存储失败（如超限）不阻断聊天
+ */
+function persistMessages() {
+  try {
+    sessionStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages.value))
+  } catch (e) {
+    console.warn('聊天记录持久化失败:', e)
+  }
+}
 
 function onCompositionStart() {
   isComposing.value = true
@@ -168,6 +194,7 @@ async function sendSuggestion(text) {
 
 async function doSend(text) {
   messages.value.push({ role: 'user', content: text })
+  persistMessages()
   inputText.value = ''
   loading.value = true
   hasStreamingContent.value = false
@@ -244,6 +271,7 @@ async function doSend(text) {
     loading.value = false
     hasStreamingContent.value = false
     abortController = null
+    persistMessages()
     await nextTick()
     scrollToBottom()
   }
@@ -263,6 +291,7 @@ function clearChat() {
   loading.value = false
   hasStreamingContent.value = false
   messages.value = []
+  sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
   if (sessionId.value) {
     fetch(`/api/meeting/chat/session/${sessionId.value}`, { method: 'DELETE' }).catch(() => {})
     sessionId.value = ''
