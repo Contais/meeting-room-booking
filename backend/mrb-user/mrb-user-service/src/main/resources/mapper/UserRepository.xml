@@ -30,7 +30,7 @@
         说明：departmentName 由 Service 层 toVO 填充
     -->
     <select id="selectUserPage" resultType="com.meetinghub.user.model.entity.User">
-        SELECT * FROM user
+        SELECT * FROM uc_user
         WHERE deleted = 0
         <include refid="userFilters"/>
         ORDER BY create_time DESC
@@ -40,7 +40,7 @@
         通讯录查询：仅启用用户，支持关键字多字段 OR 与部门过滤
     -->
     <select id="selectContacts" resultType="com.meetinghub.user.model.entity.User">
-        SELECT * FROM user
+        SELECT * FROM uc_user
         WHERE deleted = 0
           AND status = 1
         <if test="keyword != null and keyword != ''">

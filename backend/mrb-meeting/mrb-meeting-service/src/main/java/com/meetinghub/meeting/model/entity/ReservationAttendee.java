@@ -8,7 +8,7 @@ import lombok.Data;
  * 预约参会人关联实体
  */
 @Data
-@TableName("reservation_attendee")
+@TableName("meeting_room_reservation_attendee")
 public class ReservationAttendee extends BaseEntity {
 
     /** 预约ID */

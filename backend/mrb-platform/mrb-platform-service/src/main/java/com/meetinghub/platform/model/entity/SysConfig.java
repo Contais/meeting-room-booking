@@ -11,7 +11,7 @@ import lombok.Data;
  * </p>
  */
 @Data
-@TableName("sys_config")
+@TableName("platform_config")
 public class SysConfig extends BaseEntity {
 
     /** 配置键（唯一，如 file.presigned.expire） */

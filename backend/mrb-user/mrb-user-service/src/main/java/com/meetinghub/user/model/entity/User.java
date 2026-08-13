@@ -8,7 +8,7 @@ import lombok.Data;
  * 用户实体
  */
 @Data
-@TableName("user")
+@TableName("uc_user")
 public class User extends BaseEntity {
 
     /**

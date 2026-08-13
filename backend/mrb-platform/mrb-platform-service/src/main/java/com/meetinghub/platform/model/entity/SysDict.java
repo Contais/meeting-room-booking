@@ -11,7 +11,7 @@ import lombok.Data;
  * </p>
  */
 @Data
-@TableName("sys_dict")
+@TableName("platform_dict")
 public class SysDict extends BaseEntity {
 
     /** 字典编码（唯一，如 gender、reservation_status） */

@@ -8,7 +8,7 @@ import lombok.Data;
  * 字典项表实体
  */
 @Data
-@TableName("sys_dict_item")
+@TableName("platform_dict_item")
 public class SysDictItem extends BaseEntity {
 
     /** 所属字典 ID */

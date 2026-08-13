@@ -8,7 +8,7 @@ import lombok.Data;
  * 会议室-设备关联实体
  */
 @Data
-@TableName("room_equipment")
+@TableName("meeting_room_equipment")
 public class RoomEquipment extends BaseEntity {
 
     /** 会议室ID */

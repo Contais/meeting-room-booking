@@ -8,7 +8,7 @@ import lombok.Data;
  * 部门实体
  */
 @Data
-@TableName("department")
+@TableName("uc_department")
 public class Department extends BaseEntity {
 
     /**

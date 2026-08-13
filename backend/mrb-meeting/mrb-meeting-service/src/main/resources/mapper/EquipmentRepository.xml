@@ -6,7 +6,7 @@
         设备列表分页查询：关键字 OR + 名称 + 分类 + 品牌 + 状态 + 创建时间范围
     -->
     <select id="selectEquipmentPage" resultType="com.meetinghub.meeting.model.entity.Equipment">
-        SELECT * FROM equipment
+        SELECT * FROM meeting_equipment
         WHERE deleted = 0
         <if test="query.keyword != null and query.keyword != ''">
             AND (name LIKE CONCAT('%', #{query.keyword}, '%')

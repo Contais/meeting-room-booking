@@ -95,7 +95,7 @@
                r.status, r.create_time, mr.name AS room_name,
                ra.status AS my_attendee_status
         FROM meeting_room_reservation r
-        INNER JOIN reservation_attendee ra ON ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
+        INNER JOIN meeting_room_reservation_attendee ra ON ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
         LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           AND r.status = 1
@@ -125,7 +125,7 @@
               (r.user_id = #{userId} AND r.status IN (0, 1))
               OR
               (r.status = 1 AND EXISTS (
-                  SELECT 1 FROM reservation_attendee ra
+                  SELECT 1 FROM meeting_room_reservation_attendee ra
                   WHERE ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
               ))
           )

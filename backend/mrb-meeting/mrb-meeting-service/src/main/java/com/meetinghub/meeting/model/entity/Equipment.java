@@ -9,7 +9,7 @@ import java.time.LocalDate;
  * 设备实体
  */
 @Data
-@TableName("equipment")
+@TableName("meeting_equipment")
 public class Equipment extends BaseEntity {
 
     /** 设备编码 */

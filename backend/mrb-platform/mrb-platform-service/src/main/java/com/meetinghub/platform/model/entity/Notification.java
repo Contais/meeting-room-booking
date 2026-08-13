@@ -8,7 +8,7 @@ import lombok.Data;
  * 站内信通知实体
  */
 @Data
-@TableName("notification")
+@TableName("platform_notification")
 public class Notification extends BaseEntity {
 
     /** 接收人ID */
