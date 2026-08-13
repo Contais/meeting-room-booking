@@ -25,6 +25,9 @@ public final class RedisKeyConstant {
     // 预约编号按天自增序列
     public static final String RESERVATION_CODE_SEQ = PREFIX + "reservation:code:seq:";
 
+    // AI 会话记忆
+    public static final String CHAT_MEMORY = PREFIX + "chat:memory:";
+
     // MQ 消费幂等去重
     public static final String MQ_DEDUP = PREFIX + "mq:dedup:";
 

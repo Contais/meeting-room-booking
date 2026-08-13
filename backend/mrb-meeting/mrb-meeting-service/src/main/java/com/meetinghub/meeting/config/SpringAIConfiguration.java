@@ -6,7 +6,7 @@ import com.meetinghub.meeting.tools.reservation.ReservationTool;
 import com.meetinghub.meeting.tools.support.LoggingToolCallbackProvider;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
@@ -24,19 +24,19 @@ import java.nio.charset.StandardCharsets;
  * 参考 spring-ai-learning 项目的实现方式：
  * - 使用 @Configuration + @Bean 注册 ChatClient
  * - 使用 defaultTools() 注册 Function Calling 工具
- * - 使用 InMemoryChatMemory 管理会话上下文
+ * - 使用 Redis ChatMemory 管理会话上下文（多实例共享、重启不丢失）
  * </p>
  */
 @Configuration
 public class SpringAIConfiguration {
 
     /**
-     * 内存聊天记忆（按 sessionId 隔离会话）
+     * 基于 Redis 的聊天记忆（按 sessionId 隔离会话，多实例共享）
      */
     @Bean
-    public ChatMemory chatMemory() {
+    public ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository) {
         return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(20)
                 .build();
     }

@@ -29,6 +29,7 @@ import java.util.Map;
 public class ChatController {
 
     private final ChatClient chatClient;
+    private final ChatMemory chatMemory;
 
     /**
      * SSE 流式对话接口
@@ -88,7 +89,7 @@ public class ChatController {
      */
     @DeleteMapping("/session/{sessionId}")
     public void clearSession(@PathVariable String sessionId) {
-        // InMemoryChatMemory 的清理由 ChatMemory 自动管理
-        // 会话超时后自动释放
+        chatMemory.clear(sessionId);
+        log.info("清空AI会话记忆, sessionId={}", sessionId);
     }
 }
