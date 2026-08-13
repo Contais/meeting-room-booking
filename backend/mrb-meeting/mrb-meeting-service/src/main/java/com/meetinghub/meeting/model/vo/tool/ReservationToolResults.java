@@ -90,6 +90,21 @@ public final class ReservationToolResults {
     }
 
     /**
+     * 创建预约结果。
+     * <p>
+     * 携带预约编号（B 开头）供模型在后续邀请参会人、取消、查询参会人等操作中直接使用，
+     * 避免模型臆造数字预约 ID；数字 ID 不进入工具 JSON，防止泄露给用户。
+     * </p>
+     *
+     * @param success         是否成功
+     * @param message         结果描述
+     * @param reservationCode 预约编号（B 开头）
+     */
+    public record CreateReservationResult(boolean success, String message, String reservationCode)
+            implements ToolResult {
+    }
+
+    /**
      * 部门简要信息。
      *
      * @param id   部门ID（供模型调用邀请工具使用，不应展示给用户）

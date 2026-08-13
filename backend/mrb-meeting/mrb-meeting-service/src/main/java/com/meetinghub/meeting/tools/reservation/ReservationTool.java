@@ -11,6 +11,7 @@ import com.meetinghub.meeting.model.entity.MeetingRoomReservation;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.AttendeeBrief;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.AttendeeListResult;
+import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.CreateReservationResult;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.DepartmentBrief;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.DepartmentListResult;
 import com.meetinghub.meeting.model.vo.tool.ReservationToolResults.OperationResult;
@@ -63,8 +64,8 @@ public class ReservationTool {
     /** 历史预约最多展示条数，避免回复过长 */
     private static final int HISTORY_DISPLAY_LIMIT = 10;
 
-    @Tool(description = "创建会议室预约。传入会议室名称（支持模糊匹配，但需能唯一确定）、日期、开始/结束时间、会议主题。创建后可在详情页添加参会人员。返回 JSON 对象：success 是否成功、message 结果描述")
-    public OperationResult createReservation(
+    @Tool(description = "创建会议室预约。传入会议室名称（支持模糊匹配，但需能唯一确定）、日期、开始/结束时间、会议主题。返回 JSON 对象：success 是否成功、message 结果描述、reservationCode 预约编号（B 开头，可直接用于后续邀请参会人/取消/查询）")
+    public CreateReservationResult createReservation(
             ToolContext toolContext,
             @ToolParam(description = "会议室名称") String roomName,
             @ToolParam(description = "预约日期，格式 yyyy-MM-dd") String date,
@@ -104,40 +105,47 @@ public class ReservationTool {
         dto.setStartTime(start);
         dto.setEndTime(end);
 
-        reservationService.createReservation(userId, dto);
-        return new OperationResult(true,
+        String reservationCode = reservationService.createReservation(userId, dto);
+        return new CreateReservationResult(true,
                 String.format("预约创建成功：%s %s ~ %s「%s」",
-                        room.getName(), start.format(DateTimePatternConstant.DATETIME_FMT), end.format(DateTimePatternConstant.DATETIME_FMT), subject));
+                        room.getName(), start.format(DateTimePatternConstant.DATETIME_FMT), end.format(DateTimePatternConstant.DATETIME_FMT), subject),
+                reservationCode);
     }
 
-    @Tool(description = "取消本人的会议室预约，传入预约记录ID。仅可取消本人创建的预约，无法取消他人的预约。返回 JSON 对象：success 是否成功、message 结果描述")
+    @Tool(description = "取消本人的会议室预约，传入预约编号（B 开头）或预约记录ID。仅可取消本人创建的预约，无法取消他人的预约。返回 JSON 对象：success 是否成功、message 结果描述")
     public OperationResult cancelMyReservation(
             ToolContext toolContext,
-            @ToolParam(description = "预约记录ID") Long reservationId) {
+            @ToolParam(description = "预约编号（B 开头）或预约记录ID") String reservationRef) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
 
-        MeetingRoomReservation reservation = reservationRepository.selectById(reservationId);
+        MeetingRoomReservation reservation = resolveReservation(reservationRef);
         if (reservation == null) {
-            return new OperationResult(false, "预约记录不存在");
+            return new OperationResult(false, "预约记录不存在，请确认预约编号是否正确");
         }
         if (!reservation.getUserId().equals(userId)) {
             return new OperationResult(false, "无权取消他人的预约");
         }
-        reservationService.cancelReservation(userId, reservationId);
-        return new OperationResult(true, "预约 " + reservationId + " 已取消");
+        reservationService.cancelReservation(userId, reservation.getId());
+        return new OperationResult(true, "预约 " + reservation.getReservationCode() + " 已取消");
     }
 
-    @Tool(description = "查看本人未结束的预约。返回 JSON 数组，每项字段：reservationCode 预约编号、subject 主题、roomName 会议室名称、startTime/endTime 时间 yyyy-MM-dd HH:mm、status 状态中文、attendeeCount 参会人数")
-    public List<ReservationBrief> listMyUpcomingReservations(ToolContext toolContext) {
+    @Tool(description = "查看本人未结束的预约，支持按日期筛选。返回 JSON 数组，每项字段：reservationCode 预约编号、subject 主题、roomName 会议室名称、startTime/endTime 时间 yyyy-MM-dd HH:mm、status 状态中文、attendeeCount 参会人数")
+    public List<ReservationBrief> listMyUpcomingReservations(
+            ToolContext toolContext,
+            @ToolParam(description = "筛选日期，格式 yyyy-MM-dd；仅返回开始时间落在该日期的预约，可不传", required = false) String date) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
         LocalDateTime now = LocalDateTime.now();
-        List<MeetingRoomReservation> reservations = reservationRepository.selectList(
-                new LambdaQueryWrapper<MeetingRoomReservation>()
-                        .eq(MeetingRoomReservation::getUserId, userId)
-                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
-                        .ge(MeetingRoomReservation::getEndTime, now)
-                        .orderByAsc(MeetingRoomReservation::getStartTime)
-        );
+        LambdaQueryWrapper<MeetingRoomReservation> wrapper = new LambdaQueryWrapper<MeetingRoomReservation>()
+                .eq(MeetingRoomReservation::getUserId, userId)
+                .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
+                .ge(MeetingRoomReservation::getEndTime, now)
+                .orderByAsc(MeetingRoomReservation::getStartTime);
+        LocalDateTime filterStart = parseDateStart(date);
+        if (filterStart != null) {
+            wrapper.ge(MeetingRoomReservation::getStartTime, filterStart)
+                    .lt(MeetingRoomReservation::getStartTime, filterStart.plusDays(1));
+        }
+        List<MeetingRoomReservation> reservations = reservationRepository.selectList(wrapper);
         if (reservations.isEmpty()) {
             return List.of();
         }
@@ -199,37 +207,66 @@ public class ReservationTool {
         }
     }
 
-    @Tool(description = "按部门邀请参会人。传入预约ID和部门ID，将该部门所有成员加入参会人列表。仅预约创建者可操作。返回 JSON 对象：success 是否成功、message 结果描述")
+    @Tool(description = "按部门邀请参会人。传入预约编号（B 开头）或预约记录ID，以及部门ID，将该部门所有成员加入参会人列表。仅预约创建者可操作。返回 JSON 对象：success 是否成功、message 结果描述")
     public OperationResult inviteDepartmentAttendees(
             ToolContext toolContext,
-            @ToolParam(description = "预约记录ID") Long reservationId,
+            @ToolParam(description = "预约编号（B 开头）或预约记录ID") String reservationRef,
             @ToolParam(description = "部门ID") Long departmentId) {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
-        if (reservationId == null || departmentId == null) {
-            return new OperationResult(false, "请提供预约ID和部门ID");
+        if (reservationRef == null || reservationRef.isBlank() || departmentId == null) {
+            return new OperationResult(false, "请提供预约编号/预约ID和部门ID");
+        }
+        MeetingRoomReservation reservation = resolveReservation(reservationRef);
+        if (reservation == null) {
+            return new OperationResult(false, "邀请失败：预约记录不存在，请确认预约编号是否正确");
         }
         try {
-            int count = attendeeService.inviteDepartment(reservationId, userId, departmentId);
+            int count = attendeeService.inviteDepartment(reservation.getId(), userId, departmentId);
             return new OperationResult(true,
-                    String.format("已成功邀请 %d 位部门成员加入预约 %d", count, reservationId));
+                    String.format("已成功邀请 %d 位部门成员加入预约 %s", count, reservation.getReservationCode()));
         } catch (BusinessException e) {
             return new OperationResult(false, "邀请失败：" + e.getMessage());
         } catch (Exception e) {
             log.error("inviteDepartmentAttendees 调用失败, reservationId={}, departmentId={}",
-                    reservationId, departmentId, e);
+                    reservation.getId(), departmentId, e);
             return new OperationResult(false, "邀请参会人失败，请稍后重试");
         }
     }
 
-    @Tool(description = "查询某预约的参会人列表。返回 JSON 对象：attendees 参会人列表（name 姓名、departmentName 部门、status 查阅状态中文：待查阅/已查阅/已拒绝）")
+    @Tool(description = "查询某预约的参会人列表。传入预约编号（B 开头）或预约记录ID。返回 JSON 对象：attendees 参会人列表（name 姓名、departmentName 部门、status 查阅状态中文：待查阅/已查阅/已拒绝）")
     public ToolResult listReservationAttendees(
-            @ToolParam(description = "预约记录ID") Long reservationId) {
-        if (reservationId == null) {
-            return new ToolResult.ErrorResult("请提供预约ID");
+            @ToolParam(description = "预约编号（B 开头）或预约记录ID") String reservationRef) {
+        MeetingRoomReservation reservation = resolveReservation(reservationRef);
+        if (reservation == null) {
+            return new ToolResult.ErrorResult("预约记录不存在，请确认预约编号是否正确");
         }
-        var attendees = attendeeService.listAttendees(reservationId);
+        var attendees = attendeeService.listAttendees(reservation.getId());
         List<AttendeeBrief> briefs = ReservationToolResults.toBriefList(attendees);
         return new AttendeeListResult(briefs);
+    }
+
+    /**
+     * 按预约编号（B 开头）或数字预约 ID 解析预约记录，解析失败返回 null。
+     *
+     * @param reservationRef 预约编号（如 B20260812000014）或预约记录 ID
+     * @return 预约记录；不存在或格式非法时返回 null
+     */
+    private MeetingRoomReservation resolveReservation(String reservationRef) {
+        if (reservationRef == null || reservationRef.isBlank()) {
+            return null;
+        }
+        String ref = reservationRef.trim();
+        if (ref.startsWith("B") && ref.length() > 1 && ref.substring(1).chars().allMatch(Character::isDigit)) {
+            return reservationRepository.selectOne(
+                    new LambdaQueryWrapper<MeetingRoomReservation>()
+                            .eq(MeetingRoomReservation::getReservationCode, ref)
+                            .last("LIMIT 1"));
+        }
+        try {
+            return reservationRepository.selectById(Long.parseLong(ref));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**
