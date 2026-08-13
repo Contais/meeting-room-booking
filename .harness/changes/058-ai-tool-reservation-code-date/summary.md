@@ -30,7 +30,7 @@
 
 | 文件 | 变更 |
 |------|------|
-| `model/vo/tool/ReservationToolResults.java` | 新增 `CreateReservationResult(success, message, reservationCode)` record |
+| `model/vo/tool/ReservationToolResults.java` | 新增 `CreateReservationResult(success, message, reservationCode)` record 及失败工厂 `failure(message)` |
 | `tools/reservation/ReservationTool.java` | `createReservation` 返回 `CreateReservationResult`（含预约编号）；`inviteDepartmentAttendees`/`cancelMyReservation`/`listReservationAttendees` 预约标识参数改为 String（编号或ID）并新增 `resolveReservation` 服务端解析；`listMyUpcomingReservations` 新增可选 `date` 过滤；工具描述同步更新 |
 | `resources/prompt/chatbot-system-prompt.md` | 功能清单补充"按日期筛选"；场景2 改为直接用预约编号邀请；工具返回说明补充 reservationCode 用法与内部 ID 禁止展示 |
 | `.harness/changes/058-ai-tool-reservation-code-date/summary.md` | 本次变更追踪 |
@@ -48,4 +48,6 @@
 - 工具入参类型变化会影响模型调用 JSON schema（reservationId: integer → reservationRef: string），
   属于本次修复目标；提示词已同步引导模型传编号。
 - 取消/邀请成功后的 message 由数字 ID 改为预约编号，展示更友好且不泄露内部 ID。
+- 失败分支统一走 `CreateReservationResult.failure(message)`（reservationCode 为 null），
+  提示词明确「reservationCode 仅在 success 为 true 时返回」，防止模型失败后拿 null 调用后续工具。
 - 无 DB / 前端变更；数字预约 ID 从未进入工具 JSON，聊天不暴露内部 ID 的安全约束不变。
