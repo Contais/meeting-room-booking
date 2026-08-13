@@ -1,35 +1,38 @@
 -- ============================================================
 -- 会议室预约系统 - 数据库初始化脚本（最新版）
--- 用于全新环境初始化，已有环境请使用 V1.x__*.sql 增量脚本
+-- 用于全新环境初始化；已有环境请按 V1.x__*.sql 增量迁移
+-- 表名规范：服务前缀（uc/meeting/platform）+ 实体 snake_case（单数）
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS `mrb_user` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS `mrb_auth` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS `mrb_meeting` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `mrb_platform` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ============================================================
 -- 用户中心 (mrb_user)
 -- ============================================================
 USE `mrb_user`;
 
-CREATE TABLE IF NOT EXISTS `user` (
+CREATE TABLE IF NOT EXISTS `uc_user` (
     `id` BIGINT NOT NULL COMMENT '用户ID',
     `username` VARCHAR(64) NOT NULL COMMENT '用户名',
     `password` VARCHAR(128) NOT NULL COMMENT '密码（BCrypt哈希）',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
     `email` VARCHAR(128) DEFAULT NULL COMMENT '邮箱',
+    `avatar` VARCHAR(512) DEFAULT NULL COMMENT '头像 objectKey',
     `real_name` VARCHAR(64) DEFAULT NULL COMMENT '真实姓名',
     `department_id` BIGINT DEFAULT NULL COMMENT '所属部门ID',
-    `role` VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER' COMMENT '角色: ROLE_ADMIN-超级管理员, ROLE_USER-普通用户',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER' COMMENT '角色编码: ROLE_ADMIN/ROLE_USER',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_phone_active` (`phone`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
-CREATE TABLE IF NOT EXISTS `department` (
+CREATE TABLE IF NOT EXISTS `uc_department` (
     `id` BIGINT NOT NULL COMMENT '部门ID',
     `name` VARCHAR(64) NOT NULL COMMENT '部门名称',
     `parent_id` BIGINT DEFAULT 0 COMMENT '父部门ID, 0为顶级',
@@ -37,12 +40,125 @@ CREATE TABLE IF NOT EXISTS `department` (
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
     KEY `idx_parent_id` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
 
-CREATE TABLE IF NOT EXISTS `notification` (
+INSERT INTO `uc_user` (`id`, `username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
+(1, 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '超级管理员', 'ROLE_ADMIN', 1),
+(2, 'test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'ROLE_USER', 1);
+
+-- ============================================================
+-- 鉴权中心 (mrb_auth)
+-- ============================================================
+USE `mrb_auth`;
+-- Token 存储在 Redis 中，无独立表
+
+-- ============================================================
+-- 会议室中心 (mrb_meeting)
+-- ============================================================
+USE `mrb_meeting`;
+
+CREATE TABLE IF NOT EXISTS `meeting_room` (
+    `id` BIGINT NOT NULL COMMENT '会议室ID',
+    `name` VARCHAR(64) NOT NULL COMMENT '会议室名称',
+    `location` VARCHAR(128) DEFAULT NULL COMMENT '位置',
+    `capacity` INT DEFAULT NULL COMMENT '容纳人数',
+    `equipment` VARCHAR(256) DEFAULT NULL COMMENT '设备设施',
+    `image_url` VARCHAR(512) DEFAULT NULL COMMENT '实景图片 objectKey',
+    `description` TEXT DEFAULT NULL COMMENT '描述',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
+    `bookable_start` VARCHAR(5) DEFAULT '08:00' COMMENT '可预约开始时间',
+    `bookable_end` VARCHAR(5) DEFAULT '20:00' COMMENT '可预约结束时间',
+    `max_duration` INT DEFAULT 480 COMMENT '最大预约时长(分钟)',
+    `advance_days` INT DEFAULT 7 COMMENT '提前预约天数',
+    `need_approval` TINYINT DEFAULT 0 COMMENT '是否需要审批 0-否 1-是',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室表';
+
+CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
+    `id` BIGINT NOT NULL COMMENT '预约ID',
+    `reservation_code` VARCHAR(20) DEFAULT NULL COMMENT '预约编号: B + yyyyMMdd + 6位序列',
+    `room_id` BIGINT NOT NULL COMMENT '会议室ID',
+    `user_id` BIGINT NOT NULL COMMENT '预约用户ID',
+    `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
+    `attendee_count` INT DEFAULT NULL COMMENT '参会人数（由参会人列表派生）',
+    `contact_phone` VARCHAR(20) DEFAULT NULL COMMENT '联系人手机号',
+    `remark` VARCHAR(512) DEFAULT NULL COMMENT '备注',
+    `start_time` DATETIME NOT NULL COMMENT '开始时间',
+    `end_time` DATETIME NOT NULL COMMENT '结束时间',
+    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待确认, 1-已确认, 2-已取消, 3-已拒绝',
+    `reject_reason` VARCHAR(255) DEFAULT NULL COMMENT '拒绝原因（status=3 时填充）',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_reservation_code` (`reservation_code`),
+    KEY `idx_room_id` (`room_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_time_range` (`start_time`, `end_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室预约表';
+
+CREATE TABLE IF NOT EXISTS `meeting_equipment` (
+    `id` BIGINT NOT NULL COMMENT '设备ID',
+    `code` VARCHAR(50) NOT NULL COMMENT '设备编码',
+    `name` VARCHAR(100) NOT NULL COMMENT '设备名称',
+    `category` VARCHAR(50) DEFAULT NULL COMMENT '设备分类',
+    `brand` VARCHAR(64) DEFAULT NULL COMMENT '品牌',
+    `model` VARCHAR(100) DEFAULT NULL COMMENT '型号',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
+    `purchase_date` DATE DEFAULT NULL COMMENT '购置日期',
+    `description` VARCHAR(500) DEFAULT NULL COMMENT '设备描述',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_equipment_code` (`code`, `deleted`),
+    KEY `idx_category` (`category`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备表';
+
+CREATE TABLE IF NOT EXISTS `meeting_room_equipment` (
+    `id` BIGINT NOT NULL COMMENT '关联ID',
+    `room_id` BIGINT NOT NULL COMMENT '会议室ID',
+    `equipment_id` BIGINT NOT NULL COMMENT '设备ID',
+    `quantity` INT NOT NULL DEFAULT 1 COMMENT '数量',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_room_equipment` (`room_id`, `equipment_id`, `deleted`),
+    KEY `idx_equipment_id` (`equipment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室-设备关联表';
+
+CREATE TABLE IF NOT EXISTS `meeting_room_reservation_attendee` (
+    `id` BIGINT NOT NULL COMMENT '主键ID',
+    `reservation_id` BIGINT NOT NULL COMMENT '预约ID',
+    `user_id` BIGINT NOT NULL COMMENT '参会人用户ID',
+    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '参会状态: 0-待查阅, 1-已接受, 2-已拒绝',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_reservation_attendee` (`reservation_id`, `user_id`, `deleted`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预约参会人关联表';
+
+INSERT INTO `meeting_room` (`id`, `name`, `location`, `capacity`, `equipment`, `description`, `status`, `bookable_start`, `bookable_end`, `max_duration`, `advance_days`, `need_approval`) VALUES
+(1, '大会议室A', '3楼A301', 20, '投影仪,白板,视频会议系统', '适合部门例会和项目评审', 1, '08:00', '20:00', 480, 7, 0),
+(2, '中会议室B', '3楼A302', 10, '投影仪,白板', '适合小组讨论', 1, '08:00', '18:00', 240, 3, 1),
+(3, '小会议室C', '3楼A303', 6, '电视屏幕', '适合1对1或小型讨论', 1, '09:00', '18:00', 120, 1, 0);
+
+-- ============================================================
+-- 平台中心 (mrb_platform)
+-- ============================================================
+USE `mrb_platform`;
+
+CREATE TABLE IF NOT EXISTS `platform_notification` (
     `id` BIGINT NOT NULL COMMENT '通知ID',
     `user_id` BIGINT NOT NULL COMMENT '接收人ID',
     `type` VARCHAR(32) NOT NULL COMMENT '类型: RESERVATION_CREATED/APPROVED/REJECTED/CANCELLED/SYSTEM',
@@ -60,71 +176,47 @@ CREATE TABLE IF NOT EXISTS `notification` (
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站内信通知表';
 
-
-INSERT INTO `user` (`username`, `password`, `phone`, `real_name`, `role`, `status`) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138000', '超级管理员', 'ROLE_ADMIN', 1),
-('test', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '13800138001', '测试用户', 'ROLE_USER', 1);
-
--- ============================================================
--- 鉴权中心 (mrb_auth)
--- ============================================================
-USE `mrb_auth`;
-
--- Token 存储在 Redis 中，无独立表
-
--- ============================================================
--- 会议室管理 (mrb_meeting)
--- ============================================================
-USE `mrb_meeting`;
-
-CREATE TABLE IF NOT EXISTS `meeting_room` (
-    `id` BIGINT NOT NULL COMMENT '会议室ID',
-    `name` VARCHAR(64) NOT NULL COMMENT '会议室名称',
-    `location` VARCHAR(128) DEFAULT NULL COMMENT '位置',
-    `capacity` INT DEFAULT NULL COMMENT '容纳人数',
-    `equipment` VARCHAR(256) DEFAULT NULL COMMENT '设备设施',
-    `image_url` VARCHAR(512) DEFAULT NULL COMMENT '实景图片URL',
-    `description` TEXT DEFAULT NULL COMMENT '描述',
+CREATE TABLE IF NOT EXISTS `platform_dict` (
+    `id` BIGINT NOT NULL COMMENT '字典ID',
+    `code` VARCHAR(64) NOT NULL COMMENT '字典编码（唯一）',
+    `name` VARCHAR(64) NOT NULL COMMENT '字典名称',
+    `description` VARCHAR(255) DEFAULT NULL COMMENT '描述',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
-    `bookable_start` VARCHAR(5) DEFAULT '08:00' COMMENT '可预约开始时间',
-    `bookable_end` VARCHAR(5) DEFAULT '20:00' COMMENT '可预约结束时间',
-    `max_duration` INT DEFAULT 480 COMMENT '最大预约时长(分钟)',
-    `advance_days` INT DEFAULT 7 COMMENT '提前预约天数',
-    `need_approval` TINYINT DEFAULT 0 COMMENT '是否需要审批 0-否 1-是',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室表';
-
-CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
-    `id` BIGINT NOT NULL COMMENT '预约ID',
-    `reservation_code` VARCHAR(20) DEFAULT NULL COMMENT '预约编号: B + yyyyMMdd + 6位序列',
-    `room_id` BIGINT NOT NULL COMMENT '会议室ID',
-    `user_id` BIGINT NOT NULL COMMENT '用户ID',
-    `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
-    `attendee_count` INT DEFAULT NULL COMMENT '参会人数（由参会人列表自动派生）',
-    `remark` VARCHAR(512) DEFAULT NULL COMMENT '备注',
-    `start_time` DATETIME NOT NULL COMMENT '开始时间',
-    `end_time` DATETIME NOT NULL COMMENT '结束时间',
-    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待确认, 1-已确认, 2-已取消',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_reservation_code` (`reservation_code`),
-    KEY `idx_room_id` (`room_id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_time_range` (`start_time`, `end_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会议室预约表';
+    UNIQUE KEY `uk_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典表';
 
-INSERT INTO `meeting_room` (`name`, `location`, `capacity`, `equipment`, `description`, `status`, `bookable_start`, `bookable_end`, `max_duration`, `advance_days`, `need_approval`) VALUES
-('大会议室A', '3楼A301', 20, '投影仪,白板,视频会议系统', '适合部门例会和项目评审', 1, '08:00', '20:00', 480, 7, 0),
-('中会议室B', '3楼A302', 10, '投影仪,白板', '适合小组讨论', 1, '08:00', '18:00', 240, 3, 1),
-('小会议室C', '3楼A303', 6, '电视屏幕', '适合1对1或小型讨论', 1, '09:00', '18:00', 120, 1, 0);
+CREATE TABLE IF NOT EXISTS `platform_dict_item` (
+    `id` BIGINT NOT NULL COMMENT '字典项ID',
+    `dict_id` BIGINT NOT NULL COMMENT '所属字典ID',
+    `code` VARCHAR(64) NOT NULL COMMENT '字典项编码',
+    `label` VARCHAR(128) NOT NULL COMMENT '展示标签',
+    `value` VARCHAR(128) NOT NULL COMMENT '字典项值',
+    `sort` INT NOT NULL DEFAULT 0 COMMENT '排序号（升序）',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
+    PRIMARY KEY (`id`),
+    KEY `idx_dict_id` (`dict_id`, `status`, `sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典项表';
 
+CREATE TABLE IF NOT EXISTS `platform_config` (
+    `id` BIGINT NOT NULL COMMENT '配置ID',
+    `config_key` VARCHAR(128) NOT NULL COMMENT '配置键（唯一）',
+    `config_value` VARCHAR(512) DEFAULT NULL COMMENT '配置值',
+    `description` VARCHAR(255) DEFAULT NULL COMMENT '描述',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_config_key` (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
-CREATE TABLE IF NOT EXISTS `menu` (
+CREATE TABLE IF NOT EXISTS `platform_menu` (
     `id` BIGINT NOT NULL COMMENT '菜单ID',
     `name` VARCHAR(64) NOT NULL COMMENT '菜单名称',
     `path` VARCHAR(128) DEFAULT NULL COMMENT '路由路径',
@@ -135,43 +227,39 @@ CREATE TABLE IF NOT EXISTS `menu` (
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除: 0-否, 1-是',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
     KEY `idx_parent_id` (`parent_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台菜单表';
 
-CREATE TABLE IF NOT EXISTS `role` (
+CREATE TABLE IF NOT EXISTS `platform_role` (
     `id` BIGINT NOT NULL COMMENT '角色ID',
     `role_code` VARCHAR(50) NOT NULL COMMENT '角色编码',
     `role_name` VARCHAR(100) NOT NULL COMMENT '角色名称',
     `description` VARCHAR(500) DEFAULT NULL COMMENT '角色描述',
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-启用，0-禁用',
-    `is_system` TINYINT NOT NULL DEFAULT 0 COMMENT '是否系统角色：1-是，0-否',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
+    `is_system` TINYINT NOT NULL DEFAULT 0 COMMENT '是否系统角色: 1-是, 0-否',
     `sort` INT NOT NULL DEFAULT 0 COMMENT '排序',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_role_code` (`role_code`, `deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台角色表';
 
-INSERT INTO `role` (`role_code`, `role_name`, `description`, `status`, `is_system`, `sort`) VALUES
-('ROLE_ADMIN', '超级管理员', '拥有系统所有权限', 1, 1, 1),
-('ROLE_USER', '普通用户', '基础功能权限', 1, 1, 2);
-
-CREATE TABLE IF NOT EXISTS `role_menu` (
+CREATE TABLE IF NOT EXISTS `platform_role_menu` (
     `id` BIGINT NOT NULL COMMENT 'ID',
-    `role` VARCHAR(20) NOT NULL COMMENT '角色编码',
+    `role_id` BIGINT NOT NULL COMMENT '角色ID',
     `menu_id` BIGINT NOT NULL COMMENT '菜单ID',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-否, 1-是',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_role_menu` (`role`, `menu_id`),
+    UNIQUE KEY `uk_role_menu` (`role_id`, `menu_id`),
     KEY `idx_menu_id` (`menu_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色菜单关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台角色菜单关联表';
 
-INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `visible`, `status`) VALUES
+INSERT INTO `platform_menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `visible`, `status`) VALUES
 (1, '首页', '/home', 'HomeFilled', 0, 1, 1, 1),
 (2, '会议室', '/meeting/rooms', 'OfficeBuilding', 0, 2, 1, 1),
 (3, '我的预约', '/reservation/my', 'Calendar', 0, 3, 1, 1),
@@ -185,9 +273,13 @@ INSERT INTO `menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_order`, `vi
 (15, '菜单管理', '/admin/menus', 'Setting', 10, 15, 1, 1),
 (16, '角色管理', '/admin/roles', 'Lock', 10, 16, 1, 1);
 
-INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('ROLE_ADMIN', 1), ('ROLE_ADMIN', 2), ('ROLE_ADMIN', 3), ('ROLE_ADMIN', 4), ('ROLE_ADMIN', 5),
-('ROLE_ADMIN', 10), ('ROLE_ADMIN', 11), ('ROLE_ADMIN', 12), ('ROLE_ADMIN', 13), ('ROLE_ADMIN', 14), ('ROLE_ADMIN', 15), ('ROLE_ADMIN', 16);
+INSERT INTO `platform_role` (`id`, `role_code`, `role_name`, `description`, `status`, `is_system`, `sort`) VALUES
+(1, 'ROLE_ADMIN', '超级管理员', '拥有系统所有权限', 1, 1, 1),
+(2, 'ROLE_USER', '普通用户', '基础功能权限', 1, 1, 2);
 
-INSERT INTO `role_menu` (`role`, `menu_id`) VALUES
-('ROLE_USER', 1), ('ROLE_USER', 2), ('ROLE_USER', 3), ('ROLE_USER', 4), ('ROLE_USER', 5);
+INSERT INTO `platform_role_menu` (`role_id`, `menu_id`) VALUES
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
+(1, 10), (1, 11), (1, 12), (1, 13), (1, 14), (1, 15), (1, 16);
+
+INSERT INTO `platform_role_menu` (`role_id`, `menu_id`) VALUES
+(2, 1), (2, 2), (2, 3), (2, 4), (2, 5);

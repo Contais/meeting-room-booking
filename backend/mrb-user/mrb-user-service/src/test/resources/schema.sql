@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE IF NOT EXISTS "uc_user" (
     "id" BIGINT NOT NULL,
     "username" VARCHAR(64) NOT NULL,
     "password" VARCHAR(128) NOT NULL,
