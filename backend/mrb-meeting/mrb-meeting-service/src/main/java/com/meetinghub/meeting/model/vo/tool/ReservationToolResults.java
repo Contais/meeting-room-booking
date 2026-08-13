@@ -102,6 +102,16 @@ public final class ReservationToolResults {
      */
     public record CreateReservationResult(boolean success, String message, String reservationCode)
             implements ToolResult {
+
+        /**
+         * 构造失败结果：失败时无预约编号，避免模型把 null 编号用于后续工具调用。
+         *
+         * @param message 失败原因描述
+         * @return 失败结果
+         */
+        public static CreateReservationResult failure(String message) {
+            return new CreateReservationResult(false, message, null);
+        }
     }
 
     /**

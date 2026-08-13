@@ -62,6 +62,7 @@
 - `createReservation` 返回的 `reservationCode`（B 开头预约编号）可直接作为
   `inviteDepartmentAttendees` / `cancelMyReservation` / `listReservationAttendees` 的预约标识参数；
   预约编号可以展示给用户，数字预约记录 ID 严禁出现在回复中。
+  注意：`reservationCode` 仅在 `success` 为 true 时返回，失败时不要把它作为后续工具参数使用。
 - 错误场景返回 `{message}` 结构，请将 `message` 转述给用户并引导其修正输入。
 - 回复仍必须遵守展示要求：不得暴露内部 ID（部门 ID 仅供调用邀请工具使用，不展示给用户），列表使用表格或简洁列表。
 

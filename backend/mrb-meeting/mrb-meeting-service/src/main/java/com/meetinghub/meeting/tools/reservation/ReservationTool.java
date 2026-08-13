@@ -75,15 +75,15 @@ public class ReservationTool {
         Long userId = ToolAuthHelper.requireUserId(toolContext);
 
         if (roomName == null || roomName.isBlank()) {
-            return new CreateReservationResult(false, "请提供会议室名称", null);
+            return CreateReservationResult.failure("请提供会议室名称");
         }
         if (date == null || startTime == null || endTime == null) {
-            return new CreateReservationResult(false, "请提供日期和开始/结束时间", null);
+            return CreateReservationResult.failure("请提供日期和开始/结束时间");
         }
 
         RoomMatch match = roomResolver.resolveByName(roomName);
         if (!(match instanceof RoomMatch.Single s)) {
-            return new CreateReservationResult(false, RoomResolver.toErrorResult(match).message(), null);
+            return CreateReservationResult.failure(RoomResolver.toErrorResult(match).message());
         }
         MeetingRoom room = s.room();
 
@@ -96,7 +96,7 @@ public class ReservationTool {
             start = LocalDateTime.of(d, st);
             end = LocalDateTime.of(d, et);
         } catch (Exception e) {
-            return new CreateReservationResult(false, "时间格式有误，日期请用 yyyy-MM-dd，时间请用 HH:mm", null);
+            return CreateReservationResult.failure("时间格式有误，日期请用 yyyy-MM-dd，时间请用 HH:mm");
         }
 
         ReservationCreateDTO dto = new ReservationCreateDTO();
