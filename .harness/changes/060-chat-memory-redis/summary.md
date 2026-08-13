@@ -18,6 +18,7 @@ Redis 持久化存储，并修复 `clearSession` 空实现与前端会话 ID 不
 - [ ] `DELETE /meeting/chat/session/{sessionId}` 真正清空 Redis 中的会话
 - [ ] 前端用 sessionStorage 持久化会话 ID：误刷新不丢会话，关闭标签页/浏览器后重进为新会话
 - [ ] 聊天窗口消息同步持久化到 sessionStorage，刷新页面后界面与 AI 上下文一起恢复
+- [ ] 前端聊天缓存按 userId 隔离（key 带用户后缀），退出登录后另一用户不会看到上一用户的会话
 - [ ] "清空会话"同时清理本地与远端
 - [ ] 工具调用消息（TOOL）与官方 JDBC 实现行为一致（内容存空）
 - [ ] 单元测试通过（repository 读写/清空/异常 + clearSession 调用）

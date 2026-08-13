@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed, watch } from 'vue'
 import { ChatDotRound, Close, Delete, Promotion, VideoPause } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -89,25 +89,46 @@ marked.setOptions({ breaks: true, gfm: true })
 const userStore = useUserStore()
 const SESSION_ID_STORAGE_KEY = 'mrb_chat_session_id'
 const CHAT_MESSAGES_STORAGE_KEY = 'mrb_chat_messages'
+// 聊天缓存按用户隔离：退出登录后另一用户不会看到上一用户的会话与消息
+const currentUserId = computed(() => userStore.userInfo?.id ?? '')
 const visible = ref(false)
 const inputText = ref('')
 const loading = ref(false)
 const messages = ref(loadMessages())
 const messagesContainer = ref(null)
 // sessionStorage：误刷新不丢会话；关闭标签页/浏览器后重新进入即为新会话
-const sessionId = ref(sessionStorage.getItem(SESSION_ID_STORAGE_KEY) || '')
+const sessionId = ref(loadSessionId())
 const hasStreamingContent = ref(false)
 // 中文输入法 composition 状态：true 表示正在选字，回车仅用于确认候选词，不应发送
 const isComposing = ref(false)
 
 let abortController = null
 
+// 兼容清理旧版未按用户隔离的缓存（一次性的本地迁移）
+sessionStorage.removeItem(SESSION_ID_STORAGE_KEY)
+sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
+
+function chatSessionKey() {
+  return currentUserId.value ? `${SESSION_ID_STORAGE_KEY}_${currentUserId.value}` : ''
+}
+
+function chatMessagesKey() {
+  return currentUserId.value ? `${CHAT_MESSAGES_STORAGE_KEY}_${currentUserId.value}` : ''
+}
+
+function loadSessionId() {
+  const key = chatSessionKey()
+  return key ? sessionStorage.getItem(key) || '' : ''
+}
+
 /**
  * 从 sessionStorage 恢复聊天窗口消息（误刷新后界面与 AI 上下文一起恢复）
  */
 function loadMessages() {
+  const key = chatMessagesKey()
+  if (!key) return []
   try {
-    const raw = sessionStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+    const raw = sessionStorage.getItem(key)
     const parsed = raw ? JSON.parse(raw) : []
     return Array.isArray(parsed) ? parsed : []
   } catch (e) {
@@ -120,12 +141,26 @@ function loadMessages() {
  * 将聊天窗口消息写入 sessionStorage；存储失败（如超限）不阻断聊天
  */
 function persistMessages() {
+  const key = chatMessagesKey()
+  if (!key) return
   try {
-    sessionStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(messages.value))
+    sessionStorage.setItem(key, JSON.stringify(messages.value))
   } catch (e) {
     console.warn('聊天记录持久化失败:', e)
   }
 }
+
+// 切换登录用户（退出/重新登录）后加载新用户的会话状态，避免串号
+watch(currentUserId, () => {
+  if (abortController) {
+    abortController.abort()
+  }
+  loading.value = false
+  hasStreamingContent.value = false
+  abortController = null
+  sessionId.value = loadSessionId()
+  messages.value = loadMessages()
+})
 
 function onCompositionStart() {
   isComposing.value = true
@@ -212,7 +247,7 @@ async function doSend(text) {
   try {
     if (!sessionId.value) {
       sessionId.value = Math.random().toString(36).substring(2, 15)
-      sessionStorage.setItem(SESSION_ID_STORAGE_KEY, sessionId.value)
+      sessionStorage.setItem(chatSessionKey(), sessionId.value)
     }
 
     const response = await fetch('/api/meeting/chat/stream', {
@@ -291,12 +326,12 @@ function clearChat() {
   loading.value = false
   hasStreamingContent.value = false
   messages.value = []
-  sessionStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
+  sessionStorage.removeItem(chatMessagesKey())
   if (sessionId.value) {
     fetch(`/api/meeting/chat/session/${sessionId.value}`, { method: 'DELETE' }).catch(() => {})
     sessionId.value = ''
   }
-  sessionStorage.removeItem(SESSION_ID_STORAGE_KEY)
+  sessionStorage.removeItem(chatSessionKey())
 }
 
 function scrollToBottom() {
