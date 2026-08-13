@@ -85,7 +85,7 @@
     </select>
 
     <!--
-        我的会议分页查询：JOIN reservation_attendee 查询用户参加的会议
+        我的会议分页查询：JOIN meeting_room_reservation_attendee 查询用户参加的会议
         仅显示已确认(1)的会议，待审批(0)的会议在审核通过后才出现
         支持 attendeeStatus（参会人RSVP状态）与 upcoming（仅即将到来）过滤
     -->
