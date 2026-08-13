@@ -32,6 +32,7 @@ Redis 持久化存储，并修复 `clearSession` 空实现与前端会话 ID 不
 | `ChatController.clearSession`（修改） | 调用 `chatMemory.clear(sessionId)` 真清空 |
 | `ChatController`（修改） | 会话 ID 按 userId 隔离（`{userId}:{clientSessionId}`），Redis key 可识别归属 |
 | `ChatPanel.vue`（修改） | sessionId 持久化到 sessionStorage（误刷新不丢、关页重进为新会话） |
+| `ChatService` / `ChatServiceImpl`（新增） | 聊天编排下沉 Service（会话记忆、工具上下文、流式调用），Controller 保持薄层 |
 | `mrb-meeting-service/pom.xml` | 新增 `spring-boot-starter-test`（test scope） |
 
 ## 业务影响范围
