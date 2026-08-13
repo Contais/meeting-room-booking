@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.support;
 
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;

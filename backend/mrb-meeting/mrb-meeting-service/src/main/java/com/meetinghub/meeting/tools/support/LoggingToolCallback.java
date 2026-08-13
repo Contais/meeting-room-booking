@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.support;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ToolContext;

@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.support;
 
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;

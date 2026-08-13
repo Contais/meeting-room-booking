@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.reservation;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.constant.DateTimePatternConstant;
@@ -20,7 +20,10 @@ import com.meetinghub.meeting.model.vo.tool.ToolResult;
 import com.meetinghub.meeting.repository.ReservationRepository;
 import com.meetinghub.meeting.service.ReservationAttendeeService;
 import com.meetinghub.meeting.service.ReservationService;
-import com.meetinghub.meeting.tools.RoomResolver.RoomMatch;
+import com.meetinghub.meeting.tools.meeting.MeetingRoomTool;
+import com.meetinghub.meeting.tools.meeting.RoomResolver;
+import com.meetinghub.meeting.tools.meeting.RoomResolver.RoomMatch;
+import com.meetinghub.meeting.tools.support.ToolAuthHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ToolContext;

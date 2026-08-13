@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.common;
 
 import com.meetinghub.common.constant.DateTimePatternConstant;
 import lombok.RequiredArgsConstructor;

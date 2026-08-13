@@ -1,9 +1,9 @@
 package com.meetinghub.meeting.config;
 
-import com.meetinghub.meeting.tools.CommonTool;
-import com.meetinghub.meeting.tools.LoggingToolCallbackProvider;
-import com.meetinghub.meeting.tools.MeetingRoomTool;
-import com.meetinghub.meeting.tools.ReservationTool;
+import com.meetinghub.meeting.tools.common.CommonTool;
+import com.meetinghub.meeting.tools.meeting.MeetingRoomTool;
+import com.meetinghub.meeting.tools.reservation.ReservationTool;
+import com.meetinghub.meeting.tools.support.LoggingToolCallbackProvider;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;

@@ -2,7 +2,7 @@ package com.meetinghub.meeting.controller;
 
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.meeting.model.dto.ChatRequest;
-import com.meetinghub.meeting.tools.ToolAuthHelper;
+import com.meetinghub.meeting.tools.support.ToolAuthHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -39,7 +39,7 @@ public class ChatController {
      * <p>
      * 在 Servlet 请求线程中（拦截器已填充 {@link UserContext}）捕获 userId/role，
      * 通过 {@code .toolContext(Map)} 显式传入 Flux 管道。AI 工具方法在异步线程
-     * 执行时，通过 {@link com.meetinghub.meeting.tools.ToolAuthHelper} 从
+     * 执行时，通过 {@link com.meetinghub.meeting.tools.support.ToolAuthHelper} 从
      * {@link org.springframework.ai.chat.model.ToolContext} 读取用户身份，
      * 避免依赖 ThreadLocal（工具回调线程与请求线程不同，无法可靠传播）。
      * </p>

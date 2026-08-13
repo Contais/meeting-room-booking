@@ -1,4 +1,4 @@
-package com.meetinghub.meeting.tools;
+package com.meetinghub.meeting.tools.meeting;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.meetinghub.common.enums.EnableStatusEnum;
@@ -6,6 +6,7 @@ import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomSummary;
 import com.meetinghub.meeting.model.vo.tool.ToolResult;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
+import com.meetinghub.meeting.tools.reservation.ReservationTool;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
