@@ -1074,7 +1074,7 @@ defineExpose({ loadData })
   height: 2px;
   background: rgba(59, 130, 246, 0.8);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
 }
 .wk-now-line::before {

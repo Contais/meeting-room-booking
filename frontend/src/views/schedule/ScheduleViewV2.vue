@@ -1173,7 +1173,7 @@ onBeforeUnmount(() => {
 .wk-grid-wrap { flex: 1; }
 .wk-grid { position: relative; display: flex; padding: var(--week-edge-gap, 24px) 0; }
 .wk-work-hours-band { position: absolute; left: 0; right: 0; background: rgba(102,126,234,0.06); pointer-events: none; z-index: 0; }
-.wk-now-line { position: absolute; height: 2px; background: #3b82f6; z-index: 1; pointer-events: none; }
+.wk-now-line { position: absolute; height: 2px; background: #3b82f6; z-index: 3; pointer-events: none; }
 .wk-now-line::before { content: ''; position: absolute; left: -6px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; }
 .wk-now-label { position: absolute; top: -12px; left: 8px; padding: 2px 6px; border-radius: 999px; background: #3b82f6; color: #fff; font-size: 11px; }
 .wk-col { flex: 1; display: flex; flex-direction: column; position: relative; }
