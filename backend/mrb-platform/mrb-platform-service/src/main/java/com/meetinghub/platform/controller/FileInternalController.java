@@ -26,7 +26,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/platform/file/internal")
+@RequestMapping("/platform/internal/file")
 public class FileInternalController {
 
     private final FileStorageService fileStorageService;
