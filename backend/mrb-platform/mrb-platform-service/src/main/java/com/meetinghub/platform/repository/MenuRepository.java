@@ -1,7 +1,7 @@
-package com.meetinghub.user.repository;
+package com.meetinghub.platform.repository;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.meetinghub.user.model.entity.Menu;
+import com.meetinghub.platform.model.entity.Menu;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

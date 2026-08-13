@@ -1,18 +1,17 @@
-package com.meetinghub.user.controller;
+package com.meetinghub.platform.controller;
 
 import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
-import com.meetinghub.user.model.dto.MenuCreateDTO;
-import com.meetinghub.user.model.dto.MenuUpdateDTO;
-import com.meetinghub.user.model.vo.MenuVO;
-import com.meetinghub.user.service.MenuService;
+import com.meetinghub.platform.model.dto.MenuCreateDTO;
+import com.meetinghub.platform.model.dto.MenuUpdateDTO;
+import com.meetinghub.platform.model.vo.MenuVO;
+import com.meetinghub.platform.service.MenuService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/menu")
@@ -49,17 +48,6 @@ public class MenuController {
     @DeleteMapping("/admin/delete/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         menuService.delete(id);
-        return Result.ok();
-    }
-
-    @RequiresRole("ROLE_ADMIN")
-    @PutMapping("/admin/role-menus")
-    public Result<Void> saveRoleMenus(@RequestBody Map<String, Object> body) {
-        String role = (String) body.get("role");
-        @SuppressWarnings("unchecked")
-        List<Long> menuIds = ((List<Number>) body.get("menuIds")).stream()
-                .map(Number::longValue).toList();
-        menuService.saveRoleMenus(role, menuIds);
         return Result.ok();
     }
 }

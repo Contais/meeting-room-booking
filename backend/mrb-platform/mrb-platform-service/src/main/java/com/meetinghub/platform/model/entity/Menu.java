@@ -1,4 +1,4 @@
-package com.meetinghub.user.model.entity;
+package com.meetinghub.platform.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.meetinghub.common.model.BaseEntity;
@@ -8,7 +8,7 @@ import lombok.Data;
  * 菜单实体
  */
 @Data
-@TableName("menu")
+@TableName("platform_menu")
 public class Menu extends BaseEntity {
 
     private String name;

@@ -1,12 +1,12 @@
-package com.meetinghub.user.controller;
+package com.meetinghub.platform.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.meetinghub.common.result.Result;
-import com.meetinghub.user.model.dto.RoleCreateDTO;
-import com.meetinghub.user.model.dto.RoleMenuAssignDTO;
-import com.meetinghub.user.model.dto.RoleUpdateDTO;
-import com.meetinghub.user.model.vo.RoleVO;
-import com.meetinghub.user.service.RoleService;
+import com.meetinghub.platform.model.dto.RoleCreateDTO;
+import com.meetinghub.platform.model.dto.RoleMenuAssignDTO;
+import com.meetinghub.platform.model.dto.RoleUpdateDTO;
+import com.meetinghub.platform.model.vo.RoleVO;
+import com.meetinghub.platform.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

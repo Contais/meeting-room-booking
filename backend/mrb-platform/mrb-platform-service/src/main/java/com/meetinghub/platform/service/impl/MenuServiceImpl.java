@@ -1,4 +1,4 @@
-package com.meetinghub.user.service.impl;
+package com.meetinghub.platform.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -6,14 +6,16 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.VisibleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.user.model.dto.MenuCreateDTO;
-import com.meetinghub.user.model.dto.MenuUpdateDTO;
-import com.meetinghub.user.model.entity.Menu;
-import com.meetinghub.user.model.entity.RoleMenu;
-import com.meetinghub.user.model.vo.MenuVO;
-import com.meetinghub.user.repository.MenuRepository;
-import com.meetinghub.user.repository.RoleMenuRepository;
-import com.meetinghub.user.service.MenuService;
+import com.meetinghub.platform.model.dto.MenuCreateDTO;
+import com.meetinghub.platform.model.dto.MenuUpdateDTO;
+import com.meetinghub.platform.model.entity.Menu;
+import com.meetinghub.platform.model.entity.Role;
+import com.meetinghub.platform.model.entity.RoleMenu;
+import com.meetinghub.platform.model.vo.MenuVO;
+import com.meetinghub.platform.repository.MenuRepository;
+import com.meetinghub.platform.repository.RoleMenuRepository;
+import com.meetinghub.platform.repository.RoleRepository;
+import com.meetinghub.platform.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +30,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implements MenuService {
 
-    /**
-     * 顶级菜单的父节点 ID
-     */
     private static final Long ROOT_PARENT_ID = 0L;
 
     private final RoleMenuRepository roleMenuRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public List<MenuVO> listTree() {
@@ -45,10 +45,14 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
     }
 
     @Override
-    public List<MenuVO> listByRole(String role) {
-        // 查询角色拥有的菜单ID
+    public List<MenuVO> listByRole(String roleCode) {
+        Role role = roleRepository.selectOne(
+                new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, roleCode)
+        );
+        if (role == null) return List.of();
+
         List<RoleMenu> roleMenus = roleMenuRepository.selectList(
-                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRole, role)
+                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, role.getId())
         );
         if (roleMenus.isEmpty()) return List.of();
 
@@ -108,28 +112,9 @@ public class MenuServiceImpl extends ServiceImpl<MenuRepository, Menu> implement
         );
         if (childCount > 0) throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
         removeById(id);
-        // 同时删除角色菜单关联
         roleMenuRepository.delete(
                 new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getMenuId, id)
         );
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void saveRoleMenus(String role, List<Long> menuIds) {
-        // 先删除旧关联
-        roleMenuRepository.delete(
-                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRole, role)
-        );
-        // 再插入新关联
-        if (menuIds != null && !menuIds.isEmpty()) {
-            for (Long menuId : menuIds) {
-                RoleMenu rm = new RoleMenu();
-                rm.setRole(role);
-                rm.setMenuId(menuId);
-                roleMenuRepository.insert(rm);
-            }
-        }
     }
 
     private List<MenuVO> buildTree(List<MenuVO> all, Long parentId) {

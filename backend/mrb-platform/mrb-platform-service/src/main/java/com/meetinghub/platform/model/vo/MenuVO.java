@@ -1,4 +1,4 @@
-package com.meetinghub.user.model.vo;
+package com.meetinghub.platform.model.vo;
 
 import lombok.Data;
 import java.time.LocalDateTime;

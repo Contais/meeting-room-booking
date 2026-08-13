@@ -1,14 +1,14 @@
-package com.meetinghub.user.model.dto;
+package com.meetinghub.platform.model.dto;
 
 import lombok.Data;
 
 /**
- * 角色更新DTO
+ * 角色创建DTO
  */
 @Data
-public class RoleUpdateDTO {
+public class RoleCreateDTO {
 
-    private Long id;
+    private String roleCode;
 
     private String roleName;
 

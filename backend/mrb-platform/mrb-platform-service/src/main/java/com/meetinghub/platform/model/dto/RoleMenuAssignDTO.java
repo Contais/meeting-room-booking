@@ -1,4 +1,4 @@
-package com.meetinghub.user.model.dto;
+package com.meetinghub.platform.model.dto;
 
 import lombok.Data;
 import java.util.List;

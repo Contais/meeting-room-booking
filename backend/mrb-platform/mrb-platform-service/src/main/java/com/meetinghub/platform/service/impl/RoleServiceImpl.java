@@ -1,4 +1,4 @@
-package com.meetinghub.user.service.impl;
+package com.meetinghub.platform.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -8,15 +8,15 @@ import com.meetinghub.common.enums.DeletedEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.user.model.dto.RoleCreateDTO;
-import com.meetinghub.user.model.dto.RoleMenuAssignDTO;
-import com.meetinghub.user.model.dto.RoleUpdateDTO;
-import com.meetinghub.user.model.entity.Role;
-import com.meetinghub.user.model.entity.RoleMenu;
-import com.meetinghub.user.model.vo.RoleVO;
-import com.meetinghub.user.repository.RoleMenuRepository;
-import com.meetinghub.user.repository.RoleRepository;
-import com.meetinghub.user.service.RoleService;
+import com.meetinghub.platform.model.dto.RoleCreateDTO;
+import com.meetinghub.platform.model.dto.RoleMenuAssignDTO;
+import com.meetinghub.platform.model.dto.RoleUpdateDTO;
+import com.meetinghub.platform.model.entity.Role;
+import com.meetinghub.platform.model.entity.RoleMenu;
+import com.meetinghub.platform.model.vo.RoleVO;
+import com.meetinghub.platform.repository.RoleMenuRepository;
+import com.meetinghub.platform.repository.RoleRepository;
+import com.meetinghub.platform.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,9 +114,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleRepository, Role> implement
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "系统角色不可删除");
         }
         removeById(id);
-        LambdaQueryWrapper<RoleMenu> rmWrapper = new LambdaQueryWrapper<>();
-        rmWrapper.eq(RoleMenu::getRole, role.getRoleCode());
-        roleMenuRepository.delete(rmWrapper);
+        roleMenuRepository.delete(
+                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, id)
+        );
     }
 
     @Override
@@ -144,13 +144,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleRepository, Role> implement
         if (role == null || DeletedEnum.DELETED.getCode().equals(role.getDeleted())) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
-        LambdaQueryWrapper<RoleMenu> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(RoleMenu::getRole, role.getRoleCode());
-        roleMenuRepository.delete(wrapper);
+        roleMenuRepository.delete(
+                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, dto.getRoleId())
+        );
         if (dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {
             for (Long menuId : dto.getMenuIds()) {
                 RoleMenu rm = new RoleMenu();
-                rm.setRole(role.getRoleCode());
+                rm.setRoleId(dto.getRoleId());
                 rm.setMenuId(menuId);
                 roleMenuRepository.insert(rm);
             }
@@ -159,15 +159,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleRepository, Role> implement
 
     @Override
     public List<Long> getRoleMenuIds(Long roleId) {
-        Role role = getById(roleId);
-        if (role == null) {
-            return List.of();
-        }
-        LambdaQueryWrapper<RoleMenu> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(RoleMenu::getRole, role.getRoleCode());
-        return roleMenuRepository.selectList(wrapper).stream()
-                .map(RoleMenu::getMenuId)
-                .collect(Collectors.toList());
+        return roleMenuRepository.selectList(
+                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, roleId)
+        ).stream().map(RoleMenu::getMenuId).collect(Collectors.toList());
     }
 
     private RoleVO toVO(Role role) {

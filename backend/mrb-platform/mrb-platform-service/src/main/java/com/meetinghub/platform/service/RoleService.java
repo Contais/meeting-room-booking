@@ -1,12 +1,12 @@
-package com.meetinghub.user.service;
+package com.meetinghub.platform.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.meetinghub.user.model.dto.RoleCreateDTO;
-import com.meetinghub.user.model.dto.RoleMenuAssignDTO;
-import com.meetinghub.user.model.dto.RoleUpdateDTO;
-import com.meetinghub.user.model.entity.Role;
-import com.meetinghub.user.model.vo.RoleVO;
+import com.meetinghub.platform.model.dto.RoleCreateDTO;
+import com.meetinghub.platform.model.dto.RoleMenuAssignDTO;
+import com.meetinghub.platform.model.dto.RoleUpdateDTO;
+import com.meetinghub.platform.model.entity.Role;
+import com.meetinghub.platform.model.vo.RoleVO;
 
 import java.util.List;
 
