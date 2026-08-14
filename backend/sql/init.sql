@@ -377,23 +377,26 @@ INSERT INTO `platform_menu` (`id`, `name`, `path`, `icon`, `parent_id`, `sort_or
 (1, '首页', '/home', 'HomeFilled', 0, 1, 1, 1),
 (2, '会议室', '/meeting/rooms', 'OfficeBuilding', 0, 2, 1, 1),
 (3, '我的预约', '/reservation/my', 'Calendar', 0, 3, 1, 1),
-(4, '日历视图', '/schedule', 'Calendar', 0, 4, 1, 1),
-(5, '通讯录', '/contacts', 'User', 0, 5, 1, 1),
+(4, '日历视图', '/schedule', 'Grid', 0, 5, 1, 1),
+(5, '通讯录', '/contacts', 'UserFilled', 0, 6, 1, 1),
 (10, '系统管理', NULL, 'Setting', 0, 10, 1, 1),
 (11, '用户管理', '/admin/users', 'User', 10, 11, 1, 1),
-(12, '部门管理', '/admin/departments', 'Menu', 10, 12, 1, 1),
-(13, '会议室管理', '/admin/rooms', 'OfficeBuilding', 10, 13, 1, 1),
-(14, '预约管理', '/admin/reservations', 'Calendar', 10, 14, 1, 1),
-(15, '菜单管理', '/admin/menus', 'Setting', 10, 15, 1, 1),
-(16, '角色管理', '/admin/roles', 'Lock', 10, 16, 1, 1);
+(12, '部门管理', '/admin/departments', 'FolderOpened', 10, 12, 1, 1),
+(13, '会议室管理', '/admin/rooms', 'OfficeBuilding', 10, 14, 1, 1),
+(14, '预约管理', '/admin/reservations', 'List', 10, 15, 1, 1),
+(15, '菜单管理', '/admin/menus', 'Menu', 10, 16, 1, 1),
+(16, '角色管理', '/admin/roles', 'Lock', 10, 13, 1, 1),
+(17, '设备管理', '/admin/equipments', 'Box', 10, 17, 1, 1),
+(18, '我的会议', '/my-meetings', 'Tickets', 0, 4, 1, 1);
 
 INSERT INTO `platform_role` (`id`, `role_code`, `role_name`, `description`, `status`, `is_system`, `sort`) VALUES
 (1, 'ROLE_ADMIN', '超级管理员', '拥有系统所有权限', 1, 1, 1),
 (2, 'ROLE_USER', '普通用户', '基础功能权限', 1, 1, 2);
 
-INSERT INTO `platform_role_menu` (`role_id`, `menu_id`) VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
-(1, 10), (1, 11), (1, 12), (1, 13), (1, 14), (1, 15), (1, 16);
+-- 雪花主键表无自增，角色菜单关联必须显式指定 id
+INSERT INTO `platform_role_menu` (`id`, `role_id`, `menu_id`) VALUES
+(1, 1, 1), (2, 1, 2), (3, 1, 3), (4, 1, 4), (5, 1, 5),
+(6, 1, 10), (7, 1, 11), (8, 1, 12), (9, 1, 13), (10, 1, 14), (11, 1, 15), (12, 1, 16), (13, 1, 17), (14, 1, 18);
 
-INSERT INTO `platform_role_menu` (`role_id`, `menu_id`) VALUES
-(2, 1), (2, 2), (2, 3), (2, 4), (2, 5);
+INSERT INTO `platform_role_menu` (`id`, `role_id`, `menu_id`) VALUES
+(15, 2, 1), (16, 2, 2), (17, 2, 3), (18, 2, 4), (19, 2, 5), (20, 2, 18);
