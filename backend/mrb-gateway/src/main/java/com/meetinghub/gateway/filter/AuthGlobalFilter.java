@@ -43,7 +43,15 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/auth/login",
             // 本地存储模式下文件静态资源对外公开读（与 COS 公开读一致），
             // 上传接口仍需鉴权
-            "/api/file/static/"
+            "/api/file/static/",
+            // Swagger / OpenAPI 文档聚合入口（网关聚合，仅文档，不暴露业务数据）
+            "/swagger-ui",
+            "/webjars/swagger-ui",
+            "/v3/api-docs",
+            "/auth/v3/api-docs",
+            "/uc/v3/api-docs",
+            "/meeting/v3/api-docs",
+            "/platform/v3/api-docs"
     );
 
     private static final String UNAUTHORIZED_BODY =

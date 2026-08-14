@@ -17,6 +17,7 @@
 - [ ] 根 pom 配置 JaCoCo：`mvn verify` 生成各模块覆盖率报告，门禁默认不阻断、可 `-Djacoco.haltOnFailure=true` 开启
 - [ ] 新增 `.github/workflows/ci.yml`：push/PR 触发，JDK 17 + Maven `verify`，并上传 JaCoCo 报告
 - [ ] 4 个服务可通过 `/swagger-ui.html` 访问接口文档，标题/版本已配置
+- [ ] 网关聚合入口 `http://localhost:8080/swagger-ui.html` 可下拉切换四个服务
 - [ ] 新增并扩充 `ReservationServiceImplTest`、`MeetingRoomServiceImplTest`、`UserServiceImplTest`、`AuthServiceImplTest` 且全部通过
 
 ## 技术变更清单
@@ -27,6 +28,7 @@
 | `backend/pom.xml` | 引入 jacoco-maven-plugin（prepare-agent/report/check，haltOnFailure 可配置） |
 | `backend/{user,meeting,auth,platform}-service/pom.xml` | 引入 springdoc-openapi-starter-webmvc-ui |
 | `OpenApiConfig`（4 个服务，新增） | 各服务 OpenAPI 标题/描述/版本 |
+| `mrb-gateway/pom.xml` + `application.yml` + `AuthGlobalFilter` | 接入 springdoc-webflux-ui，聚合四个服务 api-docs 并放行 Swagger 路径 |
 | `.github/workflows/ci.yml`（新增） | GitHub Actions 构建、测试、Redis 服务、上传覆盖率报告 |
 | `ReservationServiceImplTest`（扩充） | 预约创建/冲突/规则边界/审批/取消/拒绝/删除 20 个用例 |
 | `MeetingRoomServiceImplTest`（扩充） | 默认规则/自定义规则/启停双向/编辑保留空字段 6 个用例 |
