@@ -83,7 +83,33 @@ class AuthServiceImplTest {
         assertThatThrownBy(() -> authService.login("nouser", "pass"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                        .isEqualTo(ErrorCode.USER_NOT_FOUND.getCode()));
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throwException_when_loginResultIsNull() {
+        when(userFeignClient.getUserForAuth("testuser")).thenReturn(null);
+
+        assertThatThrownBy(() -> authService.login("testuser", "pass"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getMessage())
+                        .isEqualTo("用户名或密码错误"));
+    }
+
+    @Test
+    void should_throwException_when_loginUserPasswordIsNull() {
+        AuthUserDTO user = new AuthUserDTO();
+        user.setId(1L);
+        user.setUsername("nopass");
+        user.setPassword(null);
+        user.setRole("ROLE_USER");
+        user.setStatus(1);
+        when(userFeignClient.getUserForAuth("nopass")).thenReturn(Result.ok(user));
+
+        assertThatThrownBy(() -> authService.login("nopass", "pass"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getMessage())
+                        .isEqualTo("用户名或密码错误"));
     }
 
     @Test

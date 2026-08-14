@@ -4,6 +4,7 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
 import com.meetinghub.meeting.model.dto.RoomCreateDTO;
+import com.meetinghub.meeting.model.dto.RoomUpdateDTO;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.repository.MeetingRoomRepository;
 import com.meetinghub.meeting.repository.ReservationRepository;
@@ -101,4 +102,41 @@ class MeetingRoomServiceImplTest {
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ErrorCode.MEETING_ROOM_NOT_FOUND.getCode()));
     }
+
+    @Test
+    void should_toggleStatus_when_disabled() {
+        MeetingRoom room = new MeetingRoom();
+        room.setId(1L);
+        room.setStatus(EnableStatusEnum.DISABLED.getCode());
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+
+        service.toggleStatus(1L);
+
+        ArgumentCaptor<MeetingRoom> captor = ArgumentCaptor.forClass(MeetingRoom.class);
+        verify(meetingRoomRepository).updateById(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(EnableStatusEnum.ENABLED.getCode());
+    }
+
+    @Test
+    void should_updateRoom_preservingNullFields() {
+        MeetingRoom room = new MeetingRoom();
+        room.setId(1L);
+        room.setName("旧名");
+        room.setBookableStart("07:00");
+        room.setBookableEnd("21:00");
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+
+        RoomUpdateDTO dto = new RoomUpdateDTO();
+        dto.setId(1L);
+        dto.setName("新名");
+
+        service.updateRoom(dto);
+
+        ArgumentCaptor<MeetingRoom> captor = ArgumentCaptor.forClass(MeetingRoom.class);
+        verify(meetingRoomRepository).updateById(captor.capture());
+        assertThat(captor.getValue().getName()).isEqualTo("新名");
+        assertThat(captor.getValue().getBookableStart()).isEqualTo("07:00");
+        assertThat(captor.getValue().getBookableEnd()).isEqualTo("21:00");
+    }
+
 }

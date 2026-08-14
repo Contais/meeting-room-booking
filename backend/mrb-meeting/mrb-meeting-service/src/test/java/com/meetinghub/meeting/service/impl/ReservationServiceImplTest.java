@@ -230,4 +230,154 @@ class ReservationServiceImplTest {
 
         verify(reservationRepository).update(any(MeetingRoomReservation.class), any());
     }
+
+    @Test
+    void should_allow_when_durationEqualsMaxDuration() {
+        MeetingRoom room = enabledRoom();
+        room.setMaxDuration(60);
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(0L);
+        when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
+        ReservationCreateDTO dto = validDto();
+        dto.setEndTime(dto.getStartTime().plusMinutes(60));
+
+        String code = service.createReservation(100L, dto);
+
+        assertThat(code).startsWith("B");
+    }
+
+    @Test
+    void should_throw_when_startBeforeBookableStart() {
+        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        ReservationCreateDTO dto = validDto();
+        dto.setStartTime(dto.getStartTime().withHour(7).withMinute(30));
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        assertThatThrownBy(() -> service.createReservation(100L, dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throw_when_endAfterBookableEnd() {
+        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        ReservationCreateDTO dto = validDto();
+        dto.setStartTime(dto.getStartTime().withHour(19).withMinute(30));
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        assertThatThrownBy(() -> service.createReservation(100L, dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_allow_when_exactlyOnBookableWindow() {
+        MeetingRoom room = enabledRoom();
+        room.setBookableStart("08:00");
+        room.setBookableEnd("09:00");
+        room.setMaxDuration(60);
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(0L);
+        when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
+        ReservationCreateDTO dto = validDto();
+        dto.setStartTime(dto.getStartTime().withHour(8).withMinute(0));
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        String code = service.createReservation(100L, dto);
+
+        assertThat(code).startsWith("B");
+    }
+
+    @Test
+    void should_throw_when_bookingDateExceedsAdvanceDays() {
+        MeetingRoom room = enabledRoom();
+        room.setAdvanceDays(1);
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        ReservationCreateDTO dto = validDto();
+        dto.setStartTime(dto.getStartTime().plusDays(1));
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        assertThatThrownBy(() -> service.createReservation(100L, dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_allow_when_bookingDateEqualsAdvanceDays() {
+        MeetingRoom room = enabledRoom();
+        room.setAdvanceDays(1);
+        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(0L);
+        when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
+        ReservationCreateDTO dto = validDto();
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        String code = service.createReservation(100L, dto);
+
+        assertThat(code).startsWith("B");
+    }
+
+    @Test
+    void should_rejectReservation_when_pending() {
+        MeetingRoomReservation reservation = new MeetingRoomReservation();
+        reservation.setId(10L);
+        reservation.setUserId(100L);
+        reservation.setSubject("周会");
+        reservation.setReservationCode("B20260814000001");
+        reservation.setStatus(ReservationStatusEnum.PENDING.getCode());
+        when(reservationRepository.selectById(10L)).thenReturn(reservation);
+        when(reservationRepository.update(any(MeetingRoomReservation.class), any())).thenReturn(1);
+
+        service.rejectReservation(10L, "时间冲突");
+
+        ArgumentCaptor<MeetingRoomReservation> captor = ArgumentCaptor.forClass(MeetingRoomReservation.class);
+        verify(reservationRepository).update(captor.capture(), any());
+        assertThat(captor.getValue().getStatus()).isEqualTo(ReservationStatusEnum.REJECTED.getCode());
+        assertThat(captor.getValue().getRejectReason()).isEqualTo("时间冲突");
+    }
+
+    @Test
+    void should_throw_when_rejectNonPending() {
+        MeetingRoomReservation reservation = new MeetingRoomReservation();
+        reservation.setId(10L);
+        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
+        when(reservationRepository.selectById(10L)).thenReturn(reservation);
+
+        assertThatThrownBy(() -> service.rejectReservation(10L, "重复"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throw_when_deleteNonDeletable() {
+        MeetingRoomReservation reservation = new MeetingRoomReservation();
+        reservation.setId(10L);
+        reservation.setUserId(100L);
+        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
+        when(reservationRepository.selectById(10L)).thenReturn(reservation);
+
+        assertThatThrownBy(() -> service.deleteReservation(100L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throw_when_cancelAlreadyStarted() {
+        MeetingRoomReservation reservation = new MeetingRoomReservation();
+        reservation.setId(10L);
+        reservation.setUserId(100L);
+        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
+        reservation.setStartTime(LocalDateTime.now().minusHours(1));
+        when(reservationRepository.selectById(10L)).thenReturn(reservation);
+
+        assertThatThrownBy(() -> service.cancelReservation(100L, 10L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
 }
