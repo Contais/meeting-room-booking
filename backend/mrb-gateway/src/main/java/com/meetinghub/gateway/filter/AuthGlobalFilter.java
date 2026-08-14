@@ -41,8 +41,6 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
     private static final List<String> WHITE_LIST = List.of(
             "/api/auth/login",
-            "/api/auth/register",
-            "/api/uc/user/register",
             // 本地存储模式下文件静态资源对外公开读（与 COS 公开读一致），
             // 上传接口仍需鉴权
             "/api/file/static/"

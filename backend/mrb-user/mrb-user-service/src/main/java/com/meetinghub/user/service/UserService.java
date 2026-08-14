@@ -30,11 +30,6 @@ public interface UserService extends IService<User> {
     Map<Long, String> getUsernamesByIds(Collection<Long> ids);
 
     /**
-     * 用户注册
-     */
-    void register(String username, String password, String phone, String email);
-
-    /**
      * 分页查询用户列表（管理端）
      */
     IPage<UserVO> listUsers(UserPageQuery query);

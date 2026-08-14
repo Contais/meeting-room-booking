@@ -53,7 +53,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     @Override
     public User getUserById(Long id) {
-        User user = getById(id);
+        User user = userRepository.selectById(id);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
@@ -62,7 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
 
     @Override
     public User getUserByUsername(String username) {
-        return getOne(
+        return userRepository.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, username)
         );
     }
@@ -140,25 +140,6 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
         if (count(wrapper) > 0) {
             throw new BusinessException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void register(String username, String password, String phone, String email) {
-        validateUsername(username);
-        validatePhoneFormat(phone);
-        checkUsernameNotExists(username);
-        checkPhoneNotExists(phone, null);
-
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(BCrypt.hashpw(password));
-        user.setPhone(normalizeBlank(phone));
-        user.setEmail(normalizeBlank(email));
-        user.setRole(RoleEnum.USER.getCode());
-        user.setStatus(EnableStatusEnum.ENABLED.getCode());
-        save(user);
-        log.info("用户注册成功, userId={}, username={}", user.getId(), username);
     }
 
     @Override

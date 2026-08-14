@@ -5,7 +5,6 @@ import com.meetinghub.common.annotation.RequiresRole;
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
-import com.meetinghub.user.model.dto.ResetPasswordDTO;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.service.UserService;
@@ -37,12 +36,6 @@ public class UserController {
             return Result.ok(null);
         }
         return Result.ok(userService.getUserDetail(user.getId()));
-    }
-
-    @PostMapping("/register")
-    public Result<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
-        userService.register(registerDTO.getUsername(), registerDTO.getPassword(), registerDTO.getPhone(), registerDTO.getEmail());
-        return Result.ok();
     }
 
     @GetMapping("/me")

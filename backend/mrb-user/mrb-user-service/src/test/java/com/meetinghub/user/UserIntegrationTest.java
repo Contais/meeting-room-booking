@@ -64,49 +64,6 @@ class UserIntegrationTest {
     }
 
     @Test
-    void should_registerUser_when_validData() {
-        Map<String, String> body = Map.of(
-                "username", "newuser",
-                "password", "password123",
-                "phone", "13800000001"
-        );
-
-        ResponseEntity<Map<String, Object>> response = post("/user/register", body);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("code")).isNotNull();
-
-        User saved = userRepository.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
-                        .eq(User::getUsername, "newuser")
-        );
-        assertThat(saved).isNotNull();
-        assertThat(saved.getPassword()).isNotEqualTo("password123");
-    }
-
-    @Test
-    void should_returnError_when_duplicateUsername() {
-        User existing = new User();
-        existing.setUsername("existing");
-        existing.setPassword("hash");
-        existing.setStatus(1);
-        userRepository.insert(existing);
-
-        Map<String, String> body = Map.of(
-                "username", "existing",
-                "password", "pass",
-                "phone", "13800000002"
-        );
-
-        ResponseEntity<Map<String, Object>> response = post("/user/register", body);
-
-        assertThat(response.getBody()).isNotNull();
-        Integer code = (Integer) response.getBody().get("code");
-        assertThat(code).isNotEqualTo(200);
-    }
-
-    @Test
     void should_returnUser_when_queryByUsername() {
         User user = new User();
         user.setUsername("querytest");
@@ -130,18 +87,4 @@ class UserIntegrationTest {
         assertThat(response.getBody().get("data")).isNull();
     }
 
-    @Test
-    void should_returnError_when_invalidUsernameFormat() {
-        Map<String, String> body = Map.of(
-                "username", "a",
-                "password", "pass",
-                "phone", "13800000004"
-        );
-
-        ResponseEntity<Map<String, Object>> response = post("/user/register", body);
-
-        assertThat(response.getBody()).isNotNull();
-        Integer code = (Integer) response.getBody().get("code");
-        assertThat(code).isNotEqualTo(200);
-    }
 }
