@@ -4,6 +4,8 @@ import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.meeting.model.vo.AttendeeVO;
 import com.meetinghub.meeting.service.ReservationAttendeeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/meeting/reservation/attendee")
 @RequiredArgsConstructor
+@Tag(name = "预约参会人", description = "参会人邀请、移除与响应")
 public class ReservationAttendeeController {
 
     private final ReservationAttendeeService attendeeService;
@@ -25,6 +28,7 @@ public class ReservationAttendeeController {
     /**
      * 邀请参会人（按用户 ID 列表），返回实际新增数量
      */
+    @Operation(summary = "按用户邀请参会人")
     @PostMapping("/{reservationId}/invite")
     public Result<Integer> inviteAttendees(@PathVariable Long reservationId,
                                             @RequestBody InviteRequest req) {
@@ -35,6 +39,7 @@ public class ReservationAttendeeController {
     /**
      * 按部门邀请参会人
      */
+    @Operation(summary = "按部门邀请参会人")
     @PostMapping("/{reservationId}/invite-department")
     public Result<Integer> inviteDepartment(@PathVariable Long reservationId,
                                              @RequestBody InviteDepartmentRequest req) {
@@ -45,6 +50,7 @@ public class ReservationAttendeeController {
     /**
      * 查询预约的参会人列表
      */
+    @Operation(summary = "查询参会人列表")
     @GetMapping("/{reservationId}/list")
     public Result<List<AttendeeVO>> listAttendees(@PathVariable Long reservationId) {
         return Result.ok(attendeeService.listAttendees(reservationId));
@@ -53,6 +59,7 @@ public class ReservationAttendeeController {
     /**
      * 移除参会人
      */
+    @Operation(summary = "移除参会人")
     @DeleteMapping("/{reservationId}/{userId}")
     public Result<Void> removeAttendee(@PathVariable Long reservationId,
                                         @PathVariable Long userId) {
@@ -66,6 +73,7 @@ public class ReservationAttendeeController {
      * @param reservationId 预约ID
      * @param req           状态请求体: status=1 已接受, status=2 已拒绝
      */
+    @Operation(summary = "响应参会邀请", description = "status=1 接受 / 2 拒绝")
     @PutMapping("/{reservationId}/respond")
     public Result<Void> respondInvitation(@PathVariable Long reservationId,
                                           @RequestBody RespondRequest req) {

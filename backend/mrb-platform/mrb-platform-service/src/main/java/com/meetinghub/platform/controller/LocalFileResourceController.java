@@ -1,6 +1,8 @@
 package com.meetinghub.platform.controller;
 
 import com.meetinghub.platform.service.impl.LocalFileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +31,12 @@ import java.nio.file.Path;
 @RequestMapping("/platform/file/static")
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "file.storage", name = "type", havingValue = "local", matchIfMissing = true)
+@Tag(name = "文件静态资源", description = "本地存储模式下的静态文件读取")
 public class LocalFileResourceController {
 
     private final LocalFileStorageService localFileStorageService;
 
+    @Operation(summary = "读取本地静态文件")
     @GetMapping("/**")
     public ResponseEntity<Resource> serve(HttpServletRequest request) {
         String objectKey = extractObjectKey(request.getRequestURI());

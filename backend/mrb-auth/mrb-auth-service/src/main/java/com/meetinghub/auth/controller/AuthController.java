@@ -4,6 +4,8 @@ import com.meetinghub.auth.model.dto.LoginDTO;
 import com.meetinghub.auth.model.dto.LoginVO;
 import com.meetinghub.auth.service.AuthService;
 import com.meetinghub.common.result.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Tag(name = "鉴权", description = "登录、Token 刷新与登出")
 public class AuthController {
 
     private final AuthService authService;
@@ -26,6 +29,7 @@ public class AuthController {
     /**
      * 用户登录
      */
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO loginDTO) {
         return Result.ok(authService.login(loginDTO.getUsername(), loginDTO.getPassword()));
@@ -34,6 +38,7 @@ public class AuthController {
     /**
      * 刷新 Token
      */
+    @Operation(summary = "刷新 Token")
     @PostMapping("/refresh")
     public Result<String> refreshToken(@RequestBody Map<String, String> params) {
         return Result.ok(authService.refreshToken(params.get("token")));
@@ -42,6 +47,7 @@ public class AuthController {
     /**
      * 用户登出
      */
+    @Operation(summary = "用户登出")
     @PostMapping("/logout")
     public Result<Void> logout(@RequestHeader("Authorization") String authorization) {
         String token = authorization.replace("Bearer ", "");

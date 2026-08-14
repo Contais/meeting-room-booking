@@ -5,6 +5,8 @@ import com.meetinghub.user.api.model.dto.AuthUserDTO;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,10 +22,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/user/internal")
 @RequiredArgsConstructor
+@Tag(name = "用户内部接口", description = "服务间 Feign 调用，不经过网关")
 public class UserInternalController {
 
     private final UserService userService;
 
+    @Operation(summary = "按用户名查询鉴权信息")
     @GetMapping("/info/username/{username}")
     public Result<AuthUserDTO> getUserForAuth(@PathVariable String username) {
         User user = userService.getUserByUsername(username);
@@ -42,6 +46,7 @@ public class UserInternalController {
     /**
      * 批量查询用户名（id -> username），供跨服务回填展示名，消除 N+1 调用
      */
+    @Operation(summary = "批量查询用户名")
     @GetMapping("/batch")
     public Result<Map<Long, String>> batchUsernames(@RequestParam List<Long> ids) {
         return Result.ok(userService.getUsernamesByIds(ids));
@@ -50,6 +55,7 @@ public class UserInternalController {
     /**
      * 按部门 ID 查询所有启用用户（跨服务调用，供 mrb-meeting 邀请参会人使用）
      */
+    @Operation(summary = "按部门查询启用用户")
     @GetMapping("/list-by-department")
     public Result<List<UserVO>> listByDepartment(@RequestParam Long departmentId) {
         return Result.ok(userService.listContacts(null, departmentId));
@@ -58,6 +64,7 @@ public class UserInternalController {
     /**
      * 按 ID 批量查询用户完整信息（供 mrb-meeting 回填参会人详情）
      */
+    @Operation(summary = "按 ID 批量查询用户详情")
     @GetMapping("/list-by-ids")
     public Result<List<UserVO>> listByIds(@RequestParam List<Long> ids) {
         return Result.ok(userService.listByIdsDetailed(ids));

@@ -29,6 +29,7 @@
 | `backend/{user,meeting,auth,platform}-service/pom.xml` | 引入 springdoc-openapi-starter-webmvc-ui |
 | `OpenApiConfig`（4 个服务，新增） | 各服务 OpenAPI 标题/描述/版本 |
 | `mrb-gateway/pom.xml` + `application.yml` + `AuthGlobalFilter` | 接入 springdoc-webflux-ui，聚合四个服务 api-docs 并放行 Swagger 路径 |
+| 各服务 Controller / 核心请求 DTO | 补充 `@Tag`、`@Operation`、`@Schema` 中文描述，提升接口可读性 |
 | `.github/workflows/ci.yml`（新增） | GitHub Actions 构建、测试、Redis 服务、上传覆盖率报告 |
 | `ReservationServiceImplTest`（扩充） | 预约创建/冲突/规则边界/审批/取消/拒绝/删除 20 个用例 |
 | `MeetingRoomServiceImplTest`（扩充） | 默认规则/自定义规则/启停双向/编辑保留空字段 6 个用例 |

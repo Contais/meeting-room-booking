@@ -3,6 +3,8 @@ package com.meetinghub.platform.controller;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.platform.config.FileStorageProperties;
 import com.meetinghub.platform.service.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -27,6 +29,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/platform/internal/file")
+@Tag(name = "文件内部接口", description = "服务间 Feign 调用，不经过网关")
 public class FileInternalController {
 
     private final FileStorageService fileStorageService;
@@ -43,6 +46,7 @@ public class FileInternalController {
      * @param objectKeys 对象键列表
      * @return objectKey -> 预签名 URL
      */
+    @Operation(summary = "批量生成预签名 URL")
     @PostMapping("/presigned-urls")
     public Result<Map<String, String>> batchPresignedUrls(@RequestBody List<String> objectKeys) {
         if (objectKeys == null || objectKeys.isEmpty()) {

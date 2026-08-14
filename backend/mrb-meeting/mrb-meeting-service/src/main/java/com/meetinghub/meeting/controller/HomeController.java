@@ -3,6 +3,8 @@ package com.meetinghub.meeting.controller;
 import com.meetinghub.common.context.UserContext;
 import com.meetinghub.common.result.Result;
 import com.meetinghub.meeting.service.HomeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/meeting/home")
 @RequiredArgsConstructor
+@Tag(name = "首页统计", description = "预约统计数据")
 public class HomeController {
 
     private final HomeService homeService;
@@ -26,6 +29,7 @@ public class HomeController {
     /**
      * 获取首页统计数据
      */
+    @Operation(summary = "查询首页统计数据")
     @GetMapping("/stats")
     public Result<Map<String, Object>> getStats() {
         return Result.ok(homeService.getStats(UserContext.getCurrentUserId()));
@@ -34,6 +38,7 @@ public class HomeController {
     /**
      * 会议室使用率
      */
+    @Operation(summary = "查询会议室使用率")
     @GetMapping("/room-usage")
     public Result<List<RoomUsageVO>> getRoomUsage() {
         return Result.ok(homeService.getRoomUsage());
@@ -42,6 +47,7 @@ public class HomeController {
     /**
      * 高峰时段分布
      */
+    @Operation(summary = "查询高峰时段分布")
     @GetMapping("/peak-hours")
     public Result<List<PeakHourVO>> getPeakHours() {
         return Result.ok(homeService.getPeakHours());
