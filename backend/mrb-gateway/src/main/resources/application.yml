@@ -23,46 +23,30 @@ spring:
         - id: auth-service
           uri: lb://mrb-auth
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/auth/**,/auth/v3/api-docs
           filters:
             - StripPrefix=1
         - id: meeting-service
           uri: lb://mrb-meeting
           predicates:
-            - Path=/api/meeting/**
+            - Path=/api/meeting/**,/meeting/v3/api-docs
           filters:
             - StripPrefix=1
         # 平台基础服务：字典、系统配置、文件存储、消息通知
         - id: platform-service
           uri: lb://mrb-platform
           predicates:
-            - Path=/api/platform/**
+            - Path=/api/platform/**,/platform/v3/api-docs
           filters:
             - StripPrefix=1
-        - id: auth-api-docs
-          uri: lb://mrb-auth
-          predicates:
-            - Path=/auth/v3/api-docs
-          filters:
-            - RewritePath=/auth/v3/api-docs, /v3/api-docs
+        # 用户服务主路由 StripPrefix=2（/api/uc → 直接映射 /user、/department），
+        # 而 api-docs 只需剥离一层 /uc，两者无法共用同一个 StripPrefix，故保留独立路由。
         - id: user-api-docs
           uri: lb://mrb-user
           predicates:
             - Path=/uc/v3/api-docs
           filters:
             - RewritePath=/uc/v3/api-docs, /v3/api-docs
-        - id: meeting-api-docs
-          uri: lb://mrb-meeting
-          predicates:
-            - Path=/meeting/v3/api-docs
-          filters:
-            - RewritePath=/meeting/v3/api-docs, /v3/api-docs
-        - id: platform-api-docs
-          uri: lb://mrb-platform
-          predicates:
-            - Path=/platform/v3/api-docs
-          filters:
-            - RewritePath=/platform/v3/api-docs, /v3/api-docs
         # WebSocket 通知推送已迁至 mrb-platform
         - id: ws-platform-service
           uri: lb:ws://mrb-platform
