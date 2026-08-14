@@ -39,14 +39,6 @@ spring:
             - Path=/api/platform/**,/platform/v3/api-docs
           filters:
             - StripPrefix=1
-        # 用户服务主路由 StripPrefix=2（/api/uc → 直接映射 /user、/department），
-        # 而 api-docs 只需剥离一层 /uc，两者无法共用同一个 StripPrefix，故保留独立路由。
-        - id: user-api-docs
-          uri: lb://mrb-user
-          predicates:
-            - Path=/uc/v3/api-docs
-          filters:
-            - RewritePath=/uc/v3/api-docs, /v3/api-docs
         # WebSocket 通知推送已迁至 mrb-platform
         - id: ws-platform-service
           uri: lb:ws://mrb-platform
@@ -63,7 +55,7 @@ springdoc:
       - name: 鉴权服务
         url: /auth/v3/api-docs
       - name: 用户服务
-        url: /uc/v3/api-docs
+        url: /api/uc/v3/api-docs
       - name: 会议室服务
         url: /meeting/v3/api-docs
       - name: 平台服务
