@@ -51,3 +51,11 @@ export function deleteUser(id: string): Promise<Result<void>> {
 export function resetPassword(id: string, newPassword: string): Promise<Result<void>> {
   return request.put(`/api/uc/user/admin/reset-password/${id}`, { newPassword })
 }
+
+export function sendPasswordResetCode(username: string): Promise<Result<void>> {
+  return request.post('/api/uc/user/forgot-password/send-code', { username })
+}
+
+export function resetPasswordByCode(data: { username: string; code: string; newPassword: string }): Promise<Result<void>> {
+  return request.post('/api/uc/user/forgot-password/reset', data)
+}

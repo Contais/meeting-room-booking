@@ -56,6 +56,11 @@ public enum ErrorCode {
     // 预约归属
     RESERVATION_ACCESS_DENIED(1023, "无权操作他人预约"),
 
+    // 密码找回相关 102x
+    EMAIL_NOT_BOUND(1024, "该账号未绑定邮箱，请联系管理员重置密码"),
+    PASSWORD_RESET_CODE_INVALID(1025, "验证码错误或已过期"),
+    PASSWORD_RESET_TOO_MANY(1026, "验证码错误次数过多，请稍后重试"),
+
     // 文件相关 110x
     FILE_EMPTY(1101, "上传文件不能为空"),
     FILE_TOO_LARGE(1102, "上传文件超过大小限制"),

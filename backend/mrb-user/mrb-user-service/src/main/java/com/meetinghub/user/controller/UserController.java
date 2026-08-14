@@ -7,6 +7,7 @@ import com.meetinghub.common.result.Result;
 import com.meetinghub.user.model.dto.*;
 import com.meetinghub.user.model.entity.User;
 import com.meetinghub.user.model.vo.UserVO;
+import com.meetinghub.user.service.PasswordResetService;
 import com.meetinghub.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final PasswordResetService passwordResetService;
 
     @Operation(summary = "查询用户详情", description = "普通用户仅能查询自己，管理员可查询任意用户")
     @GetMapping("/{id}")
@@ -60,6 +62,20 @@ public class UserController {
     @PutMapping("/me/password")
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         userService.changePassword(UserContext.getCurrentUserId(), dto);
+        return Result.ok();
+    }
+
+    @Operation(summary = "发送密码重置验证码", description = "验证码发送到账号绑定邮箱")
+    @PostMapping("/forgot-password/send-code")
+    public Result<Void> sendPasswordResetCode(@Valid @RequestBody ForgotPasswordSendDTO dto) {
+        passwordResetService.sendResetCode(dto.getUsername());
+        return Result.ok();
+    }
+
+    @Operation(summary = "通过验证码重置密码")
+    @PostMapping("/forgot-password/reset")
+    public Result<Void> resetPasswordByCode(@Valid @RequestBody ForgotPasswordResetDTO dto) {
+        passwordResetService.resetPassword(dto.getUsername(), dto.getCode(), dto.getNewPassword());
         return Result.ok();
     }
 

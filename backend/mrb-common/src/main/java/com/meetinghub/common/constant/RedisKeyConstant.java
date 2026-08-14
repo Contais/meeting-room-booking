@@ -36,4 +36,9 @@ public final class RedisKeyConstant {
 
     // 预约提醒已发送标记
     public static final String SCHEDULE_REMINDED = PREFIX + "schedule:reminded:";
+
+    // 密码找回验证码
+    public static final String FORGOT_PWD_CODE = PREFIX + "forgot-pwd:code:";
+    public static final String FORGOT_PWD_COOLDOWN = PREFIX + "forgot-pwd:cooldown:";
+    public static final String FORGOT_PWD_ATTEMPTS = PREFIX + "forgot-pwd:attempts:";
 }
