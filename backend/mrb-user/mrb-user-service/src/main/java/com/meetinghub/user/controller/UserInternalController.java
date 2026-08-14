@@ -16,11 +16,11 @@ import java.util.Map;
 /**
  * 用户内部接口控制器（服务间 Feign）
  * <p>
- * 路径前缀 {@code /user/internal/**}，仅供服务间 Feign 调用，不经过网关。
+ * 路径前缀 {@code /uc/user/internal/**}，仅供服务间 Feign 调用，不经过网关。
  * </p>
  */
 @RestController
-@RequestMapping("/user/internal")
+@RequestMapping("/uc/user/internal")
 @RequiredArgsConstructor
 @Tag(name = "用户内部接口", description = "服务间 Feign 调用，不经过网关")
 public class UserInternalController {

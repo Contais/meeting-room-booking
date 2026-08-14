@@ -16,6 +16,6 @@ public interface DepartmentFeignClient {
     /**
      * 查询扁平化的部门列表（不含树结构）
      */
-    @GetMapping("/department/list")
+    @GetMapping("/uc/department/list")
     Result<List<DepartmentBriefDTO>> listFlat();
 }

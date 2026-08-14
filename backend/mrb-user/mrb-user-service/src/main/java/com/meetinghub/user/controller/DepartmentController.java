@@ -18,7 +18,7 @@ import java.util.List;
  * 部门控制器
  */
 @RestController
-@RequestMapping("/department")
+@RequestMapping("/uc/department")
 @RequiredArgsConstructor
 @Tag(name = "部门", description = "部门树与部门管理")
 public class DepartmentController {

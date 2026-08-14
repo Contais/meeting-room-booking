@@ -49,7 +49,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             "/webjars/swagger-ui",
             "/v3/api-docs",
             "/auth/v3/api-docs",
-            "/api/uc/v3/api-docs",
+            "/uc/v3/api-docs",
             "/meeting/v3/api-docs",
             "/platform/v3/api-docs"
     );

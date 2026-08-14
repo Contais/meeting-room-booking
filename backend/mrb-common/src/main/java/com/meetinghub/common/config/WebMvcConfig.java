@@ -29,6 +29,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         // 2. 角色校验：依赖已填充的 UserContext
         registry.addInterceptor(roleInterceptor)
-                .addPathPatterns("/user/admin/**");
+                .addPathPatterns("/uc/user/admin/**");
     }
 }

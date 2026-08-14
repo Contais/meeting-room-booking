@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * 用户控制器
  */
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/uc/user")
 @RequiredArgsConstructor
 @Tag(name = "用户", description = "用户与个人中心")
 public class UserController {

@@ -72,7 +72,7 @@ class UserIntegrationTest {
         user.setStatus(1);
         userRepository.insert(user);
 
-        ResponseEntity<Map<String, Object>> response = get("/user/info/username/querytest");
+        ResponseEntity<Map<String, Object>> response = get("/uc/user/info/username/querytest");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -81,7 +81,7 @@ class UserIntegrationTest {
 
     @Test
     void should_returnNullData_when_usernameNotFound() {
-        ResponseEntity<Map<String, Object>> response = get("/user/info/username/nobody");
+        ResponseEntity<Map<String, Object>> response = get("/uc/user/info/username/nobody");
 
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().get("data")).isNull();

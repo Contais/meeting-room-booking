@@ -17,9 +17,9 @@ spring:
         - id: uc-service
           uri: lb://mrb-user
           predicates:
-            - Path=/api/uc/**
+            - Path=/api/uc/**,/uc/v3/api-docs
           filters:
-            - StripPrefix=2
+            - StripPrefix=1
         - id: auth-service
           uri: lb://mrb-auth
           predicates:
