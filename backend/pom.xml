@@ -40,6 +40,7 @@
         <jacoco.version>0.8.12</jacoco.version>
         <!-- 覆盖率门禁默认不阻断（生成报告），CI 可用 -Djacoco.haltOnFailure=true 开启强制 -->
         <jacoco.haltOnFailure>false</jacoco.haltOnFailure>
+        <springdoc.version>2.6.0</springdoc.version>
     </properties>
 
     <dependencyManagement>
@@ -106,6 +107,11 @@
                 <groupId>com.qcloud</groupId>
                 <artifactId>cos_api</artifactId>
                 <version>${qcloud-cos.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
