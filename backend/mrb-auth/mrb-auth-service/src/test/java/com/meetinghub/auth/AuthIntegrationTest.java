@@ -123,7 +123,8 @@ class AuthIntegrationTest {
         );
 
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().get("code")).isEqualTo(1005);
+        assertThat(response.getBody().get("code")).isEqualTo(400);
+        assertThat(response.getBody().get("message")).isEqualTo("用户名或密码错误");
     }
 
     @Test
