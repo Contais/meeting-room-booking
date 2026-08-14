@@ -55,6 +55,11 @@ router.beforeEach(async (to, _from, next) => {
   next()
 })
 
-router.afterEach(() => { NProgress.done() })
+const APP_TITLE = '会议室预约系统'
+
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} - ${APP_TITLE}` : APP_TITLE
+  NProgress.done()
+})
 
 export default router
