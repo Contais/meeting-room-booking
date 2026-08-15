@@ -60,6 +60,7 @@ public enum ErrorCode {
     EMAIL_NOT_BOUND(1024, "该账号未绑定邮箱，请联系管理员重置密码"),
     PASSWORD_RESET_CODE_INVALID(1025, "验证码错误或已过期"),
     PASSWORD_RESET_TOO_MANY(1026, "验证码错误次数过多，请稍后重试"),
+    MAIL_NOT_CONFIGURED(1027, "邮件服务未配置"),
 
     // 文件相关 110x
     FILE_EMPTY(1101, "上传文件不能为空"),
