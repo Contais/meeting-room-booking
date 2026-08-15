@@ -9,8 +9,9 @@
     <div class="forgot-card">
       <div class="card-header">
         <div class="brand-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg viewBox="0 0 32 32" fill="none" width="32" height="32">
+            <path d="M6 26V6L16 16L26 6V26" stroke="#667eea" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 26H12V18H20V26H26" stroke="#667eea" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <h1 class="card-title">找回密码</h1>
@@ -332,14 +333,11 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   margin: 0 auto 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 24px rgba(102, 126, 234, 0.35);
 }
-.brand-mark svg { width: 30px; height: 30px; color: #fff; }
+.brand-mark svg { width: 40px; height: 40px; }
 .card-title { font-size: 26px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px 0; }
 .card-subtitle { font-size: 14px; color: #8c8c8c; margin: 0; line-height: 1.5; }
 
