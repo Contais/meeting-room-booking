@@ -3,8 +3,10 @@
     <el-aside :width="isCollapsed ? '64px' : '220px'" class="layout-aside">
       <div class="logo" :class="{ 'logo-collapsed': isCollapsed }">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
-            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+            <rect x="4.75" y="4.75" width="22.5" height="22.5" rx="4.5" stroke="#ffffff" stroke-width="2.5"/>
+            <path d="M11 21.25 L11 10.625 L16 16 L21 10.625 L21 21.25" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="23.625" cy="10.125" r="1.5" fill="#1F6FEB"/>
           </svg>
         </div>
         <h2 v-if="!isCollapsed">会议室预约</h2>
@@ -304,12 +306,9 @@ watch(() => notificationStore.latestNotification, (n) => {
 .logo-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   flex-shrink: 0;
 }
 

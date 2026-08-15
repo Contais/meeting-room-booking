@@ -10,8 +10,10 @@
       <div class="brand-panel">
         <div class="brand-content">
           <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <svg viewBox="0 0 32 32" fill="none" width="48" height="48">
+              <rect x="4.75" y="4.75" width="22.5" height="22.5" rx="4.5" stroke="#ffffff" stroke-width="2.5"/>
+              <path d="M11 21.25 L11 10.625 L16 16 L21 10.625 L21 21.25" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="23.625" cy="10.125" r="1.5" fill="#1F6FEB"/>
             </svg>
           </div>
           <h1 class="brand-title">会议室预约系统</h1>
@@ -156,8 +158,8 @@ async function handleLogin() {
 .brand-panel { flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 60px 50px; display: flex; align-items: center; position: relative; overflow: hidden; }
 .brand-panel::before { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); pointer-events: none; }
 .brand-content { position: relative; z-index: 1; }
-.brand-icon { width: 64px; height: 64px; background: rgba(255, 255, 255, 0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; backdrop-filter: blur(10px); }
-.brand-icon svg { width: 36px; height: 36px; color: #fff; }
+.brand-icon { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; }
+.brand-icon svg { width: 48px; height: 48px; }
 .brand-title { font-size: 32px; font-weight: 700; color: #fff; margin: 0 0 12px 0; }
 .brand-desc { font-size: 15px; color: rgba(255, 255, 255, 0.75); margin: 0 0 40px 0; line-height: 1.6; }
 .brand-features { display: flex; flex-direction: column; gap: 16px; }
