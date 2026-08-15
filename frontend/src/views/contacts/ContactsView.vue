@@ -48,7 +48,7 @@
             <div class="search-bar">
               <el-input
                 v-model="keyword"
-                placeholder="搜索姓名、用户名、手机号、邮箱"
+                placeholder="搜索姓名、拼音（如 zhangsan / zs）、用户名、手机号、邮箱"
                 clearable
                 style="width: 320px"
               >
@@ -166,6 +166,7 @@ import { OfficeBuilding, User, Search, Phone, Message, Grid, List, ArrowRight } 
 import { listContacts } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import { isAvatarUrl } from '@/utils/avatar'
+import { matchUserByKeyword } from '@/utils/pinyinMatch'
 import type { UserInfo } from '@/types/user'
 import type { Department } from '@/types/department'
 
@@ -325,17 +326,12 @@ const pageTitle = computed(() => {
   return currentDeptName.value || '全部人员'
 })
 
-/** 关键字 + 部门(含子部门) 前端过滤 */
+/** 关键字 + 部门(含子部门) 前端过滤（关键字支持姓名拼音全拼/首字母） */
 const filteredContacts = computed(() => {
   let list = allUsers.value
-  const kw = keyword.value.trim().toLowerCase()
+  const kw = keyword.value.trim()
   if (kw) {
-    list = list.filter(u =>
-      (u.username || '').toLowerCase().includes(kw) ||
-      (u.realName || '').toLowerCase().includes(kw) ||
-      (u.phone || '').toLowerCase().includes(kw) ||
-      (u.email || '').toLowerCase().includes(kw)
-    )
+    list = list.filter(u => matchUserByKeyword(u, kw))
   }
   if (selectedDeptId.value === UNASSIGNED) {
     list = list.filter(u => u.departmentId == null)

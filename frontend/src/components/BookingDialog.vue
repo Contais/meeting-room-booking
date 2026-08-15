@@ -89,56 +89,15 @@
       </el-form-item>
       <div class="dialog-form-item">
         <label>参会人员<span v-if="form.attendeeUserIds.length" class="attendee-count">已选 {{ form.attendeeUserIds.length }} 人</span></label>
-        <div class="attendee-toolbar">
-          <el-select
-            v-model="filterDeptId"
-            placeholder="按部门筛选"
-            clearable
-            filterable
-            size="small"
-            class="dept-filter"
-          >
-            <el-option
-              v-for="d in flatDepartments"
-              :key="d.id"
-              :label="d.path"
-              :value="d.id"
-            />
-          </el-select>
-          <el-button size="small" link @click="selectAllFiltered">全选</el-button>
-          <el-button size="small" link @click="clearAll">清空</el-button>
-        </div>
-        <el-select
-          v-model="form.attendeeUserIds"
-          multiple
-          filterable
-          collapse-tags
-          collapse-tags-tooltip
-          :max-collapse-tags="5"
-          placeholder="从通讯录选择参会人员（选填）"
-          class="attendee-select"
-          :loading="contactsLoading"
-          popper-class="attendee-select-popper"
-        >
-          <el-option-group
-            v-for="group in groupedContacts"
-            :key="group.deptId"
-            :label="`${group.deptName} (${group.users.length})`"
-          >
-            <el-option
-              v-for="u in group.users"
-              :key="u.id"
-              :label="u.realName || u.username"
-              :value="u.id"
-            >
-              <span>{{ u.realName || u.username }}</span>
-              <span class="contact-meta">{{ u.phone || u.email || '' }}</span>
-            </el-option>
-          </el-option-group>
-          <template #empty>
-            <div class="select-empty">暂无匹配人员</div>
+        <div class="attendee-display" @click="userSelectVisible = true">
+          <template v-if="selectedAttendees.length">
+            <el-tag v-for="u in selectedAttendees" :key="u.id" size="small" closable @close.stop="removeAttendee(u.id)">
+              {{ u.realName || u.username }}
+            </el-tag>
           </template>
-        </el-select>
+          <span v-else class="attendee-placeholder">点击选择参会人员（选填）</span>
+        </div>
+        <UserSelectDialog v-model="userSelectVisible" :selected-ids="form.attendeeUserIds" @confirm="onAttendeesConfirm" />
       </div>
       <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
     </el-form>
@@ -160,10 +119,9 @@ import { createReservation } from '@/api/reservation'
 import { listByRoomAndDate } from '@/api/reservation'
 import { listActiveRooms } from '@/api/meeting'
 import { listContacts } from '@/api/user'
-import { getDepartmentTree } from '@/api/department'
+import UserSelectDialog from '@/components/UserSelectDialog.vue'
 import type { MeetingRoom } from '@/types/meeting'
 import type { UserInfo } from '@/types/user'
-import type { Department } from '@/types/department'
 
 const props = defineProps<{
   modelValue: boolean
@@ -193,8 +151,8 @@ const selectedRoomId = ref<string | undefined>(props.roomId)
 const timelineRef = ref<HTMLElement | null>(null)
 const contacts = ref<UserInfo[]>([])
 const contactsLoading = ref(false)
-const deptTree = ref<Department[]>([])
-const filterDeptId = ref<string | null>(null)
+/** 参会人员选择弹窗 */
+const userSelectVisible = ref(false)
 // 自动拉取的会议室列表（当外部未传入 rooms 时使用）
 const fetchedRooms = ref<MeetingRoom[]>([])
 
@@ -502,106 +460,21 @@ async function loadContacts() {
   }
 }
 
-async function loadDeptTree() {
-  try {
-    const res = await getDepartmentTree()
-    deptTree.value = res.data || []
-  } catch { /* */ }
+/** 已选参会人员完整信息（按选择顺序回显） */
+const selectedAttendees = computed(() =>
+  form.attendeeUserIds
+    .map(id => contacts.value.find(u => u.id === id))
+    .filter((u): u is UserInfo => !!u)
+)
+
+/** 移除单个已选参会人 */
+function removeAttendee(id: string) {
+  form.attendeeUserIds = form.attendeeUserIds.filter(i => i !== id)
 }
 
-/** 扁平化部门列表（含完整路径），用于部门筛选下拉 */
-const flatDepartments = computed(() => {
-  const result: { id: string; path: string }[] = []
-  const walk = (nodes: Department[], ancestors: string[]) => {
-    for (const node of nodes) {
-      result.push({ id: node.id, path: [...ancestors, node.name].join(' / ') })
-      if (node.children) walk(node.children, [...ancestors, node.name])
-    }
-  }
-  walk(deptTree.value, [])
-  return result
-})
-
-/** 部门完整路径映射（id -> "父部门 / 子部门 / ..."） */
-const deptPathMap = computed(() => {
-  const map = new Map<string, string>()
-  const build = (nodes: Department[], ancestors: string[]) => {
-    for (const node of nodes) {
-      map.set(node.id, [...ancestors, node.name].join(' / '))
-      if (node.children) build(node.children, [...ancestors, node.name])
-    }
-  }
-  build(deptTree.value, [])
-  return map
-})
-
-/** 收集指定部门及其所有子部门的 ID */
-function collectDeptIds(id: string): string[] {
-  const result: string[] = []
-  const findAndCollect = (nodes: Department[]): boolean => {
-    for (const node of nodes) {
-      if (node.id === id) {
-        result.push(node.id)
-        const collectChildren = (n: Department) => {
-          if (n.children) {
-            for (const child of n.children) {
-              result.push(child.id)
-              collectChildren(child)
-            }
-          }
-        }
-        collectChildren(node)
-        return true
-      }
-      if (node.children && findAndCollect(node.children)) return true
-    }
-    return false
-  }
-  findAndCollect(deptTree.value)
-  return result
-}
-
-/** 按部门筛选后的联系人列表（含子部门） */
-const filteredContacts = computed(() => {
-  if (filterDeptId.value == null) return contacts.value
-  const deptIds = new Set(collectDeptIds(filterDeptId.value))
-  return contacts.value.filter(u => u.departmentId != null && deptIds.has(u.departmentId))
-})
-
-/** 按部门分组的联系人列表 */
-const groupedContacts = computed(() => {
-  const groups: Map<string, { deptId: string; deptName: string; users: UserInfo[] }> = new Map()
-  for (const user of filteredContacts.value) {
-    const deptId = user.departmentId || '0'
-    const deptName = user.departmentId
-      ? (deptPathMap.value.get(user.departmentId) || user.departmentName || '未知部门')
-      : '未分配人员'
-    if (!groups.has(deptId)) {
-      groups.set(deptId, { deptId, deptName, users: [] })
-    }
-    groups.get(deptId)!.users.push(user)
-  }
-  return Array.from(groups.values()).sort((a, b) => {
-    if (a.deptId === '0') return 1
-    if (b.deptId === '0') return -1
-    return Number(a.deptId) - Number(b.deptId)
-  })
-})
-
-/** 全选当前筛选结果 */
-function selectAllFiltered() {
-  const ids = filteredContacts.value.map(u => u.id)
-  const existing = new Set(form.attendeeUserIds)
-  for (const id of ids) {
-    if (!existing.has(id)) {
-      form.attendeeUserIds.push(id)
-    }
-  }
-}
-
-/** 清空所有选中 */
-function clearAll() {
-  form.attendeeUserIds = []
+/** 选人弹窗确认回调 */
+function onAttendeesConfirm(ids: string[]) {
+  form.attendeeUserIds = ids
 }
 
 // 默认滚动到 09:00 或当前时间
@@ -667,7 +540,7 @@ function handleClose() {
   bookedReservations.value = []
   dragAnchor.value = ''
   isDragging.value = false
-  filterDeptId.value = null
+  userSelectVisible.value = false
   formRef.value?.clearValidate()
   if (!props.roomId) selectedRoomId.value = undefined
 }
@@ -695,12 +568,9 @@ watch(visible, async (val) => {
     } else {
       scrollToWorkHour()
     }
-    // 懒加载通讯录人员列表与部门树（仅首次打开加载）
+    // 懒加载通讯录人员列表（仅首次打开加载，用于已选参会人回显）
     if (!contacts.value.length) {
       loadContacts()
-    }
-    if (!deptTree.value.length) {
-      loadDeptTree()
     }
   }
 })
@@ -712,11 +582,9 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
 .attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; }
-.attendee-toolbar { display: flex; align-items: center; gap: 8px; }
-.dept-filter { flex: 1; }
-.attendee-select { width: 100%; }
-.contact-meta { float: right; color: var(--el-text-color-secondary); font-size: 12px; }
-.select-empty { padding: 16px; text-align: center; color: var(--el-text-color-secondary); font-size: 13px; }
+.attendee-display { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 34px; padding: 5px 10px; border: 1px solid #dcdfe6; border-radius: 6px; cursor: pointer; transition: border-color 0.2s; }
+.attendee-display:hover { border-color: var(--el-color-primary); }
+.attendee-placeholder { font-size: 13px; color: #a8abb2; }
 
 .dialog-rules-tip { background: var(--el-color-primary-light-9, #ecf5ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
 
