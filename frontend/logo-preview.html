@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MRB Logo 预览 - 大疆风格</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    
+    .preview-section {
+      padding: 80px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 50vh;
+    }
+    
+    .dark-bg { background: linear-gradient(180deg, #1a1640 0%, #302b63 50%, #24243e 100%); color: #fff; }
+    .light-bg { background: #ffffff; color: #1a1a1a; }
+    .gray-bg { background: #f5f5f5; color: #1a1a1a; }
+    
+    .section-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+      margin-bottom: 40px;
+    }
+    
+    .comparison {
+      display: flex;
+      gap: 80px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .compare-item {
+      text-align: center;
+    }
+    
+    .compare-label {
+      font-size: 12px;
+      opacity: 0.5;
+      margin-top: 16px;
+      letter-spacing: 1px;
+    }
+    
+    .size-demo {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+      margin-top: 60px;
+    }
+    
+    .favicon-demo {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .browser-mock {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .browser-dots {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.red { background: #ff5f57; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #28ca41; }
+    
+    .browser-url {
+      background: #f0f0f0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: #666;
+      margin-left: 8px;
+    }
+    
+    .sidebar-demo {
+      background: linear-gradient(180deg, #1a1640 0%, #302b63 50%, #24243e 100%);
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .sidebar-logo span {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .dji-reference {
+      margin-top: 40px;
+      padding: 30px;
+      background: rgba(0,0,0,0.03);
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .dji-reference h3 {
+      font-size: 14px;
+      opacity: 0.5;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 深色背景 - 白色logo -->
+  <div class="preview-section dark-bg">
+    <div class="section-title">白色版 - 深色背景</div>
+    
+    <!-- MRB 完整字标 -->
+    <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+      <!-- M -->
+      <path d="M10 70V10h10l20 35L60 10h10v60H60V27L40 63h-5L15 27v43H10z" fill="#ffffff"/>
+      <!-- R -->
+      <path d="M80 70V10h25c12 0 20 7 20 18 0 8-5 14-13 16l15 26h-12l-13-22h-12v22H80zm10-32h13c6 0 10-3 10-9s-4-8-10-8H90v17z" fill="#ffffff"/>
+      <!-- B -->
+      <path d="M135 70V10h23c14 0 22 6 22 17 0 7-4 12-10 14 7 2 12 8 12 16 0 11-9 18-23 18h-24v-5zm10-32h12c7 0 11-3 11-8s-4-7-11-7h-12v15zm0 29h13c8 0 12-4 12-10s-4-9-12-9h-13v19z" fill="#ffffff"/>
+    </svg>
+    <div class="compare-label" style="color:#fff;opacity:0.6;margin-top:16px;">MRB 完整字标</div>
+    
+    <div class="size-demo">
+      <div class="compare-item">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <path d="M5 50V6h6l13 22 13-22h6v44h-6V17L25 45h-3L11 17v33H5z" fill="#ffffff"/>
+        </svg>
+        <div class="compare-label" style="color:#fff;opacity:0.6;">M 图标</div>
+      </div>
+    </div>
+    
+    <div class="comparison" style="margin-top:60px;">
+      <div class="compare-item">
+        <div class="sidebar-demo">
+          <div class="sidebar-logo">
+            <svg width="36" height="36" viewBox="0 0 56 56" fill="none">
+              <path d="M5 50V6h6l13 22 13-22h6v44h-6V17L25 45h-3L11 17v33H5z" fill="#ffffff"/>
+            </svg>
+            <span>会议室预约</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.5);font-size:13px;padding:8px 12px;">首页</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:13px;padding:8px 12px;">会议室</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:13px;padding:8px 12px;">我的预约</div>
+        </div>
+        <div class="compare-label" style="color:#fff;opacity:0.6;margin-top:16px;">侧边栏效果</div>
+      </div>
+      
+      <div class="compare-item">
+        <svg width="72" height="72" viewBox="0 0 56 56" fill="none">
+          <path d="M5 50V6h6l13 22 13-22h6v44h-6V17L25 45h-3L11 17v33H5z" fill="#ffffff"/>
+        </svg>
+        <div class="compare-label" style="color:#fff;opacity:0.6;margin-top:16px;">72px 登录页图标</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 白色背景 - 黑色logo -->
+  <div class="preview-section light-bg">
+    <div class="section-title">黑色版 - 浅色背景 / Favicon</div>
+    
+    <!-- MRB 完整字标 黑色 -->
+    <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+      <path d="M10 70V10h10l20 35L60 10h10v60H60V27L40 63h-5L15 27v43H10z" fill="#1a1a1a"/>
+      <path d="M80 70V10h25c12 0 20 7 20 18 0 8-5 14-13 16l15 26h-12l-13-22h-12v22H80zm10-32h13c6 0 10-3 10-9s-4-8-10-8H90v17z" fill="#1a1a1a"/>
+      <path d="M135 70V10h23c14 0 22 6 22 17 0 7-4 12-10 14 7 2 12 8 12 16 0 11-9 18-23 18h-24v-5zm10-32h12c7 0 11-3 11-8s-4-7-11-7h-12v15zm0 29h13c8 0 12-4 12-10s-4-9-12-9h-13v19z" fill="#1a1a1a"/>
+    </svg>
+    <div class="compare-label" style="margin-top:16px;">MRB 字标 - 黑色</div>
+    
+    <div class="favicon-demo" style="margin-top:60px;">
+      <div class="compare-item">
+        <svg width="64" height="64" viewBox="0 0 32 32" fill="none">
+          <!-- M 字母作为favicon图标（简洁有力） -->
+          <path d="M3 29V3h4l9 16 9-16h4v26h-4V9l-9 15h-2L7 9v20H3z" fill="#1a1a1a"/>
+        </svg>
+        <div class="compare-label">M 图标 64px</div>
+      </div>
+      
+      <div class="compare-item">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M3 29V3h4l9 16 9-16h4v26h-4V9l-9 15h-2L7 9v20H3z" fill="#1a1a1a"/>
+        </svg>
+        <div class="compare-label">Favicon 32px</div>
+      </div>
+      
+      <div class="compare-item">
+        <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+          <path d="M3 29V3h4l9 16 9-16h4v26h-4V9l-9 15h-2L7 9v20H3z" fill="#1a1a1a"/>
+        </svg>
+        <div class="compare-label">16px</div>
+      </div>
+      
+      <div class="compare-item">
+        <div class="browser-mock">
+          <div class="browser-dots">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+            <path d="M3 29V3h4l9 16 9-16h4v26h-4V9l-9 15h-2L7 9v20H3z" fill="#1a1a1a"/>
+          </svg>
+          <span class="browser-url">会议室预约系统</span>
+        </div>
+        <div class="compare-label">浏览器标签</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 品牌色版 -->
+  <div class="preview-section gray-bg">
+    <div class="section-title">品牌色版</div>
+    <svg width="200" height="80" viewBox="0 0 200 80" fill="none">
+      <path d="M10 70V10h10l20 35L60 10h10v60H60V27L40 63h-5L15 27v43H10z" fill="#667eea"/>
+      <path d="M80 70V10h25c12 0 20 7 20 18 0 8-5 14-13 16l15 26h-12l-13-22h-12v22H80zm10-32h13c6 0 10-3 10-9s-4-8-10-8H90v17z" fill="#667eea"/>
+      <path d="M135 70V10h23c14 0 22 6 22 17 0 7-4 12-10 14 7 2 12 8 12 16 0 11-9 18-23 18h-24v-5zm10-32h12c7 0 11-3 11-8s-4-7-11-7h-12v15zm0 29h13c8 0 12-4 12-10s-4-9-12-9h-13v19z" fill="#667eea"/>
+    </svg>
+    <div class="compare-label" style="margin-top:16px;">#667eea 品牌色</div>
+    
+    <div class="dji-reference">
+      <h3>DJI 大疆 logo 参考风格</h3>
+      <div style="font-size:72px;font-weight:700;letter-spacing:-1px;color:#1a1a1a;">DJI</div>
+      <p style="margin-top:12px;font-size:13px;color:#666;line-height:1.8;">
+        特点：几何无衬线 · 线条均匀 · 字重较大 · 现代简约 · 科技感<br>
+        我们的MRB设计延续此风格：粗体几何字母、统一线条、无多余装饰
+      </p>
+    </div>
+  </div>
+</body>
+</html>
