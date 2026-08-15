@@ -50,7 +50,9 @@
 
             <div class="form-options">
               <el-checkbox v-model="rememberMe">记住我</el-checkbox>
-              <a href="javascript:;" class="forgot-link" @click="openForgot">忘记密码?</a>
+              <router-link :to="{ name: 'ForgotPassword', query: { username: form.username } }" class="forgot-link">
+                忘记密码?
+              </router-link>
             </div>
 
             <el-form-item>
@@ -69,43 +71,16 @@
     <div class="icp-wrap">
       <IcpFooter />
     </div>
-
-    <el-dialog v-model="forgotVisible" title="找回密码" width="420px" append-to-body>
-      <el-form :model="forgotForm" label-position="top">
-        <el-form-item label="用户名">
-          <el-input v-model="forgotForm.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="邮箱验证码">
-          <div class="code-row">
-            <el-input v-model="forgotForm.code" placeholder="6 位验证码" maxlength="6" />
-            <el-button :disabled="countdown > 0" :loading="sendingCode" @click="handleSendCode">
-              {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
-            </el-button>
-          </div>
-        </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="forgotForm.newPassword" type="password" show-password placeholder="至少 6 位" />
-        </el-form-item>
-        <el-form-item label="确认新密码">
-          <el-input v-model="forgotForm.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="forgotVisible = false">取消</el-button>
-        <el-button type="primary" :loading="resetting" @click="handleReset">重置密码</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onUnmounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login } from '@/api/auth'
-import { sendPasswordResetCode, resetPasswordByCode } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import IcpFooter from '@/components/IcpFooter.vue'
 
@@ -115,18 +90,20 @@ const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const rememberMe = ref(false)
-const forgotVisible = ref(false)
-const sendingCode = ref(false)
-const resetting = ref(false)
-const countdown = ref(0)
-let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const form = reactive({ username: '', password: '' })
-const forgotForm = reactive({ username: '', code: '', newPassword: '', confirmPassword: '' })
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
+
+onMounted(() => {
+  // 从找回密码页返回时回填用户名
+  const username = typeof route.query.username === 'string' ? route.query.username : ''
+  if (username) {
+    form.username = username
+  }
+})
 
 async function handleLogin() {
   const valid = await formRef.value?.validate().catch(() => false)
@@ -157,79 +134,6 @@ async function handleLogin() {
   }
 }
 
-function openForgot() {
-  forgotForm.username = form.username
-  forgotVisible.value = true
-}
-
-async function handleSendCode() {
-  if (!forgotForm.username.trim()) {
-    ElMessage.warning('请输入用户名')
-    return
-  }
-  sendingCode.value = true
-  try {
-    await sendPasswordResetCode(forgotForm.username.trim())
-    ElMessage.success('验证码已发送，请查收邮箱')
-    countdown.value = 60
-    countdownTimer = setInterval(() => {
-      countdown.value -= 1
-      if (countdown.value <= 0 && countdownTimer) {
-        clearInterval(countdownTimer)
-        countdownTimer = null
-      }
-    }, 1000)
-  } catch {
-    // error handled by interceptor
-  } finally {
-    sendingCode.value = false
-  }
-}
-
-async function handleReset() {
-  if (!forgotForm.username.trim()) {
-    ElMessage.warning('请输入用户名')
-    return
-  }
-  if (!forgotForm.code.trim()) {
-    ElMessage.warning('请输入验证码')
-    return
-  }
-  if (forgotForm.newPassword.length < 6) {
-    ElMessage.warning('新密码至少 6 位')
-    return
-  }
-  if (forgotForm.newPassword !== forgotForm.confirmPassword) {
-    ElMessage.warning('两次输入的密码不一致')
-    return
-  }
-  resetting.value = true
-  try {
-    await resetPasswordByCode({
-      username: forgotForm.username.trim(),
-      code: forgotForm.code.trim(),
-      newPassword: forgotForm.newPassword,
-    })
-    ElMessage.success('密码已重置，请使用新密码登录')
-    forgotVisible.value = false
-    form.username = forgotForm.username
-    form.password = ''
-    forgotForm.code = ''
-    forgotForm.newPassword = ''
-    forgotForm.confirmPassword = ''
-  } catch {
-    // error handled by interceptor
-  } finally {
-    resetting.value = false
-  }
-}
-
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-})
 </script>
 
 <style scoped>
@@ -270,11 +174,8 @@ onUnmounted(() => {
 .login-form :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px #667eea inset; }
 .login-form :deep(.el-form-item) { margin-bottom: 22px; }
 .form-options { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.forgot-link { font-size: 13px; color: #667eea; text-decoration: none; }
+.forgot-link { display: inline-block; padding: 6px 0 6px 8px; font-size: 14px; color: #667eea; text-decoration: none; transition: color 0.2s ease; }
 .forgot-link:hover { color: #764ba2; }
-.code-row { display: flex; gap: 8px; width: 100%; }
-.code-row .el-input { flex: 1; }
-.code-row .el-button { white-space: nowrap; }
 .login-btn { width: 100%; height: 48px; border-radius: 10px; font-size: 16px; font-weight: 600; letter-spacing: 2px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; transition: all 0.3s ease; }
 .login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
 .login-btn:active { transform: translateY(0); }
