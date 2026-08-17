@@ -2,7 +2,7 @@
   <el-drawer v-model="visible" title="预约会议室" size="600px" direction="rtl" destroy-on-close @close="handleClose">
     <div v-if="room" class="dialog-rules-tip">
       <el-icon><InfoFilled /></el-icon>
-      可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
+      可预约时段: {{ room.bookableStart || '08:00' }}~{{ room.bookableEnd || '20:00' }}<template v-if="room.minDuration">，最短 {{ room.minDuration }} 分钟</template>，最长 {{ room.maxDuration || 480 }} 分钟，最多提前 {{ room.advanceDays || 7 }} 天
     </div>
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="booking-form">
       <div v-if="!room" class="dialog-form-item">
@@ -24,7 +24,7 @@
             <div class="tp-summary">
               <template v-if="form.startMinute && form.endMinute">
                 <span class="tp-range">{{ form.startMinute }} <span class="tp-arrow">→</span> {{ form.endMinute }}</span>
-                <span class="tp-dur" :class="{ over: isOverMaxDuration }">{{ durationText }}</span>
+                <span class="tp-dur" :class="{ over: isOverMaxDuration, below: isBelowMinDuration }">{{ durationText }}</span>
               </template>
               <template v-else-if="form.startMinute">
                 <span class="tp-range">{{ form.startMinute }} <span class="tp-arrow muted">→ 选择结束</span></span>
@@ -318,6 +318,10 @@ const isOverMaxDuration = computed(() => {
   const max = currentRoom.value?.maxDuration || 0
   return max > 0 && durationMinutes.value > max
 })
+const isBelowMinDuration = computed(() => {
+  const min = currentRoom.value?.minDuration || 0
+  return min > 0 && durationMinutes.value > 0 && durationMinutes.value < min
+})
 const durationText = computed(() => {
   const d = durationMinutes.value
   if (d <= 0) return ''
@@ -600,6 +604,10 @@ async function handleSubmit() {
     ElMessage.error(`单次预约最长 ${currentRoom.value?.maxDuration} 分钟`)
     return
   }
+  if (isBelowMinDuration.value) {
+    ElMessage.error(`单次预约最短 ${currentRoom.value?.minDuration} 分钟`)
+    return
+  }
   const roomId = props.roomId || selectedRoomId.value
   if (!roomId) {
     ElMessage.error('请选择会议室')
@@ -705,6 +713,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .tp-range.placeholder { color: #c0c4cc; font-weight: 400; font-size: 13px; }
 .tp-dur { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: var(--el-color-primary-light-9); color: var(--primary); border: 1px solid var(--el-color-primary-light-7); }
 .tp-dur.over { background: #fef0f0; color: #f56c6c; border-color: #fbc4c4; }
+.tp-dur.below { background: #fef5e7; color: #e6a23c; border-color: #f5dab1; }
 
 /* 纵向时间轴 */
 .tp-timeline { position: relative; max-height: 320px; overflow-y: auto; padding: 6px 0; user-select: none; touch-action: pan-y; }

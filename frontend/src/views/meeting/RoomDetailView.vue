@@ -35,6 +35,7 @@
             <div class="info-item"><span class="info-label">容纳人数</span><span class="info-value">{{ room.capacity || '-' }} 人</span></div>
             <div class="info-item"><span class="info-label">设备设施</span><span class="info-value">{{ room.equipment || '暂无' }}</span></div>
             <div class="info-item"><span class="info-label">可预约时段</span><span class="info-value">{{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}</span></div>
+            <div class="info-item"><span class="info-label">最小预约时长</span><span class="info-value">{{ room.minDuration > 0 ? room.minDuration + ' 分钟' : '不限制' }}</span></div>
             <div class="info-item"><span class="info-label">最大预约时长</span><span class="info-value">{{ room.maxDuration || 480 }} 分钟</span></div>
             <div class="info-item"><span class="info-label">提前预约</span><span class="info-value">最多 {{ room.advanceDays || 7 }} 天</span></div>
             <div class="info-item"><span class="info-label">审批模式</span><el-tag :type="room.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ room.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></div>

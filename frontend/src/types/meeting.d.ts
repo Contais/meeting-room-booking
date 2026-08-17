@@ -9,6 +9,7 @@ export interface MeetingRoom {
   status: number
   bookableStart: string
   bookableEnd: string
+  minDuration: number
   maxDuration: number
   advanceDays: number
   needApproval: number

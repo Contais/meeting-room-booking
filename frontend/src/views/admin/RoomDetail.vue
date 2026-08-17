@@ -58,6 +58,9 @@
           <el-descriptions-item label="可预约时段">
             {{ room.bookableStart || '08:00' }} ~ {{ room.bookableEnd || '20:00' }}
           </el-descriptions-item>
+          <el-descriptions-item label="最小预约时长">
+            {{ room.minDuration > 0 ? room.minDuration + ' 分钟' : '不限制' }}
+          </el-descriptions-item>
           <el-descriptions-item label="最大预约时长">
             {{ room.maxDuration || 480 }} 分钟
           </el-descriptions-item>
@@ -121,6 +124,7 @@
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="2" placeholder="详细描述" /></el-form-item>
         <el-divider content-position="left">使用规则</el-divider>
         <el-form-item label="预约时段"><div style="display:flex;align-items:center;gap:8px"><el-time-picker v-model="form.bookableStart" format="HH:mm" value-format="HH:mm" placeholder="开始" style="width:130px" /><span>~</span><el-time-picker v-model="form.bookableEnd" format="HH:mm" value-format="HH:mm" placeholder="结束" style="width:130px" /></div></el-form-item>
+        <el-form-item label="最小预约时长"><el-input-number v-model="form.minDuration" :min="0" :max="1440" :step="30" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">分钟（0 表示不限制）</span></el-form-item>
         <el-form-item label="最大时长"><el-input-number v-model="form.maxDuration" :min="30" :max="1440" :step="30" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">分钟</span></el-form-item>
         <el-form-item label="提前天数"><el-input-number v-model="form.advanceDays" :min="1" :max="90" style="width:180px" /><span style="margin-left:6px;color:var(--text-muted);font-size:13px">天</span></el-form-item>
         <el-form-item label="审批"><el-radio-group v-model="form.needApproval"><el-radio :value="0">免审批</el-radio><el-radio :value="1">需审批</el-radio></el-radio-group></el-form-item>
@@ -160,7 +164,7 @@ const assigning = ref(false)
 const editDialogVisible = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
-const form = reactive({ id: undefined as string | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', maxDuration: 480, advanceDays: 7, needApproval: 0 })
+const form = reactive({ id: undefined as string | undefined, name: '', location: '', capacity: 10, equipment: '', imageUrl: '', description: '', bookableStart: '08:00', bookableEnd: '20:00', minDuration: 0, maxDuration: 480, advanceDays: 7, needApproval: 0 })
 const rules: FormRules = { name: [{ required: true, message: '请输入名称', trigger: 'blur' }], capacity: [{ required: true, message: '请输入人数', trigger: 'blur' }] }
 
 async function loadDetail() {
@@ -217,6 +221,7 @@ function openEditDialog() {
     description: room.value.description || '',
     bookableStart: room.value.bookableStart || '08:00',
     bookableEnd: room.value.bookableEnd || '20:00',
+    minDuration: room.value.minDuration ?? 0,
     maxDuration: room.value.maxDuration || 480,
     advanceDays: room.value.advanceDays || 7,
     needApproval: room.value.needApproval || 0
