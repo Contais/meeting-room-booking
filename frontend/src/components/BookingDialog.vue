@@ -40,13 +40,18 @@
           </div>
 
           <!-- 纵向时间轴：拖拽选区 -->
-          <div v-if="timeSlots.length" ref="timelineRef" class="tp-timeline" @pointermove="onPointerMove">
+          <div v-if="timeSlots.length" ref="timelineRef" class="tp-timeline" role="group" aria-label="预约时间选择" @pointermove="onPointerMove" @keydown="onTimelineKeydown">
             <div
               v-for="s in timeSlots"
               :key="s.time"
               class="tp-slot"
               :class="slotClass(s)"
               :data-time="s.time"
+              role="button"
+              :tabindex="isTabStop(s.time) ? 0 : -1"
+              :aria-label="slotAriaLabel(s)"
+              :aria-pressed="isStartEdge(s.time) || isSlotInSelection(s.time) || isEndEdge(s.time)"
+              @focus="focusedTime = s.time"
               @pointerdown="onPointerDown($event, s.time)"
             >
               <span class="tp-label">{{ s.time }}</span>
@@ -83,7 +88,7 @@
             <span class="lg"><i class="dot free"></i>空闲</span>
             <span class="lg"><i class="dot busy"></i>已约</span>
             <span class="lg"><i class="dot sel"></i>已选</span>
-            <span class="tp-hint">支持拖动选择 / 点击起点再点击终点</span>
+            <span class="tp-hint">拖动或点选起止，支持键盘方向键选择</span>
           </div>
         </div>
       </el-form-item>
@@ -353,12 +358,15 @@ function isBookedRangeStart(t: string): boolean {
   return bookedRanges.value.some(r => r.start === tm)
 }
 
-function onPointerDown(e: PointerEvent, t: string) {
+// 判断某个时刻当前是否可点选（鼠标与键盘共用同一套规则）
+function isSlotSelectable(t: string): boolean {
   // 选结束时刻时，允许点击「已约区间起点」（结束时刻为预约开始瞬间，不构成冲突）
-  // 例如已有 08:30-08:45，选 08:15-08:30 时可点击 08:30 作为结束
   const selectingEnd = !!form.startMinute && !form.endMinute
-  const allowed = selectingEnd ? (!isTimeDisabled(t) || isBookedRangeStart(t)) : !isTimeDisabled(t)
-  if (!allowed) return
+  return selectingEnd ? (!isTimeDisabled(t) || isBookedRangeStart(t)) : !isTimeDisabled(t)
+}
+
+function onPointerDown(e: PointerEvent, t: string) {
+  if (!isSlotSelectable(t)) return
   e.preventDefault()
   // 注意：这里不立即修改 form.startMinute，否则点击（pointerup 无移动）时
   // handleCellClick 会误判为"再次点击同一槽位"而取消选择。选区由 pointermove（拖拽）
@@ -401,6 +409,13 @@ function onPointerUp() {
   formRef.value?.validateField('startMinute').catch(() => false)
 }
 
+// 触屏滚动会触发 pointercancel，仅重置拖拽状态，不当作点选
+function onPointerCancel() {
+  isDragging.value = false
+  movedDuringDrag = false
+  dragAnchor.value = ''
+}
+
 // 点击-点击回退模式
 function handleCellClick(t: string) {
   if (!form.startMinute || (form.startMinute && form.endMinute)) {
@@ -421,12 +436,85 @@ function handleCellClick(t: string) {
   }
 }
 
+// 键盘导航：焦点进入时间轴后用方向键移动，回车 / 空格点选
+const focusedTime = ref('')
+const selectableTimes = computed(() => timeSlots.value.filter(s => isSlotSelectable(s.time)).map(s => s.time))
+
+function isTabStop(t: string): boolean {
+  const list = selectableTimes.value
+  if (!list.length) return false
+  const active = focusedTime.value && list.includes(focusedTime.value) ? focusedTime.value : list[0]
+  return t === active
+}
+
+function slotAriaLabel(s: Slot): string {
+  const parts = [s.time]
+  if (s.booked) parts.push('已预约')
+  else if (isExpired(s.time)) parts.push('已过期')
+  if (isStartEdge(s.time)) parts.push('开始时间')
+  if (isEndEdge(s.time)) parts.push('结束时间')
+  return parts.join('，')
+}
+
+function focusSlot(time: string) {
+  focusedTime.value = time
+  nextTick(() => {
+    const el = timelineRef.value?.querySelector(`[data-time="${time}"]`) as HTMLElement | null
+    el?.focus()
+    el?.scrollIntoView({ block: 'nearest' })
+  })
+}
+
+function moveFocus(delta: number) {
+  const list = selectableTimes.value
+  if (!list.length) return
+  const idx = list.indexOf(focusedTime.value)
+  const nextIdx = idx === -1
+    ? (delta > 0 ? 0 : list.length - 1)
+    : Math.min(list.length - 1, Math.max(0, idx + delta))
+  focusSlot(list[nextIdx])
+}
+
+function onTimelineKeydown(e: KeyboardEvent) {
+  const target = e.target as HTMLElement | null
+  const slotEl = target?.closest?.('[data-time]') as HTMLElement | null
+  const t = slotEl?.dataset?.time
+  if (!t) return
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault()
+      moveFocus(1)
+      break
+    case 'ArrowUp':
+      e.preventDefault()
+      moveFocus(-1)
+      break
+    case 'Home':
+      e.preventDefault()
+      focusSlot(selectableTimes.value[0] || t)
+      break
+    case 'End':
+      e.preventDefault()
+      focusSlot(selectableTimes.value[selectableTimes.value.length - 1] || t)
+      break
+    case 'Enter':
+    case ' ':
+      e.preventDefault()
+      handleCellClick(t)
+      break
+  }
+}
+
 // 全局监听 pointerup，确保拖出时间轴也能结束
 if (typeof window !== 'undefined') {
   window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerCancel)
 }
 onBeforeUnmount(() => {
-  if (typeof window !== 'undefined') window.removeEventListener('pointerup', onPointerUp)
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('pointerup', onPointerUp)
+    window.removeEventListener('pointercancel', onPointerCancel)
+  }
 })
 
 function disableFutureDate(date: Date) {
@@ -550,6 +638,7 @@ function handleClose() {
   bookedReservations.value = []
   dragAnchor.value = ''
   isDragging.value = false
+  focusedTime.value = ''
   userSelectVisible.value = false
   formRef.value?.clearValidate()
   if (!props.roomId) selectedRoomId.value = undefined
@@ -624,6 +713,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 .tp-slot { display: flex; align-items: stretch; height: 32px; cursor: pointer; position: relative; }
 .tp-slot + .tp-slot { border-top: 1px solid #f2f4f7; }
+.tp-slot:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; z-index: 1; }
 /* 整点加重 */
 .tp-slot[data-time$=":00"] { border-top-color: #e4e7ed; }
 .tp-slot .tp-label { width: 54px; flex-shrink: 0; text-align: right; padding-right: 10px; font-size: 12px; color: #909399; line-height: 32px; font-variant-numeric: tabular-nums; }

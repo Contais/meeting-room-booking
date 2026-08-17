@@ -58,12 +58,14 @@
           >
             <template #default="{ data }">
               <div class="usd-dept-node">
-                <el-checkbox
-                  :model-value="isDeptChecked(data.id)"
-                  :indeterminate="isDeptIndeterminate(data.id)"
-                  @click.stop
-                  @change="(val: any) => toggleDept(data.id, !!val)"
-                />
+                <el-tooltip content="勾选即全选本部门及子部门人员" placement="right" :show-after="300">
+                  <el-checkbox
+                    :model-value="isDeptChecked(data.id)"
+                    :indeterminate="isDeptIndeterminate(data.id)"
+                    @click.stop
+                    @change="(val: any) => toggleDept(data.id, !!val)"
+                  />
+                </el-tooltip>
                 <span class="usd-dept-name">{{ data.name }}</span>
                 <el-tag v-if="deptUserCount(data.id) > 0" size="small" type="info" effect="light" round>
                   {{ deptUserCount(data.id) }}
