@@ -86,6 +86,7 @@
         <div class="picker-preview">
           <div class="preview-avatar" :style="getAvatarStyle()">
             <el-icon v-if="selectedAvatarIcon" :size="40"><component :is="selectedAvatarIcon" /></el-icon>
+            <img v-else-if="currentAvatarIsUrl" :src="userStore.userInfo?.avatar" class="preview-avatar-img" alt="头像预览" />
             <span v-else class="preview-letter">{{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}</span>
           </div>
           <div class="preview-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</div>
@@ -505,6 +506,13 @@ async function handleChangePassword() {
 }
 
 .banner-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.preview-avatar-img {
   width: 100%;
   height: 100%;
   border-radius: 50%;

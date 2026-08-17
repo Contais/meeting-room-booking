@@ -27,8 +27,8 @@
 
       <el-table :data="roleList" v-loading="loading" empty-text="暂无角色数据，点击左上角「新建角色」创建">
         <el-table-column type="index" :index="(index: number) => (query.pageNum - 1) * query.pageSize + index + 1" label="序号" width="70" align="center" />
-        <el-table-column prop="roleCode" label="角色编码" width="160" />
-        <el-table-column label="角色名称" width="180">
+        <el-table-column prop="roleCode" label="角色编码" width="120" />
+        <el-table-column label="角色名称" width="140">
           <template #default="{ row }">
             <span class="role-name-cell">
               <span class="role-dot" :style="{ background: getRoleColor(row.id) }"></span>
@@ -37,8 +37,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="100" align="center" />
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column prop="sort" label="排序" width="70" align="center" />
+        <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>
               {{ row.status === 1 ? '启用' : '禁用' }}
@@ -52,7 +52,7 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="220" fixed="right" align="center">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="handlePermission(row)">
@@ -70,7 +70,7 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="toggle" :disabled="row.isSystem === 1">
-                      {{ row.status === 1 ? '禁用' : '启用' }}
+                      <el-icon><Switch /></el-icon>{{ row.status === 1 ? '禁用' : '启用' }}
                     </el-dropdown-item>
                     <el-dropdown-item command="delete" divided class="danger-item" :disabled="row.isSystem === 1">
                       <el-icon><Delete /></el-icon>删除
@@ -130,7 +130,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Key, Refresh, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Key, Refresh, ArrowDown, Switch } from '@element-plus/icons-vue'
 import {
   listRoles,
   createRole,
