@@ -21,7 +21,7 @@
 
       <el-table :data="tableData" v-loading="loading" empty-text="暂无知识条目，点击左上角「新增条目」创建">
         <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
-        <el-table-column prop="title" label="标题 / 来源" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="title" label="标题 / 来源" min-width="160" show-overflow-tooltip />
         <el-table-column label="分类" width="110" align="center">
           <template #default="{ row }">
             <el-tag type="info" size="small" effect="light" round>{{ row.categoryName || row.category }}</el-tag>
@@ -41,9 +41,12 @@
           </template>
         </el-table-column>
         <el-table-column label="更新时间" width="170"><template #default="{ row }">{{ formatDateTime(row.updateTime || row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
+              <el-button type="primary" link @click="showDetail(row)">
+                <el-icon><View /></el-icon>详情
+              </el-button>
               <el-button type="primary" link @click="showEditDialog(row)">
                 <el-icon><Edit /></el-icon>编辑
               </el-button>
@@ -98,6 +101,35 @@
         </el-form-item>
       </el-form>
     </FormDrawer>
+
+    <el-drawer v-model="detailVisible" title="知识条目详情" size="520px" direction="rtl" destroy-on-close>
+      <div v-if="currentDetail" class="detail-body">
+        <div class="detail-head">
+          <h3 class="detail-title">{{ currentDetail.title }}</h3>
+          <el-tag :type="currentDetail.status === 1 ? 'success' : 'warning'" size="small" effect="light">
+            {{ currentDetail.status === 1 ? '启用' : '禁用' }}
+          </el-tag>
+        </div>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="分类">
+            <el-tag type="info" size="small" effect="light" round>{{ currentDetail.categoryName || currentDetail.category }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="常见问法">{{ currentDetail.question }}</el-descriptions-item>
+          <el-descriptions-item label="标签">{{ currentDetail.tags || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="排序">{{ currentDetail.sort }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ formatDateTime(currentDetail.createTime) }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ formatDateTime(currentDetail.updateTime || currentDetail.createTime) }}</el-descriptions-item>
+        </el-descriptions>
+        <div class="detail-answer">
+          <div class="detail-answer-label">答案内容</div>
+          <div class="detail-answer-text">{{ currentDetail.answer }}</div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="editFromDetail">编辑</el-button>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
@@ -105,7 +137,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, Switch, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, Switch, ArrowDown, View } from '@element-plus/icons-vue'
 import { listKnowledge, createKnowledge, updateKnowledge, toggleKnowledgeStatus, deleteKnowledge } from '@/api/knowledge'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
@@ -120,6 +152,8 @@ const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+const detailVisible = ref(false)
+const currentDetail = ref<KnowledgeEntry | null>(null)
 
 const categories = [
   { value: 'RULES', label: '预约规则' },
@@ -206,6 +240,18 @@ function showEditDialog(row: KnowledgeEntry) {
   dialogVisible.value = true
 }
 
+function showDetail(row: KnowledgeEntry) {
+  currentDetail.value = row
+  detailVisible.value = true
+}
+
+function editFromDetail() {
+  if (!currentDetail.value) return
+  const row = currentDetail.value
+  detailVisible.value = false
+  showEditDialog(row)
+}
+
 async function handleSubmit() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
@@ -274,5 +320,41 @@ onMounted(loadData)
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  word-break: break-all;
+}
+
+.detail-answer-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detail-answer-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

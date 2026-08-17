@@ -327,6 +327,10 @@ watch(() => notificationStore.latestNotification, (n) => {
 .side-menu {
   border-right: none;
   padding: 8px 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .side-menu > .el-menu-item,
