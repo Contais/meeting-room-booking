@@ -47,7 +47,7 @@ public class MeetingRoomTool {
     private final ReservationRepository reservationRepository;
     private final RoomResolver roomResolver;
 
-    @Tool(description = "查询所有可用的会议室列表。返回 JSON 数组，每项字段：name 会议室名称、location 位置、capacity 容量、equipment 设备")
+    @Tool(description = "查询所有可用的会议室列表。返回 JSON 数组，每项字段：name 会议室名称、location 位置、capacity 容量、equipment 设备、needApproval 是否需要审批、advanceDays 提前预约天数、maxDuration 单次最大时长(分钟)、bookableStart/bookableEnd 可预约时段")
     public List<RoomSummary> listAvailableRooms() {
         List<MeetingRoom> rooms = meetingRoomRepository.selectList(
                 new LambdaQueryWrapper<MeetingRoom>().eq(MeetingRoom::getStatus, EnableStatusEnum.ENABLED.getCode())
@@ -103,7 +103,7 @@ public class MeetingRoomTool {
         return stats;
     }
 
-    @Tool(description = "根据需求推荐可用会议室。传入日期、可选时段、人数、设备关键词，返回符合条件的空闲会议室列表。返回 JSON 对象，字段：date 日期、startTime/endTime 时段 HH:mm、rooms 会议室列表（name、location、capacity、equipment）")
+    @Tool(description = "根据需求推荐可用会议室。传入日期、可选时段、人数、设备关键词，返回符合条件的空闲会议室列表。返回 JSON 对象，字段：date 日期、startTime/endTime 时段 HH:mm、rooms 会议室列表（name、location、capacity、equipment、needApproval、advanceDays、maxDuration、bookableStart、bookableEnd）")
     public ToolResult recommendRoom(
             @ToolParam(description = "日期，格式 yyyy-MM-dd") String date,
             @ToolParam(description = "开始时间，格式 HH:mm", required = false) String startTime,

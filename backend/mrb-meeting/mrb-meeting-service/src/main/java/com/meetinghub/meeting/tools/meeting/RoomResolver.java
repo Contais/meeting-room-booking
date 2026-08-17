@@ -1,6 +1,7 @@
 package com.meetinghub.meeting.tools.meeting;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.meetinghub.common.enums.ApprovalModeEnum;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import com.meetinghub.meeting.model.vo.tool.RoomToolResults.RoomSummary;
@@ -79,7 +80,12 @@ public class RoomResolver {
     public static RoomSummary toSummary(MeetingRoom room) {
         return new RoomSummary(room.getName(), room.getLocation(),
                 room.getCapacity() != null ? room.getCapacity() : 0,
-                room.getEquipment());
+                room.getEquipment(),
+                ApprovalModeEnum.NEED_APPROVAL.getCode().equals(room.getNeedApproval()),
+                room.getAdvanceDays() != null ? room.getAdvanceDays() : 0,
+                room.getMaxDuration() != null ? room.getMaxDuration() : 0,
+                room.getBookableStart(),
+                room.getBookableEnd());
     }
 
     /**
