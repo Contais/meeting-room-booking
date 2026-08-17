@@ -9,7 +9,7 @@
               <el-icon><ArrowLeft /></el-icon>
               <span>返回</span>
             </el-button>
-            <span class="header-title">{{ room.name }}</span>
+            <span class="header-title">会议室详情</span>
           </div>
           <div class="header-actions">
             <el-button type="primary" plain :disabled="room.status !== 1" @click="showReserveDialog">

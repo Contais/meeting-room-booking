@@ -7,7 +7,7 @@
             <el-icon><ArrowLeft /></el-icon>
             <span>返回</span>
           </el-button>
-          <span v-if="reservation" class="header-title">{{ reservation.subject }}</span>
+          <span class="header-title">{{ pageTitle }}</span>
         </div>
         <div v-if="reservation" class="header-actions">
           <el-button v-if="reservation.status === 2 || reservation.status === 3" type="danger" plain @click="handleDelete">
@@ -247,6 +247,8 @@ const activeGroups = ref<number[]>([0, 1, 2])
 
 // 管理员模式：路由路径以 /admin/ 开头
 const isAdminMode = computed(() => route.path.startsWith('/admin/'))
+// 详情页标题：优先使用来源页传入的页面类型（预约详情 / 会议详情）
+const pageTitle = computed(() => (route.query.dt as string) || '预约详情')
 
 const canCancel = computed(() => {
   if (!reservation.value) return false

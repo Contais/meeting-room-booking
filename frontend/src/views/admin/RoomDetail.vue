@@ -7,7 +7,7 @@
             <el-icon><ArrowLeft /></el-icon>
             <span>返回</span>
           </el-button>
-          <span v-if="room" class="header-title">{{ room.name }}</span>
+          <span class="header-title">会议室详情</span>
         </div>
         <div v-if="room" class="header-actions">
           <el-button type="danger" plain @click="handleDelete">
@@ -112,7 +112,7 @@
     </el-dialog>
 
     <FormDrawer v-model:visible="editDialogVisible" title="编辑会议室" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="请输入会议室名称" /></el-form-item>
         <el-form-item label="位置"><el-input v-model="form.location" placeholder="如：3楼A301" /></el-form-item>

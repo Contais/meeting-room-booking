@@ -79,7 +79,7 @@
 
     <!-- 新增/编辑抽屉 -->
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑菜单' : '添加菜单'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
         <el-form-item label="菜单名称" prop="name"><el-input v-model="form.name" placeholder="搜索菜单名称" /></el-form-item>
         <el-form-item label="路由路径"><el-input v-model="form.path" placeholder="如: /admin/users（留空则为目录）" /></el-form-item>
         <el-form-item label="图标">

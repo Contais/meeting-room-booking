@@ -9,7 +9,7 @@
               <el-icon><ArrowLeft /></el-icon>
               <span>返回</span>
             </el-button>
-            <span class="header-title">{{ equipment.name }}</span>
+            <span class="header-title">设备详情</span>
           </div>
           <div class="header-actions">
             <el-button :type="equipment.status === 1 ? 'warning' : 'success'" plain @click="handleToggle">
@@ -82,7 +82,7 @@
 
     <!-- 编辑抽屉 -->
     <FormDrawer v-model:visible="editDialogVisible" title="编辑设备" :loading="submitting" @submit="handleEditSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
         <el-form-item label="设备编码"><el-input v-model="form.code" disabled /></el-form-item>
         <el-form-item label="设备名称" prop="name"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="分类">

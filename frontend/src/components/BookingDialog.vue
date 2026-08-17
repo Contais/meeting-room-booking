@@ -679,7 +679,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 <style scoped>
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.dialog-form-item label { font-size: 13px; color: var(--text-primary); font-weight: 500; display: flex; align-items: center; gap: 4px; }
 .dialog-form-item label .req { color: var(--el-color-danger, #f56c6c); font-weight: 600; line-height: 1; }
 .dialog-form-item label .optional { color: #a8abb2; font-weight: 400; font-size: 12px; }
 .attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; margin-left: auto; }
@@ -691,7 +691,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 /* 表单标签统一上置，与其它输入项对齐 */
 .booking-form :deep(.el-form-item) { margin-bottom: 16px; }
-.booking-form :deep(.el-form-item__label) { font-size: 13px; color: #606266; font-weight: 500; padding: 0 0 6px 0; line-height: 1.4; }
+.booking-form :deep(.el-form-item__label) { font-size: 13px; color: var(--text-primary); font-weight: 500; padding: 0 0 6px 0; line-height: 1.4; }
 .booking-form :deep(.el-form-item__content) { margin-left: 0 !important; line-height: normal; }
 
 /* 时间选择器：el-form-item__content 为 flex 行布局，子项需显式 100% 才能与上方输入框右边对齐 */

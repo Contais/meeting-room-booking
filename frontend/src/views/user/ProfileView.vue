@@ -31,7 +31,7 @@
           <el-icon class="card-header-icon"><User /></el-icon>
           <h3>个人信息</h3>
         </div>
-        <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="100px">
+        <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-position="top" class="form-standard">
           <el-form-item label="用户名">
             <el-input :value="userStore.userInfo?.username" disabled />
           </el-form-item>
@@ -61,7 +61,7 @@
           <el-icon class="card-header-icon"><Lock /></el-icon>
           <h3>修改密码</h3>
         </div>
-        <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
+        <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-position="top" class="form-standard">
           <el-form-item label="旧密码" prop="oldPassword">
             <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入旧密码" show-password />
           </el-form-item>

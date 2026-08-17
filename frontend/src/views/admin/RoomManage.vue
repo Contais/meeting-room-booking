@@ -53,7 +53,7 @@
     </TableCard>
 
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="名称" prop="name"><el-input v-model="form.name" placeholder="搜索会议室名称或位置" /></el-form-item>
         <el-form-item label="位置"><el-input v-model="form.location" placeholder="如：3楼A301" /></el-form-item>

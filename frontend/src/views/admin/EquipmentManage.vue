@@ -82,7 +82,7 @@
 
     <!-- 新增/编辑设备 -->
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑设备' : '新增设备'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
         <el-divider content-position="left">基础信息</el-divider>
         <el-form-item label="设备编码" prop="code">
           <el-input v-model="form.code" placeholder="如：EQ-PROJ-001" :disabled="isEdit" />

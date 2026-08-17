@@ -86,7 +86,7 @@
 
     <!-- 新建/编辑角色抽屉 -->
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-position="top" class="form-standard">
         <el-form-item label="角色编码" prop="roleCode">
           <el-input v-model="formData.roleCode" placeholder="请输入角色编码" :disabled="isEdit" />
         </el-form-item>
