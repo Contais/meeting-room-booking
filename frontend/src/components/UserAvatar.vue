@@ -61,10 +61,16 @@ const iconComponent = computed(() => {
   return name ? iconComponents[name] || null : null
 })
 const initial = computed(() => (props.username || 'U').charAt(0).toUpperCase())
-const avatarStyle = computed(() => ({
-  background: avatarGradients[avatarData.value.gradient % avatarGradients.length] || avatarGradients[0],
-  color: '#fff',
-}))
+const avatarStyle = computed(() => {
+  // 图片头像用中性底色：避免渐变底色在透明/边缘缝隙处透出紫色圆
+  if (isUrl.value) {
+    return { background: 'var(--bg-page, #f5f7fa)' }
+  }
+  return {
+    background: avatarGradients[avatarData.value.gradient % avatarGradients.length] || avatarGradients[0],
+    color: '#fff',
+  }
+})
 const iconSize = computed(() => (props.size === 'sm' ? 16 : props.size === 'lg' ? 32 : 20))
 </script>
 

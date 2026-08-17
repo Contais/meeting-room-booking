@@ -272,6 +272,10 @@ function buildAvatarData(): string {
 }
 
 function getAvatarStyle(): Record<string, string> {
+  // 图片头像用中性底色，避免紫色渐变在图片边缘/透明处透出
+  if (currentAvatarIsUrl.value) {
+    return { background: 'var(--bg-page, #f5f7fa)' }
+  }
   const gradient = avatarGradients[selectedGradientIdx.value] || avatarGradients[0]
   return {
     background: gradient,
@@ -402,6 +406,7 @@ async function handleChangePassword() {
   font-weight: 600;
   flex-shrink: 0;
   transition: transform 0.3s ease;
+  overflow: hidden;
 }
 
 .avatar-edit-btn {
@@ -506,14 +511,12 @@ async function handleChangePassword() {
 .banner-avatar-img {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   object-fit: cover;
 }
 
 .preview-avatar-img {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   object-fit: cover;
 }
 

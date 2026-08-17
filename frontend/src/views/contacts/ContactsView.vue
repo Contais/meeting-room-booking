@@ -213,6 +213,10 @@ function parseAvatarData(avatar?: string): { icon: string; gradient: number } {
 }
 
 function getAvatarStyle(user: UserInfo): Record<string, string> {
+  // 图片头像用中性底色，避免紫色渐变在图片边缘/透明处透出
+  if (getAvatarUrl(user)) {
+    return { background: 'var(--bg-page, #f5f7fa)' }
+  }
   const { gradient } = parseAvatarData(user.avatar)
   const idx = (gradient ?? 0) % avatarGradients.length
   return {
@@ -690,7 +694,6 @@ onMounted(() => {
 .user-avatar-img {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   object-fit: cover;
 }
 
