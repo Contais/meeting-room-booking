@@ -286,8 +286,8 @@ onMounted(loadReservations)
 .week-header { display: flex; background: #fafbfc; border-bottom: 1px solid #e5e7eb; }
 .day-header { flex: 1; padding: 8px; text-align: center; border-right: 1px solid #f3f4f6; }
 .day-header:last-child { border-right: none; }
-.day-header.today { background: #ecf5ff; }
-.day-header.today .day-date { background: #409eff; color: #fff; border-radius: 50%; }
+.day-header.today { background: #eef2ff; }
+.day-header.today .day-date { background: var(--primary); color: #fff; border-radius: 50%; }
 .day-name { font-size: 11px; color: #9ca3af; }
 .day-date { font-size: 14px; font-weight: 600; color: #303133; margin-top: 4px; display: inline-block; width: 28px; height: 28px; line-height: 28px; }
 

@@ -277,7 +277,7 @@ onMounted(loadDetail)
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #409eff, #337ecc);
+  background: linear-gradient(135deg, var(--primary), var(--el-color-primary-dark-2));
   color: #fff;
   display: flex;
   align-items: center;

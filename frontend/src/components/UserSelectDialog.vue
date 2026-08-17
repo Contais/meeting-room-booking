@@ -358,7 +358,7 @@ function handleConfirm() {
   background: var(--bg-page, #f5f7fa);
 }
 .usd-dept-special.active {
-  background: var(--primary, #409eff);
+  background: var(--primary, #4f6ef7);
   color: #fff;
 }
 .usd-dept-special.active :deep(.el-tag) {
@@ -409,7 +409,7 @@ function handleConfirm() {
   background: var(--bg-page, #f5f7fa);
 }
 .usd-user.selected {
-  background: var(--el-color-primary-light-9, #ecf5ff);
+  background: var(--el-color-primary-light-9, #eef2ff);
 }
 .usd-user-info {
   display: flex;

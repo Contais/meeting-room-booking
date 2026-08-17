@@ -418,7 +418,7 @@ watch(() => notificationStore.latestNotification, (n) => {
 }
 
 .parent-link:hover {
-  color: var(--primary, #409eff);
+  color: var(--primary, #4f6ef7);
 }
 
 .title-separator {

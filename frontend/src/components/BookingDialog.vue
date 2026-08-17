@@ -586,7 +586,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .attendee-display:hover { border-color: var(--el-color-primary); }
 .attendee-placeholder { font-size: 13px; color: #a8abb2; }
 
-.dialog-rules-tip { background: var(--el-color-primary-light-9, #ecf5ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+.dialog-rules-tip { background: var(--el-color-primary-light-9, #eef2ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
 
 /* 表单标签统一上置，与其它输入项对齐 */
 .booking-form :deep(.el-form-item) { margin-bottom: 16px; }
@@ -599,10 +599,10 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .tp-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-page); border-bottom: 1px solid var(--border-light); }
 .tp-summary { display: flex; align-items: center; gap: 10px; min-height: 26px; }
 .tp-range { font-size: 15px; font-weight: 600; color: #303133; display: flex; align-items: center; gap: 6px; }
-.tp-range .tp-arrow { color: #409eff; }
+.tp-range .tp-arrow { color: var(--primary); }
 .tp-range .tp-arrow.muted { color: #c0c4cc; font-weight: 400; }
 .tp-range.placeholder { color: #c0c4cc; font-weight: 400; font-size: 13px; }
-.tp-dur { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: #ecf5ff; color: #409eff; border: 1px solid #d9ecff; }
+.tp-dur { padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: var(--el-color-primary-light-9); color: var(--primary); border: 1px solid var(--el-color-primary-light-7); }
 .tp-dur.over { background: #fef0f0; color: #f56c6c; border-color: #fbc4c4; }
 
 /* 纵向时间轴 */
@@ -624,13 +624,13 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .tp-booked-user { flex-shrink: 0; max-width: 80px; font-size: 11px; color: #fff; background: #e6a23c; padding: 1px 6px; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 已选区间 */
-.tp-selected { width: 100%; height: 22px; background: linear-gradient(90deg, rgba(64,158,255,0.12), rgba(102,177,255,0.18)); border-left: 3px solid #409eff; display: flex; align-items: center; padding: 0 8px; }
-.tp-selected-start { background: linear-gradient(90deg, #409eff, rgba(64,158,255,0.15)); }
-.tp-selected-end { background: linear-gradient(270deg, #409eff, rgba(64,158,255,0.15)); border-left: none; border-right: 3px solid #409eff; justify-content: flex-end; }
+.tp-selected { width: 100%; height: 22px; background: linear-gradient(90deg, rgba(79,110,247,0.12), rgba(168,186,249,0.18)); border-left: 3px solid var(--primary); display: flex; align-items: center; padding: 0 8px; }
+.tp-selected-start { background: linear-gradient(90deg, var(--primary), rgba(79,110,247,0.15)); }
+.tp-selected-end { background: linear-gradient(270deg, var(--primary), rgba(79,110,247,0.15)); border-left: none; border-right: 3px solid var(--primary); justify-content: flex-end; }
 .tp-edge-label { font-size: 11px; color: #fff; font-weight: 600; }
 
 /* 悬浮 */
-.tp-slot:not(.booked):not(.disabled):hover .tp-cell::before { content: ''; position: absolute; left: 0; right: 8px; top: 3px; bottom: 3px; background: rgba(64,158,255,0.08); border-left: 3px solid #a0cfff; border-radius: 0 4px 4px 0; pointer-events: none; }
+.tp-slot:not(.booked):not(.disabled):hover .tp-cell::before { content: ''; position: absolute; left: 0; right: 8px; top: 3px; bottom: 3px; background: rgba(79,110,247,0.08); border-left: 3px solid #a8baf9; border-radius: 0 4px 4px 0; pointer-events: none; }
 
 .tp-slot.booked { cursor: not-allowed; }
 .tp-slot.disabled { cursor: not-allowed; opacity: 0.45; }
@@ -647,6 +647,6 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 .tp-legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .tp-legend .dot.free { background: #fff; border: 1px solid #dcdfe6; }
 .tp-legend .dot.busy { background: repeating-linear-gradient(45deg, #fef0f0, #fef0f0 2px, #fde2e2 2px, #fde2e2 4px); border-left: 3px solid #f56c6c; }
-.tp-legend .dot.sel { background: rgba(64,158,255,0.18); border-left: 3px solid #409eff; }
+.tp-legend .dot.sel { background: rgba(79,110,247,0.18); border-left: 3px solid var(--primary); }
 .tp-hint { margin-left: auto; font-size: 11px; color: #c0c4cc; }
 </style>

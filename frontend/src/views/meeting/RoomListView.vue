@@ -146,7 +146,7 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 .legend-item:hover { border-color: var(--primary); background: var(--primary-light, #f5f7ff); }
-.legend-item.active { border-color: var(--primary); background: var(--primary-light, #ecf5ff); color: var(--primary); }
+.legend-item.active { border-color: var(--primary); background: var(--primary-light, #eef2ff); color: var(--primary); }
 .legend-desc { color: var(--text-muted); font-size: 11px; }
 .legend-clear {
   margin-left: auto; padding: 4px 10px; border-radius: 16px;
