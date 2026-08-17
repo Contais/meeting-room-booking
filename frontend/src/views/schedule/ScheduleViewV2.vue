@@ -1050,7 +1050,7 @@ onBeforeUnmount(() => {
 .today-label { font-size: 11px; color: var(--text-muted); }
 .today-date { font-size: 12px; font-weight: 600; color: var(--primary, #667eea); }
 .today-card-body { padding: 8px 0; }
-.today-next { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+.today-next { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
 .today-next-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
 .today-next-time { font-size: 11px; color: var(--text-secondary); }
 .today-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px 0; }
@@ -1120,8 +1120,8 @@ onBeforeUnmount(() => {
 .legend-dot.s1 { background: linear-gradient(135deg, #10b981, #059669); }
 .legend-dot.s-attendee { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .evt-title { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.evt-time { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
-.evt-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evt-time { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.evt-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ============ 日视图 - 会议室日历（横向多行） ============ */
 .day-view.dragging, .day-view.dragging *, .week-view.dragging, .week-view.dragging * { cursor: grabbing !important; user-select: none; }
@@ -1144,7 +1144,7 @@ onBeforeUnmount(() => {
 .day-row { display: flex; height: 64px; border-bottom: 1px solid var(--border-light, #f0f0f0); position: relative; }
 .room-label { width: 120px; padding: 6px 12px; border-right: 1px solid var(--border-light); display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; background: #fff; z-index: 4; position: sticky; left: 0; }
 .room-name { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.room-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .day-grid-wrap { position: relative; flex-shrink: 0; padding: 0 var(--day-edge-gap, 24px); overflow: hidden; }
 .day-grid { display: flex; height: 100%; }
 .grid-cell { width: var(--hour-width, 60px); border-right: 1px solid var(--border-light, #f3f4f6); cursor: pointer; flex-shrink: 0; }
@@ -1182,7 +1182,7 @@ onBeforeUnmount(() => {
 .wk-cell:hover { background: rgba(102,126,234,0.04); }
 .week-event { position: absolute; border-radius: 6px; padding: 3px 6px; font-size: 11px; overflow: hidden; cursor: pointer; z-index: 2; transition: all 0.2s; }
 .week-event:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.evt-room { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evt-room { font-size: 11px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ============ 月视图 ============ */
 .month-view { padding: 0; }

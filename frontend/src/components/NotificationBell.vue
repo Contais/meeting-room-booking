@@ -142,7 +142,7 @@ function formatTime(time: string): string {
   padding: 0 4px;
   background: var(--el-color-danger, #f56c6c);
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   display: flex;
   align-items: center;

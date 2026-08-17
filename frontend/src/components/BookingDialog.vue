@@ -638,7 +638,7 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 /* 当前时间线 */
 .tp-now-line { position: absolute; left: 54px; right: 0; height: 0; border-top: 1.5px dashed #f56c6c; z-index: 2; pointer-events: none; }
-.tp-now-label { position: absolute; right: 4px; top: -8px; font-size: 10px; color: #fff; background: #f56c6c; padding: 0 4px; border-radius: 3px; }
+.tp-now-label { position: absolute; right: 4px; top: -8px; font-size: 11px; color: #fff; background: #f56c6c; padding: 0 4px; border-radius: 3px; }
 
 .tp-empty { padding: 28px; text-align: center; color: #c0c4cc; font-size: 13px; }
 

@@ -1121,8 +1121,8 @@ defineExpose({ loadData })
 .evt-block.s3 { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .evt-inner { height: 100%; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .evt-title { font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-.evt-time { font-size: 10px; color: #6b7280; margin-top: 1px; white-space: nowrap; }
-.evt-user { font-size: 10px; color: #9ca3af; margin-top: 1px; white-space: nowrap; }
+.evt-time { font-size: 11px; color: #6b7280; margin-top: 1px; white-space: nowrap; }
+.evt-user { font-size: 11px; color: #9ca3af; margin-top: 1px; white-space: nowrap; }
 
 /* ========== 月视图 ========== */
 .month-view { padding: 0; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
