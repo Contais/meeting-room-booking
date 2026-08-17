@@ -74,6 +74,7 @@ class ReservationServiceImplTest {
         room.setStatus(EnableStatusEnum.ENABLED.getCode());
         room.setBookableStart("08:00");
         room.setBookableEnd("20:00");
+        room.setMinDuration(0);
         room.setMaxDuration(480);
         room.setAdvanceDays(7);
         room.setNeedApproval(ApprovalModeEnum.FREE_APPROVAL.getCode());
@@ -91,7 +92,7 @@ class ReservationServiceImplTest {
 
     @Test
     void should_createConfirmedReservation_when_freeApproval() {
-        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
         when(reservationRepository.selectCount(any())).thenReturn(0L);
         when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
 
@@ -108,7 +109,7 @@ class ReservationServiceImplTest {
     void should_createPendingReservation_when_needApproval() {
         MeetingRoom room = enabledRoom();
         room.setNeedApproval(ApprovalModeEnum.NEED_APPROVAL.getCode());
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         when(reservationRepository.selectCount(any())).thenReturn(0L);
         when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
 
@@ -121,7 +122,7 @@ class ReservationServiceImplTest {
 
     @Test
     void should_throw_when_roomNotFound() {
-        when(meetingRoomRepository.selectById(99L)).thenReturn(null);
+        when(meetingRoomRepository.selectByIdForUpdate(99L)).thenReturn(null);
         ReservationCreateDTO dto = validDto();
         dto.setRoomId(99L);
 
@@ -135,7 +136,7 @@ class ReservationServiceImplTest {
     void should_throw_when_roomDisabled() {
         MeetingRoom room = enabledRoom();
         room.setStatus(EnableStatusEnum.DISABLED.getCode());
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
 
         assertThatThrownBy(() -> service.createReservation(100L, validDto()))
                 .isInstanceOf(BusinessException.class)
@@ -145,7 +146,7 @@ class ReservationServiceImplTest {
 
     @Test
     void should_throw_when_endNotAfterStart() {
-        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
         ReservationCreateDTO dto = validDto();
         dto.setEndTime(dto.getStartTime());
 
@@ -156,8 +157,49 @@ class ReservationServiceImplTest {
     }
 
     @Test
+    void should_throw_when_startTimeInPast() {
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
+        ReservationCreateDTO dto = validDto();
+        dto.setStartTime(LocalDateTime.now().minusDays(1));
+        dto.setEndTime(dto.getStartTime().plusHours(1));
+
+        assertThatThrownBy(() -> service.createReservation(100L, dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throw_when_storedBookableTimeInvalid() {
+        MeetingRoom room = enabledRoom();
+        room.setBookableEnd("25:00");
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
+
+        assertThatThrownBy(() -> service.createReservation(100L, validDto()))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
+    void should_throw_when_durationBelowMinDuration() {
+        MeetingRoom room = enabledRoom();
+        room.setMinDuration(60);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(0L);
+
+        ReservationCreateDTO dto = validDto();
+        dto.setEndTime(dto.getStartTime().plusMinutes(30));
+
+        assertThatThrownBy(() -> service.createReservation(100L, dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+    }
+
+    @Test
     void should_throw_when_timeConflict() {
-        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
         when(reservationRepository.selectCount(any())).thenReturn(1L);
 
         assertThatThrownBy(() -> service.createReservation(100L, validDto()))
@@ -170,7 +212,7 @@ class ReservationServiceImplTest {
     void should_throw_when_exceedsMaxDuration() {
         MeetingRoom room = enabledRoom();
         room.setMaxDuration(30);
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         ReservationCreateDTO dto = validDto();
         dto.setEndTime(dto.getStartTime().plusHours(2));
 
@@ -235,7 +277,7 @@ class ReservationServiceImplTest {
     void should_allow_when_durationEqualsMaxDuration() {
         MeetingRoom room = enabledRoom();
         room.setMaxDuration(60);
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         when(reservationRepository.selectCount(any())).thenReturn(0L);
         when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
         ReservationCreateDTO dto = validDto();
@@ -248,7 +290,7 @@ class ReservationServiceImplTest {
 
     @Test
     void should_throw_when_startBeforeBookableStart() {
-        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
         ReservationCreateDTO dto = validDto();
         dto.setStartTime(dto.getStartTime().withHour(7).withMinute(30));
         dto.setEndTime(dto.getStartTime().plusHours(1));
@@ -261,7 +303,7 @@ class ReservationServiceImplTest {
 
     @Test
     void should_throw_when_endAfterBookableEnd() {
-        when(meetingRoomRepository.selectById(1L)).thenReturn(enabledRoom());
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(enabledRoom());
         ReservationCreateDTO dto = validDto();
         dto.setStartTime(dto.getStartTime().withHour(19).withMinute(30));
         dto.setEndTime(dto.getStartTime().plusHours(1));
@@ -278,7 +320,7 @@ class ReservationServiceImplTest {
         room.setBookableStart("08:00");
         room.setBookableEnd("09:00");
         room.setMaxDuration(60);
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         when(reservationRepository.selectCount(any())).thenReturn(0L);
         when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
         ReservationCreateDTO dto = validDto();
@@ -294,7 +336,7 @@ class ReservationServiceImplTest {
     void should_throw_when_bookingDateExceedsAdvanceDays() {
         MeetingRoom room = enabledRoom();
         room.setAdvanceDays(1);
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         ReservationCreateDTO dto = validDto();
         dto.setStartTime(dto.getStartTime().plusDays(1));
         dto.setEndTime(dto.getStartTime().plusHours(1));
@@ -309,7 +351,7 @@ class ReservationServiceImplTest {
     void should_allow_when_bookingDateEqualsAdvanceDays() {
         MeetingRoom room = enabledRoom();
         room.setAdvanceDays(1);
-        when(meetingRoomRepository.selectById(1L)).thenReturn(room);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
         when(reservationRepository.selectCount(any())).thenReturn(0L);
         when(reservationRepository.insert(any(MeetingRoomReservation.class))).thenReturn(1);
         ReservationCreateDTO dto = validDto();

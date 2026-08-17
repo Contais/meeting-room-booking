@@ -85,6 +85,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
     /** 会议室默认配置常量 */
     private static final String DEFAULT_BOOKABLE_START = "08:00";
     private static final String DEFAULT_BOOKABLE_END = "20:00";
+    private static final Integer DEFAULT_MIN_DURATION = 0;
     private static final Integer DEFAULT_MAX_DURATION = 480;
     private static final Integer DEFAULT_ADVANCE_DAYS = 7;
 
@@ -100,10 +101,12 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         room.setDescription(dto.getDescription());
         room.setBookableStart(dto.getBookableStart() != null ? dto.getBookableStart() : DEFAULT_BOOKABLE_START);
         room.setBookableEnd(dto.getBookableEnd() != null ? dto.getBookableEnd() : DEFAULT_BOOKABLE_END);
+        room.setMinDuration(dto.getMinDuration() != null ? dto.getMinDuration() : DEFAULT_MIN_DURATION);
         room.setMaxDuration(dto.getMaxDuration() != null ? dto.getMaxDuration() : DEFAULT_MAX_DURATION);
         room.setAdvanceDays(dto.getAdvanceDays() != null ? dto.getAdvanceDays() : DEFAULT_ADVANCE_DAYS);
         room.setNeedApproval(dto.getNeedApproval() != null ? dto.getNeedApproval() : ApprovalModeEnum.FREE_APPROVAL.getCode());
         room.setStatus(EnableStatusEnum.ENABLED.getCode());
+        validateRoomRules(room);
         save(room);
     }
 
@@ -116,7 +119,16 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         }
         // 自动复制 DTO 中非 null 字段到实体，避免 11 个 if 判断
         BeanUtils.copyProperties(dto, room, getNullPropertyNames(dto));
+        validateRoomRules(room);
         updateById(room);
+    }
+
+    /**
+     * 校验会议室使用规则，非法配置统一返回业务参数错误，避免入库后才在预约链路暴露。
+     */
+    private void validateRoomRules(MeetingRoom room) {
+        MeetingRoomRuleValidator.validate(room.getBookableStart(), room.getBookableEnd(),
+                room.getMinDuration(), room.getMaxDuration(), room.getAdvanceDays());
     }
 
     /**
@@ -157,11 +169,23 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRoom(Long id) {
-        MeetingRoom room = getById(id);
+        // 与创建预约共用会议室行锁，避免“删除校验通过后、预约创建又写入”的并发竞态
+        MeetingRoom room = meetingRoomRepository.selectByIdForUpdate(id);
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
-        removeById(id);
+        // 仅阻止删除仍有未结束预约的会议室，避免产生引用已删除会议室的孤儿预约；
+        // 已结束的历史预约保留为历史记录，会议室名称通过 LEFT JOIN 缺省展示。
+        Long activeReservationCount = reservationRepository.selectCount(
+                new LambdaQueryWrapper<MeetingRoomReservation>()
+                        .eq(MeetingRoomReservation::getRoomId, id)
+                        .notIn(MeetingRoomReservation::getStatus, ReservationStatusEnum.EXCLUDED_CODES)
+                        .gt(MeetingRoomReservation::getEndTime, LocalDateTime.now())
+        );
+        if (activeReservationCount != null && activeReservationCount > 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "该会议室存在未结束的预约，无法删除");
+        }
+        meetingRoomRepository.deleteById(id);
     }
 
     /**
@@ -267,6 +291,7 @@ public class MeetingRoomServiceImpl extends ServiceImpl<MeetingRoomRepository, M
         vo.setStatus(room.getStatus());
         vo.setBookableStart(room.getBookableStart());
         vo.setBookableEnd(room.getBookableEnd());
+        vo.setMinDuration(room.getMinDuration());
         vo.setMaxDuration(room.getMaxDuration());
         vo.setAdvanceDays(room.getAdvanceDays());
         vo.setNeedApproval(room.getNeedApproval());

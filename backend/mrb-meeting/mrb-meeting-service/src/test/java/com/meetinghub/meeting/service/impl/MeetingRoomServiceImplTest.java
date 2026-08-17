@@ -53,6 +53,7 @@ class MeetingRoomServiceImplTest {
         verify(meetingRoomRepository).insert(captor.capture());
         assertThat(captor.getValue().getBookableStart()).isEqualTo("08:00");
         assertThat(captor.getValue().getBookableEnd()).isEqualTo("20:00");
+        assertThat(captor.getValue().getMinDuration()).isEqualTo(0);
         assertThat(captor.getValue().getMaxDuration()).isEqualTo(480);
         assertThat(captor.getValue().getAdvanceDays()).isEqualTo(7);
         assertThat(captor.getValue().getStatus()).isEqualTo(EnableStatusEnum.ENABLED.getCode());
@@ -65,6 +66,7 @@ class MeetingRoomServiceImplTest {
         dto.setCapacity(6);
         dto.setBookableStart("09:00");
         dto.setBookableEnd("18:30");
+        dto.setMinDuration(30);
         dto.setMaxDuration(120);
         dto.setAdvanceDays(3);
         dto.setNeedApproval(1);
@@ -75,8 +77,53 @@ class MeetingRoomServiceImplTest {
         ArgumentCaptor<MeetingRoom> captor = ArgumentCaptor.forClass(MeetingRoom.class);
         verify(meetingRoomRepository).insert(captor.capture());
         assertThat(captor.getValue().getBookableStart()).isEqualTo("09:00");
+        assertThat(captor.getValue().getMinDuration()).isEqualTo(30);
         assertThat(captor.getValue().getMaxDuration()).isEqualTo(120);
         assertThat(captor.getValue().getNeedApproval()).isEqualTo(1);
+    }
+
+    @Test
+    void should_throw_when_createRoomWithInvalidBookableTime() {
+        RoomCreateDTO dto = new RoomCreateDTO();
+        dto.setName("C301");
+        dto.setCapacity(10);
+        dto.setBookableStart("25:00");
+        dto.setBookableEnd("26:00");
+
+        assertThatThrownBy(() -> service.createRoom(dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+        verify(meetingRoomRepository, never()).insert(any(MeetingRoom.class));
+    }
+
+    @Test
+    void should_throw_when_createRoomWithNegativeDuration() {
+        RoomCreateDTO dto = new RoomCreateDTO();
+        dto.setName("C302");
+        dto.setCapacity(10);
+        dto.setMaxDuration(-1);
+
+        assertThatThrownBy(() -> service.createRoom(dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+        verify(meetingRoomRepository, never()).insert(any(MeetingRoom.class));
+    }
+
+    @Test
+    void should_throw_when_createRoomWithMinDurationGreaterThanMax() {
+        RoomCreateDTO dto = new RoomCreateDTO();
+        dto.setName("C303");
+        dto.setCapacity(10);
+        dto.setMinDuration(120);
+        dto.setMaxDuration(60);
+
+        assertThatThrownBy(() -> service.createRoom(dto))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+        verify(meetingRoomRepository, never()).insert(any(MeetingRoom.class));
     }
 
     @Test
@@ -115,6 +162,34 @@ class MeetingRoomServiceImplTest {
         ArgumentCaptor<MeetingRoom> captor = ArgumentCaptor.forClass(MeetingRoom.class);
         verify(meetingRoomRepository).updateById(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(EnableStatusEnum.ENABLED.getCode());
+    }
+
+    @Test
+    void should_throw_when_deleteRoomWithActiveReservation() {
+        MeetingRoom room = new MeetingRoom();
+        room.setId(1L);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.deleteRoom(1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(ErrorCode.PARAM_ERROR.getCode()));
+        verify(meetingRoomRepository, never()).deleteById(any());
+        verify(meetingRoomRepository, never()).updateById(any(MeetingRoom.class));
+    }
+
+    @Test
+    void should_deleteRoom_when_noActiveReservation() {
+        MeetingRoom room = new MeetingRoom();
+        room.setId(1L);
+        when(meetingRoomRepository.selectByIdForUpdate(1L)).thenReturn(room);
+        when(reservationRepository.selectCount(any())).thenReturn(0L);
+        when(meetingRoomRepository.deleteById(1L)).thenReturn(1);
+
+        service.deleteRoom(1L);
+
+        verify(meetingRoomRepository).deleteById(1L);
     }
 
     @Test

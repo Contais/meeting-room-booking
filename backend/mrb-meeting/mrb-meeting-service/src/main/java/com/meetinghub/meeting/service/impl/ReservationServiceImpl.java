@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import com.meetinghub.meeting.model.vo.ScheduleReservationVO;
@@ -65,7 +66,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
     @Transactional(rollbackFor = Exception.class)
     public String createReservation(Long userId, ReservationCreateDTO dto) {
         // 1. 校验会议室存在
-        MeetingRoom room = meetingRoomRepository.selectById(dto.getRoomId());
+        // 锁定会议室行，将同一会议室的“查冲突 -> 插入”串行化，避免并发创建同时通过校验
+        MeetingRoom room = meetingRoomRepository.selectByIdForUpdate(dto.getRoomId());
         if (room == null) {
             throw new BusinessException(ErrorCode.MEETING_ROOM_NOT_FOUND);
         }
@@ -76,6 +78,9 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 2. 校验时间合法性
         if (dto.getEndTime().isBefore(dto.getStartTime()) || dto.getEndTime().isEqual(dto.getStartTime())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "结束时间必须晚于开始时间");
+        }
+        if (dto.getStartTime().isBefore(LocalDateTime.now()) || dto.getStartTime().isEqual(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "开始时间必须晚于当前时间");
         }
 
         // 3. 使用规则校验
@@ -152,6 +157,10 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         LocalDateTime end = dto.getEndTime();
         LocalDateTime now = LocalDateTime.now();
 
+        // 防御性校验：即使数据库中已存在历史脏数据，也返回业务错误而非 LocalTime.parse 500
+        MeetingRoomRuleValidator.validate(room.getBookableStart(), room.getBookableEnd(),
+                room.getMinDuration(), room.getMaxDuration(), room.getAdvanceDays());
+
         // 3.1 校验提前预约天数
         if (room.getAdvanceDays() != null && room.getAdvanceDays() > 0) {
             LocalDate bookingDate = start.toLocalDate();
@@ -164,8 +173,8 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
 
         // 3.2 校验可预约时段
         if (room.getBookableStart() != null && room.getBookableEnd() != null) {
-            LocalTime bookableStart = LocalTime.parse(room.getBookableStart());
-            LocalTime bookableEnd = LocalTime.parse(room.getBookableEnd());
+            LocalTime bookableStart = parseBookableTime(room.getBookableStart());
+            LocalTime bookableEnd = parseBookableTime(room.getBookableEnd());
             LocalTime reservationStart = start.toLocalTime();
             LocalTime reservationEnd = end.toLocalTime();
 
@@ -175,13 +184,31 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             }
         }
 
-        // 3.3 校验最大预约时长
+        // 3.3 校验最小预约时长
+        if (room.getMinDuration() != null && room.getMinDuration() > 0) {
+            long durationMinutes = ChronoUnit.MINUTES.between(start, end);
+            if (durationMinutes < room.getMinDuration()) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
+                        "单次预约最短 " + room.getMinDuration() + " 分钟");
+            }
+        }
+
+        // 3.4 校验最大预约时长
         if (room.getMaxDuration() != null && room.getMaxDuration() > 0) {
             long durationMinutes = ChronoUnit.MINUTES.between(start, end);
             if (durationMinutes > room.getMaxDuration()) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(),
                         "单次预约最长 " + room.getMaxDuration() + " 分钟");
             }
+        }
+    }
+
+    private LocalTime parseBookableTime(String value) {
+        try {
+            return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm"));
+        } catch (DateTimeParseException ex) {
+            // 正常情况下 MeetingRoomRuleValidator 已经拦截，这里兜底避免脏数据 500
+            throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "可预约时间格式不正确，应为 HH:mm");
         }
     }
 

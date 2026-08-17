@@ -31,6 +31,8 @@ public class RoomUpdateDTO implements Serializable {
     private String bookableStart;
     @Schema(description = "可预约结束时间 HH:mm")
     private String bookableEnd;
+    @Schema(description = "单次最小预约时长（分钟），0表示不限制")
+    private Integer minDuration;
     @Schema(description = "单次最大预约时长（分钟）")
     private Integer maxDuration;
     @Schema(description = "提前预约天数")
