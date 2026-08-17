@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
  * </p>
  */
 @RestController
-@RequestMapping("/platform/kb")
+@RequestMapping("/platform/knowledge")
 @RequiredArgsConstructor
 @Tag(name = "知识库", description = "AI 助手知识库维护")
 public class KnowledgeController {

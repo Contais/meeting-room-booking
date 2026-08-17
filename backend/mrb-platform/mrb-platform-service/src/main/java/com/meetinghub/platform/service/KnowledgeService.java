@@ -2,7 +2,7 @@ package com.meetinghub.platform.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.meetinghub.platform.api.model.dto.KbEntryDTO;
+import com.meetinghub.platform.api.model.dto.KnowledgeEntryDTO;
 import com.meetinghub.platform.model.dto.KnowledgeCreateDTO;
 import com.meetinghub.platform.model.dto.KnowledgePageQuery;
 import com.meetinghub.platform.model.dto.KnowledgeUpdateDTO;
@@ -45,6 +45,6 @@ public interface KnowledgeService extends IService<KnowledgeEntry> {
      * 按用户问题检索最相关的知识条目（最多 top3），供 AI 生成回答。
      * 未命中返回空列表。
      */
-    List<KbEntryDTO> search(String query);
+    List<KnowledgeEntryDTO> search(String query);
 
 }

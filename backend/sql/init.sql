@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS `platform_config` (
     UNIQUE KEY `uk_config_key` (`config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
-CREATE TABLE IF NOT EXISTS `platform_kb_entry` (
+CREATE TABLE IF NOT EXISTS `platform_knowledge_entry` (
     `id` BIGINT NOT NULL COMMENT '主键（雪花算法）',
     `category` VARCHAR(32) NOT NULL COMMENT '分类编码',
     `title` VARCHAR(128) NOT NULL COMMENT '条目标题/来源',
@@ -419,7 +419,7 @@ INSERT INTO `platform_role_menu` (`id`, `role_id`, `menu_id`) VALUES
 INSERT INTO `platform_role_menu` (`id`, `role_id`, `menu_id`) VALUES
 (15, 2, 1), (16, 2, 2), (17, 2, 3), (18, 2, 4), (19, 2, 5), (20, 2, 18);
 
-INSERT IGNORE INTO `platform_kb_entry` (`id`, `category`, `title`, `question`, `answer`, `tags`, `sort`, `status`) VALUES
+INSERT IGNORE INTO `platform_knowledge_entry` (`id`, `category`, `title`, `question`, `answer`, `tags`, `sort`, `status`) VALUES
 (1, 'RULES', '预约规则·提前预约天数', '我可以提前几天预约？', '一般情况下可提前 7 天预约会议室；不同会议室可能配置不同，具体以预约页面可选择的日期范围为准。', '提前,预约,天数', 1, 1),
 (2, 'RULES', '预约规则·单次预约时长', '最多能约多久？', '单次预约时长有限制，通常不超过 8 小时；部分会议室可能更短，提交预约时系统会自动校验。', '时长,上限,预约', 2, 1),
 (3, 'RULES', '预约规则·最短预约时长', '预约有最短时长限制吗？', '部分会议室设置了单次最短预约时长，预约时需满足该下限，否则无法提交。', '最短,时长', 3, 1),

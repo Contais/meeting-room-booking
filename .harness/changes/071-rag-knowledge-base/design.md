@@ -23,7 +23,7 @@ Bookie(模型) --工具调用--> KnowledgeTool(mrb-meeting)
                       KnowledgeService.search(query)
                                  |
                                  v
-                         platform_kb_entry(MySQL)
+                         platform_knowledge_entry(MySQL)
 ```
 
 - 已有先例：`NotificationInternalController` + `NotificationFeignClient`、`FileFeignClient`。
@@ -32,10 +32,10 @@ Bookie(模型) --工具调用--> KnowledgeTool(mrb-meeting)
 
 ## 3. 数据模型
 
-表 `platform_kb_entry`（Flyway 迁移 `V1.24__create_platform_kb_entry.sql`）：
+表 `platform_knowledge_entry`（Flyway 迁移 `V1.24__create_platform_knowledge_entry.sql`）：
 
 ```sql
-CREATE TABLE platform_kb_entry (
+CREATE TABLE platform_knowledge_entry (
     id          BIGINT       NOT NULL COMMENT '主键（雪花算法）',
     category    VARCHAR(32)  NOT NULL COMMENT '分类',
     title       VARCHAR(128) NOT NULL COMMENT '条目标题/来源（如：预约规则）',
@@ -56,7 +56,7 @@ CREATE TABLE platform_kb_entry (
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| category | String | 分类，枚举 `KbCategoryEnum` |
+| category | String | 分类，枚举 `KnowledgeCategoryEnum` |
 | title | String | 条目标题/来源，用于 FR3 的「注明来源」与检索标题命中 |
 | question | String | 常见问法（可容纳多个分号分隔的问法） |
 | answer | String | 答案内容 |
@@ -66,7 +66,7 @@ CREATE TABLE platform_kb_entry (
 
 > 与用户原清单的差异：新增 `title`（支撑 FR3 来源引用与检索打分），`update_time` 改为继承自 `BaseEntity`，补充 `id/create_time/deleted/sort`。
 
-分类使用 `KbCategoryEnum` 固定集合（`RULES` 预约规则 / `FLOW` 流程指引 / `EXCEPTION` 异常处理 / `ANNOUNCEMENT` 公告运营），便于管理端下拉与扩展。
+分类使用 `KnowledgeCategoryEnum` 固定集合（`RULES` 预约规则 / `FLOW` 流程指引 / `EXCEPTION` 异常处理 / `ANNOUNCEMENT` 公告运营），便于管理端下拉与扩展。
 
 ## 4. 检索打分（轻量关键词）
 
@@ -76,7 +76,7 @@ CREATE TABLE platform_kb_entry (
 2. 对 query 做简单分词（按空白/常见标点切分，去掉停用词）。
 3. 逐条打分：标题命中 +3、问题命中 +3、标签命中 +2、答案正文命中 +1（重复命中不累加同一权重）。
 4. 按分数降序取 top3；低于阈值或命中为空时返回「未收录」占位结果。
-5. 返回 `List<KbEntryDTO>`（含 title/category/answer，屏蔽 id/deleted 等内部字段）。
+5. 返回 `List<KnowledgeEntryDTO>`（含 title/category/answer，屏蔽 id/deleted 等内部字段）。
 
 评分逻辑放在平台服务（表归属方），便于单测；Feign 仅传输 DTO。
 
@@ -86,16 +86,16 @@ CREATE TABLE platform_kb_entry (
 
 ```java
 @Tool(description = "检索会议室预约系统知识库（预约规则、操作流程、异常处理、公告等），返回最相关的知识条目。规则/流程/FAQ/公告类问题应优先调用本工具，未命中时按兜底话术回复，禁止自行编造规则")
-public KbSearchResult searchKnowledge(
+public KnowledgeSearchResult searchKnowledge(
         @ToolParam(description = "用户问题") String query) {
-    Result<List<KbEntryDTO>> result = knowledgeFeignClient.search(query);
+    Result<List<KnowledgeEntryDTO>> result = knowledgeFeignClient.search(query);
     // 转换：命中 -> 结构化条目列表；空 -> 未收录占位
 }
 ```
 
 `SpringAIConfiguration.chatClient(...)` 增加 `knowledgeTool` 入参，并加入 `LoggingToolCallbackProvider` 的工具数组。
 
-工具返回结构化 `KbSearchResult`（沿用 `ToolResult` / 现有 `tools` 分包的返回风格），由模型组织成自然语言，不在工具内拼展示文案。
+工具返回结构化 `KnowledgeSearchResult`（沿用 `ToolResult` / 现有 `tools` 分包的返回风格），由模型组织成自然语言，不在工具内拼展示文案。
 
 ## 6. 系统提示词约束（FR4 的关键）
 
@@ -110,7 +110,7 @@ public KbSearchResult searchKnowledge(
 
 ## 7. 管理端与权限
 
-- 平台服务新增 `KnowledgeController`（`/platform/kb`）CRUD，响应 `Result` 包裹。
+- 平台服务新增 `KnowledgeController`（`/platform/knowledge`）CRUD，响应 `Result` 包裹。
 - 前端新增 `views/admin/KnowledgeManage.vue`（`<script setup>`），复用 `TableCard`/`SearchBar`/`FormDrawer` 组件与前端 UI 规范；API 增 `frontend/src/api/knowledge.ts`，类型增 `frontend/src/types/knowledge.d.ts`。
 - `platform_menu` 新增菜单行并按需配置 `platform_role_menu`，复用管理员权限。
 
@@ -123,4 +123,4 @@ public KbSearchResult searchKnowledge(
 
 - 关键词检索升级为向量检索（Spring AI `VectorStore` 抽象），需先确定 embedding 模型来源与成本。
 - 知识条目支持「多问法」与同义词扩展，提升召回。
-- 启用条目缓存到 Redis（Key 前缀 `mrb:kb:entries`），管理端变更时失效。
+- 启用条目缓存到 Redis（Key 前缀 `mrb:knowledge:entries`），管理端变更时失效。

@@ -7,8 +7,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
-import com.meetinghub.platform.api.model.dto.KbEntryDTO;
-import com.meetinghub.platform.enums.KbCategoryEnum;
+import com.meetinghub.platform.api.model.dto.KnowledgeEntryDTO;
+import com.meetinghub.platform.enums.KnowledgeCategoryEnum;
 import com.meetinghub.platform.model.dto.KnowledgeCreateDTO;
 import com.meetinghub.platform.model.dto.KnowledgePageQuery;
 import com.meetinghub.platform.model.dto.KnowledgeUpdateDTO;
@@ -137,7 +137,7 @@ public class KnowledgeServiceImpl extends ServiceImpl<KnowledgeEntryRepository, 
     }
 
     @Override
-    public List<KbEntryDTO> search(String query) {
+    public List<KnowledgeEntryDTO> search(String query) {
         if (!StringUtils.hasText(query)) {
             return List.of();
         }
@@ -210,8 +210,8 @@ public class KnowledgeServiceImpl extends ServiceImpl<KnowledgeEntryRepository, 
         return features;
     }
 
-    private KbEntryDTO toDTO(KnowledgeEntry entry) {
-        KbEntryDTO dto = new KbEntryDTO();
+    private KnowledgeEntryDTO toDTO(KnowledgeEntry entry) {
+        KnowledgeEntryDTO dto = new KnowledgeEntryDTO();
         dto.setTitle(entry.getTitle());
         dto.setCategory(categoryLabel(entry.getCategory()));
         dto.setAnswer(entry.getAnswer());
@@ -236,12 +236,12 @@ public class KnowledgeServiceImpl extends ServiceImpl<KnowledgeEntryRepository, 
     }
 
     private String categoryLabel(String code) {
-        KbCategoryEnum category = KbCategoryEnum.fromCode(code);
+        KnowledgeCategoryEnum category = KnowledgeCategoryEnum.fromCode(code);
         return category != null ? category.getLabel() : code;
     }
 
     private void validateCategory(String code) {
-        if (KbCategoryEnum.fromCode(code) == null) {
+        if (KnowledgeCategoryEnum.fromCode(code) == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "知识分类不合法: " + code);
         }
     }

@@ -34,10 +34,10 @@
 
 | 层 | 变更 | 服务 | 说明 |
 |----|------|------|------|
-| DB | 新增 `platform_kb_entry` 表 | mrb_platform | Flyway 迁移 `V1.24__create_platform_kb_entry.sql`；实体继承 `BaseEntity` |
+| DB | 新增 `platform_knowledge_entry` 表 | mrb_platform | Flyway 迁移 `V1.24__create_platform_knowledge_entry.sql`；实体继承 `BaseEntity` |
 | 平台服务 | Entity / Repository / Service / Controller | mrb-platform | 知识条目的 CRUD 与检索打分逻辑（表归属方） |
 | 平台 API | `KnowledgeFeignClient` + 检索 DTO | mrb-platform-api | 供 meeting 服务跨服务检索 |
-| 平台服务 | `KnowledgeInternalController` | mrb-platform | `/platform/internal/kb/search`，仿 `NotificationInternalController` |
+| 平台服务 | `KnowledgeInternalController` | mrb-platform | `/platform/internal/knowledge/search`，仿 `NotificationInternalController` |
 | 会议室服务 | `KnowledgeTool` | mrb-meeting | `@Tool searchKnowledge(query)`，调用 Feign 返回结构化结果 |
 | 会议室服务 | `SpringAIConfiguration` 注册新工具 | mrb-meeting | `LoggingToolCallbackProvider` 增加 `knowledgeTool` |
 | 会议室服务 | 系统提示词新增知识库约束 | mrb-meeting | `chatbot-system-prompt.md` 增加「知识类问题」路由与禁编造规则 |
@@ -61,7 +61,7 @@
 
 ## 5. 任务拆分建议
 
-1. 建表 + 实体（`platform_kb_entry`，含 `title` 补字段）。
+1. 建表 + 实体（`platform_knowledge_entry`，含 `title` 补字段）。
 2. platform 服务：Repository + Service（CRUD + 关键词打分检索）+ Controller + InternalController + FeignClient + DTO。
 3. meeting 服务：`KnowledgeTool` + 工具注册 + 系统提示词约束。
 4. 前端：知识库管理页（列表/搜索/新增/编辑/启停/删除）+ API + 类型 + 路由 + 菜单。

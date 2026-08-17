@@ -1,6 +1,6 @@
 -- ============================================================
 -- V1.24: 新增平台知识库（RAG 轻量关键词检索）
--- 1) 知识条目表 platform_kb_entry
+-- 1) 知识条目表 platform_knowledge_entry
 -- 2) 管理菜单「知识库管理」及管理员角色关联
 -- 3) 预置基础知识条目（预约规则/流程/异常/公告）
 -- init.sql 已同步修改；本脚本用于已部署环境的增量升级。
@@ -8,7 +8,7 @@
 
 USE `mrb_platform`;
 
-CREATE TABLE IF NOT EXISTS `platform_kb_entry` (
+CREATE TABLE IF NOT EXISTS `platform_knowledge_entry` (
     `id` BIGINT NOT NULL COMMENT '主键（雪花算法）',
     `category` VARCHAR(32) NOT NULL COMMENT '分类编码',
     `title` VARCHAR(128) NOT NULL COMMENT '条目标题/来源',
@@ -41,7 +41,7 @@ INSERT IGNORE INTO `platform_role_menu` (`id`, `role_id`, `menu_id`)
 SELECT 21, r.`id`, 19 FROM `platform_role` r WHERE r.`role_code` = 'ROLE_ADMIN';
 
 -- ========== 预置知识条目（幂等，仅首次生效，不覆盖管理员后续修改） ==========
-INSERT IGNORE INTO `platform_kb_entry` (`id`, `category`, `title`, `question`, `answer`, `tags`, `sort`, `status`) VALUES
+INSERT IGNORE INTO `platform_knowledge_entry` (`id`, `category`, `title`, `question`, `answer`, `tags`, `sort`, `status`) VALUES
 (1, 'RULES', '预约规则·提前预约天数', '我可以提前几天预约？', '一般情况下可提前 7 天预约会议室；不同会议室可能配置不同，具体以预约页面可选择的日期范围为准。', '提前,预约,天数', 1, 1),
 (2, 'RULES', '预约规则·单次预约时长', '最多能约多久？', '单次预约时长有限制，通常不超过 8 小时；部分会议室可能更短，提交预约时系统会自动校验。', '时长,上限,预约', 2, 1),
 (3, 'RULES', '预约规则·最短预约时长', '预约有最短时长限制吗？', '部分会议室设置了单次最短预约时长，预约时需满足该下限，否则无法提交。', '最短,时长', 3, 1),

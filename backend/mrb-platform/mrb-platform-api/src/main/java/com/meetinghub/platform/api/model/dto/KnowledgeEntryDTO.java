@@ -14,7 +14,7 @@ import java.io.Serializable;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class KbEntryDTO implements Serializable {
+public class KnowledgeEntryDTO implements Serializable {
 
     /** 条目标题/来源（如「预约规则·提前预约天数」） */
     private String title;

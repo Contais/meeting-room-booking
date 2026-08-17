@@ -2,7 +2,7 @@ package com.meetinghub.platform.service.impl;
 
 import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.exception.BusinessException;
-import com.meetinghub.platform.api.model.dto.KbEntryDTO;
+import com.meetinghub.platform.api.model.dto.KnowledgeEntryDTO;
 import com.meetinghub.platform.model.dto.KnowledgeCreateDTO;
 import com.meetinghub.platform.model.entity.KnowledgeEntry;
 import com.meetinghub.platform.repository.KnowledgeEntryRepository;
@@ -42,7 +42,7 @@ class KnowledgeServiceImplTest {
                 "节假日期间会议室还能约吗", "节假日期间以管理员公告为准。", "节假日,国庆,公告");
         when(repository.selectList(any())).thenReturn(List.of(rejected, holiday));
 
-        List<KbEntryDTO> result = service.search("预约被拒绝了怎么办");
+        List<KnowledgeEntryDTO> result = service.search("预约被拒绝了怎么办");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("异常处理·预约被拒");

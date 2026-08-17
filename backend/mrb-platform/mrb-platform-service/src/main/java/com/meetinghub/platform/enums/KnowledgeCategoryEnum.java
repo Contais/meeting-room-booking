@@ -12,7 +12,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum KbCategoryEnum {
+public enum KnowledgeCategoryEnum {
 
     RULES("RULES", "预约规则"),
     FLOW("FLOW", "流程指引"),
@@ -28,11 +28,11 @@ public enum KbCategoryEnum {
      * @param code 分类编码
      * @return 枚举实例
      */
-    public static KbCategoryEnum fromCode(String code) {
+    public static KnowledgeCategoryEnum fromCode(String code) {
         if (code == null) {
             return null;
         }
-        for (KbCategoryEnum category : values()) {
+        for (KnowledgeCategoryEnum category : values()) {
             if (category.code.equals(code)) {
                 return category;
             }

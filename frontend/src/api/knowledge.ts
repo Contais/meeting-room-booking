@@ -3,7 +3,7 @@ import type { Result } from '@/types/api'
 import type { KnowledgeEntry, KnowledgePageQuery, KnowledgePageResult } from '@/types/knowledge'
 
 export function listKnowledge(params: KnowledgePageQuery): Promise<Result<KnowledgePageResult>> {
-  return request.get('/api/platform/kb/admin/list', { params })
+  return request.get('/api/platform/knowledge/admin/list', { params })
 }
 
 export function createKnowledge(data: {
@@ -15,7 +15,7 @@ export function createKnowledge(data: {
   sort?: number
   status?: number
 }): Promise<Result<void>> {
-  return request.post('/api/platform/kb/admin/create', data)
+  return request.post('/api/platform/knowledge/admin/create', data)
 }
 
 export function updateKnowledge(data: {
@@ -28,15 +28,15 @@ export function updateKnowledge(data: {
   sort?: number
   status?: number
 }): Promise<Result<void>> {
-  return request.put('/api/platform/kb/admin/update', data)
+  return request.put('/api/platform/knowledge/admin/update', data)
 }
 
 export function toggleKnowledgeStatus(id: string): Promise<Result<void>> {
-  return request.put(`/api/platform/kb/admin/toggle-status/${id}`)
+  return request.put(`/api/platform/knowledge/admin/toggle-status/${id}`)
 }
 
 export function deleteKnowledge(id: string): Promise<Result<void>> {
-  return request.delete(`/api/platform/kb/admin/delete/${id}`)
+  return request.delete(`/api/platform/knowledge/admin/delete/${id}`)
 }
 
 export type { KnowledgeEntry, KnowledgePageQuery, KnowledgePageResult }

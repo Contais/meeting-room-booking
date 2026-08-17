@@ -12,10 +12,10 @@ import lombok.Data;
  * </p>
  */
 @Data
-@TableName("platform_kb_entry")
+@TableName("platform_knowledge_entry")
 public class KnowledgeEntry extends BaseEntity {
 
-    /** 分类编码（见 {@link com.meetinghub.platform.enums.KbCategoryEnum}） */
+    /** 分类编码（见 {@link com.meetinghub.platform.enums.KnowledgeCategoryEnum}） */
     private String category;
 
     /** 条目标题/来源 */
