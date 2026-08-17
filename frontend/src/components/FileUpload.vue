@@ -175,6 +175,9 @@ async function handleRemove() {
   height: 96px;
   border-radius: 50%;
 }
+.file-upload.shape-avatar .trigger-inner {
+  border: none;
+}
 
 .preview-wrapper {
   position: relative;

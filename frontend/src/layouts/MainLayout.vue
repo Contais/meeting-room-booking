@@ -524,7 +524,6 @@ watch(() => notificationStore.latestNotification, (n) => {
   font-size: 14px;
   font-weight: 600;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-img {
@@ -594,7 +593,6 @@ watch(() => notificationStore.latestNotification, (n) => {
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 

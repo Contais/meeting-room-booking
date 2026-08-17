@@ -500,7 +500,6 @@ async function handleChangePassword() {
   font-size: 32px;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   transition: background 0.2s ease;
   overflow: hidden;
 }
