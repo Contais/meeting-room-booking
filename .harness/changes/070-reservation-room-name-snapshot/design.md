@@ -51,7 +51,6 @@ save(reservation)
 
 ```text
 if reservation.roomName is present -> use snapshot
-else if roomNameMap contains roomId -> use map value
 else -> empty string
 ```
 
@@ -67,7 +66,7 @@ else -> empty string
 ## 5. 兼容性
 
 - 新记录写入快照，旧记录由迁移回填。
-- 若迁移前存在 `room_name` 为空的边界数据，读取端回退到外部名称映射或空字符串。
+- 若迁移前存在 `room_name` 为空的边界数据，读取端返回空字符串；迁移脚本负责正常数据回填。
 - `room_name` 为冗余字段，不影响现有预约创建接口契约。
 
 ## 6. 测试策略

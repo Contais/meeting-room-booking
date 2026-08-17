@@ -37,8 +37,8 @@
 
 - `ReservationServiceImpl`
   - 创建预约时写入 `reservation.roomName = room.getName()`。
-  - 新增 `resolveRoomName`：优先使用快照，快照为空时回退到外部名称映射。
-  - `toVO`、`getSchedule`、`getReservationDetail` 使用快照解析。
+  - 新增 `roomNameOrDefault`：快照为 null 时返回空字符串，不依赖外部名称映射。
+  - `toVO`、`getSchedule`、`getReservationDetail` 直接读取快照。
   - 详情查询不再单独 `selectById` 查询会议室名称。
 - `ReservationToolResults`
   - 工具专用预约简要信息在 `roomNameMap` 缺失时回退到 `MeetingRoomReservation.roomName`。

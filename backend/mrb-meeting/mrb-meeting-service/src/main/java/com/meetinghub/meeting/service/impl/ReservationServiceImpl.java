@@ -306,7 +306,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                         .between(MeetingRoomReservation::getStartTime, dayStart, dayEnd)
                         .orderByAsc(MeetingRoomReservation::getStartTime)
         );
-        List<ReservationVO> vos = reservations.stream().map(r -> toVO(r, null, null)).collect(Collectors.toList());
+        List<ReservationVO> vos = reservations.stream().map(r -> toVO(r, null)).collect(Collectors.toList());
         // 批量回填预约人用户名，供前端已约时段展示
         fillUsernames(vos);
         return vos;
@@ -502,9 +502,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
                         .gt(MeetingRoomReservation::getEndTime, rangeStart)
         );
 
-        Map<Long, String> roomNameMap = rooms.stream()
-                .collect(Collectors.toMap(MeetingRoom::getId, MeetingRoom::getName));
-
         // 查询预约人姓名（批量 Feign 调用，消除 N+1）
         List<Long> userIds = reservations.stream()
                 .map(MeetingRoomReservation::getUserId).distinct().collect(Collectors.toList());
@@ -536,7 +533,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             ScheduleReservationVO rvo = new ScheduleReservationVO();
             rvo.setId(r.getId());
             rvo.setRoomId(r.getRoomId());
-            rvo.setRoomName(resolveRoomName(r, roomNameMap));
+            rvo.setRoomName(roomNameOrDefault(r.getRoomName()));
             rvo.setSubject(r.getSubject());
             rvo.setUserName(userNameMap.getOrDefault(r.getUserId(), ""));
             rvo.setAttendeeCount(r.getAttendeeCount());
@@ -549,12 +546,12 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         return vo;
     }
 
-    private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> roomNameMap, Map<Long, String> userNameMap) {
+    private ReservationVO toVO(MeetingRoomReservation r, Map<Long, String> userNameMap) {
         ReservationVO vo = new ReservationVO();
         vo.setId(r.getId());
         vo.setReservationCode(r.getReservationCode());
         vo.setRoomId(r.getRoomId());
-        vo.setRoomName(resolveRoomName(r, roomNameMap));
+        vo.setRoomName(roomNameOrDefault(r.getRoomName()));
         vo.setUserId(r.getUserId());
         vo.setUsername(userNameMap != null ? userNameMap.getOrDefault(r.getUserId(), "") : "");
         vo.setSubject(r.getSubject());
@@ -586,23 +583,16 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             log.warn("Feign 查询用户名失败, userId={}", r.getUserId(), e);
         }
 
-        ReservationVO vo = toVO(r, null, Map.of(r.getUserId(), userName));
+        ReservationVO vo = toVO(r, Map.of(r.getUserId(), userName));
         vo.setAttendees(attendeeService.listAttendees(reservationId));
         return vo;
     }
 
     /**
-     * 解析会议室名称：优先使用预约创建时保存的 room_name 快照；
-     * 历史数据缺失快照时，再回退到调用方传入的会议室名称映射。
+     * 会议室名称快照兜底：快照为 null 时返回空字符串，避免前端收到 null。
      */
-    private String resolveRoomName(MeetingRoomReservation reservation, Map<Long, String> roomNameMap) {
-        if (reservation.getRoomName() != null && !reservation.getRoomName().isBlank()) {
-            return reservation.getRoomName();
-        }
-        if (roomNameMap != null) {
-            return roomNameMap.getOrDefault(reservation.getRoomId(), "");
-        }
-        return "";
+    private String roomNameOrDefault(String roomName) {
+        return roomName != null ? roomName : "";
     }
 
     @Override
