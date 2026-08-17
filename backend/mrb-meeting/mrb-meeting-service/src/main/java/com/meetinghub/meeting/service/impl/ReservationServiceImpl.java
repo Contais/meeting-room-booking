@@ -533,7 +533,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             ScheduleReservationVO rvo = new ScheduleReservationVO();
             rvo.setId(r.getId());
             rvo.setRoomId(r.getRoomId());
-            rvo.setRoomName(roomNameOrDefault(r.getRoomName()));
+            rvo.setRoomName(r.getRoomName());
             rvo.setSubject(r.getSubject());
             rvo.setUserName(userNameMap.getOrDefault(r.getUserId(), ""));
             rvo.setAttendeeCount(r.getAttendeeCount());
@@ -551,7 +551,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         vo.setId(r.getId());
         vo.setReservationCode(r.getReservationCode());
         vo.setRoomId(r.getRoomId());
-        vo.setRoomName(roomNameOrDefault(r.getRoomName()));
+        vo.setRoomName(r.getRoomName());
         vo.setUserId(r.getUserId());
         vo.setUsername(userNameMap != null ? userNameMap.getOrDefault(r.getUserId(), "") : "");
         vo.setSubject(r.getSubject());
@@ -586,13 +586,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         ReservationVO vo = toVO(r, Map.of(r.getUserId(), userName));
         vo.setAttendees(attendeeService.listAttendees(reservationId));
         return vo;
-    }
-
-    /**
-     * 会议室名称快照兜底：快照为 null 时返回空字符串，避免前端收到 null。
-     */
-    private String roomNameOrDefault(String roomName) {
-        return roomName != null ? roomName : "";
     }
 
     @Override
