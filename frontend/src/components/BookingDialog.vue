@@ -6,18 +6,18 @@
     </div>
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="booking-form">
       <div v-if="!room" class="dialog-form-item">
-        <label>会议室</label>
+        <label><span class="req">*</span>会议室</label>
         <el-select v-model="selectedRoomId" placeholder="请选择会议室" style="width: 100%" @change="onRoomChange">
             <el-option v-for="r in roomList" :key="r.id" :label="r.name" :value="r.id" />
         </el-select>
       </div>
       <div v-else class="dialog-form-item"><label>会议室</label><el-input :value="room?.name" disabled /></div>
-      <div class="dialog-form-item"><label>会议主题</label><el-input v-model="form.subject" placeholder="请输入会议主题" /></div>
+      <div class="dialog-form-item"><label><span class="req">*</span>会议主题</label><el-input v-model="form.subject" placeholder="请输入会议主题" /></div>
       <div class="dialog-form-item">
-        <label>预约日期</label>
+        <label><span class="req">*</span>预约日期</label>
         <el-date-picker v-model="form.selectedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" :disabled-date="disableFutureDate" @change="onDateChange" />
       </div>
-      <el-form-item label="预约时间" prop="startMinute">
+      <el-form-item label="预约时间" prop="startMinute" required>
         <div class="time-picker">
           <!-- 顶部信息栏 -->
           <div class="tp-header">
@@ -88,18 +88,18 @@
         </div>
       </el-form-item>
       <div class="dialog-form-item">
-        <label>参会人员<span v-if="form.attendeeUserIds.length" class="attendee-count">已选 {{ form.attendeeUserIds.length }} 人</span></label>
-        <div class="attendee-display" @click="userSelectVisible = true">
+        <label><span>参会人员<span class="optional">（选填）</span></span><span v-if="form.attendeeUserIds.length" class="attendee-count">已选 {{ form.attendeeUserIds.length }} 人</span></label>
+        <div class="attendee-display" role="button" tabindex="0" aria-label="选择参会人员" @click="userSelectVisible = true" @keydown.enter="userSelectVisible = true" @keydown.space.prevent="userSelectVisible = true">
           <template v-if="selectedAttendees.length">
             <el-tag v-for="u in selectedAttendees" :key="u.id" size="small" closable @close.stop="removeAttendee(u.id)">
               {{ u.realName || u.username }}
             </el-tag>
           </template>
-          <span v-else class="attendee-placeholder">点击选择参会人员（选填）</span>
+          <span v-else class="attendee-placeholder">点击选择参会人员</span>
         </div>
         <UserSelectDialog v-model="userSelectVisible" :selected-ids="form.attendeeUserIds" @confirm="onAttendeesConfirm" />
       </div>
-      <div class="dialog-form-item"><label>备注</label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息（选填）" /></div>
+      <div class="dialog-form-item"><label><span>备注<span class="optional">（选填）</span></span></label><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注" /></div>
     </el-form>
     <template #footer>
       <div style="display: flex; justify-content: flex-end; gap: 12px; width: 100%;">
@@ -370,6 +370,16 @@ function onPointerDown(e: PointerEvent, t: string) {
 
 function onPointerMove(e: PointerEvent) {
   if (!isDragging.value) return
+  const el = timelineRef.value
+  if (el && el.scrollHeight > el.clientHeight) {
+    const rect = el.getBoundingClientRect()
+    const edge = 32
+    if (e.clientY < rect.top + edge) {
+      el.scrollTop = Math.max(0, el.scrollTop - 10)
+    } else if (e.clientY > rect.bottom - edge) {
+      el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + 10)
+    }
+  }
   const t = getTimeFromEvent(e)
   if (!t || t === dragAnchor.value) return
   // computeDragRange 会自动夹紧到已约/过期边界
@@ -580,8 +590,10 @@ watch(() => props.roomId, (val) => { if (val) selectedRoomId.value = val })
 
 <style scoped>
 .dialog-form-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; justify-content: space-between; }
-.attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; }
+.dialog-form-item label { font-size: 13px; color: #606266; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.dialog-form-item label .req { color: var(--el-color-danger, #f56c6c); font-weight: 600; line-height: 1; }
+.dialog-form-item label .optional { color: #a8abb2; font-weight: 400; font-size: 12px; }
+.attendee-count { font-size: 12px; color: var(--el-color-primary); font-weight: 400; margin-left: auto; }
 .attendee-display { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 34px; padding: 5px 10px; border: 1px solid #dcdfe6; border-radius: 6px; cursor: pointer; transition: border-color 0.2s; }
 .attendee-display:hover { border-color: var(--el-color-primary); }
 .attendee-placeholder { font-size: 13px; color: #a8abb2; }

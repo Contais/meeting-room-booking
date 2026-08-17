@@ -12,11 +12,12 @@
       <!-- 顶部：搜索 + 已选人员 -->
       <el-input
         v-model="keyword"
-        placeholder="搜索姓名、拼音（如 zhangsan / zs）、用户名、手机号、邮箱"
+        placeholder="搜索姓名 / 拼音 / 用户名 / 手机号"
         clearable
         :prefix-icon="Search"
         class="usd-search"
       />
+      <div class="usd-search-hint">支持姓名、拼音、简拼（如 zhangsan / zs）、手机号、邮箱</div>
       <div class="usd-selected">
         <template v-if="workingUsers.length">
           <el-tag
@@ -310,6 +311,11 @@ function handleConfirm() {
 
 .usd-search {
   flex-shrink: 0;
+}
+.usd-search-hint {
+  font-size: 12px;
+  color: var(--text-muted, #909399);
+  margin-top: -4px;
 }
 
 /* 已选人员 */
