@@ -29,7 +29,6 @@
         <el-table-column prop="name" label="名称" min-width="120" />
         <el-table-column prop="location" label="位置" min-width="100" />
         <el-table-column prop="capacity" label="容量" width="80" align="center" />
-        <el-table-column prop="equipment" label="设备" min-width="150" show-overflow-tooltip />
         <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
         <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
