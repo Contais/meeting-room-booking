@@ -19,6 +19,7 @@ public class MeetingRoomVO implements Serializable {
     private Integer status;
     private String bookableStart;
     private String bookableEnd;
+    private Integer minDuration;
     private Integer maxDuration;
     private Integer advanceDays;
     private Integer needApproval;

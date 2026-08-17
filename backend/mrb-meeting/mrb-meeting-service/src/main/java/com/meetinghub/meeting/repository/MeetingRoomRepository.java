@@ -6,6 +6,7 @@ import com.meetinghub.meeting.model.dto.RoomPageQuery;
 import com.meetinghub.meeting.model.entity.MeetingRoom;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 /**
  * 会议室数据访问层
@@ -20,4 +21,13 @@ public interface MeetingRoomRepository extends BaseMapper<MeetingRoom> {
      * @param query 过滤条件
      */
     IPage<MeetingRoom> selectRoomPage(IPage<MeetingRoom> page, @Param("query") RoomPageQuery query);
+
+    /**
+     * 按 ID 加行锁查询会议室，用于预约创建时串行化同一会议室的冲突检测。
+     *
+     * @param id 会议室ID
+     * @return 会议室实体，不存在时返回 null
+     */
+    @Select("SELECT * FROM meeting_room WHERE id = #{id} AND deleted = 0 FOR UPDATE")
+    MeetingRoom selectByIdForUpdate(@Param("id") Long id);
 }

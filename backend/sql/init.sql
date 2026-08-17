@@ -185,6 +185,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room` (
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
     `bookable_start` VARCHAR(5) DEFAULT '08:00' COMMENT '可预约开始时间',
     `bookable_end` VARCHAR(5) DEFAULT '20:00' COMMENT '可预约结束时间',
+    `min_duration` INT DEFAULT 0 COMMENT '单次最小预约时长(分钟)，0表示不限制',
     `max_duration` INT DEFAULT 480 COMMENT '最大预约时长(分钟)',
     `advance_days` INT DEFAULT 7 COMMENT '提前预约天数',
     `need_approval` TINYINT DEFAULT 0 COMMENT '是否需要审批 0-否 1-是',
@@ -262,10 +263,10 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation_attendee` (
     KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预约参会人关联表';
 
-INSERT INTO `meeting_room` (`id`, `name`, `location`, `capacity`, `equipment`, `description`, `status`, `bookable_start`, `bookable_end`, `max_duration`, `advance_days`, `need_approval`) VALUES
-(1, '大会议室A', '3楼A301', 20, '投影仪,白板,视频会议系统', '适合部门例会和项目评审', 1, '08:00', '20:00', 480, 7, 0),
-(2, '中会议室B', '3楼A302', 10, '投影仪,白板', '适合小组讨论', 1, '08:00', '18:00', 240, 3, 1),
-(3, '小会议室C', '3楼A303', 6, '电视屏幕', '适合1对1或小型讨论', 1, '09:00', '18:00', 120, 1, 0);
+INSERT INTO `meeting_room` (`id`, `name`, `location`, `capacity`, `equipment`, `description`, `status`, `bookable_start`, `bookable_end`, `min_duration`, `max_duration`, `advance_days`, `need_approval`) VALUES
+(1, '大会议室A', '3楼A301', 20, '投影仪,白板,视频会议系统', '适合部门例会和项目评审', 1, '08:00', '20:00', 0, 480, 7, 0),
+(2, '中会议室B', '3楼A302', 10, '投影仪,白板', '适合小组讨论', 1, '08:00', '18:00', 0, 240, 3, 1),
+(3, '小会议室C', '3楼A303', 6, '电视屏幕', '适合1对1或小型讨论', 1, '09:00', '18:00', 0, 120, 1, 0);
 
 -- ============================================================
 -- 平台中心 (mrb_platform)

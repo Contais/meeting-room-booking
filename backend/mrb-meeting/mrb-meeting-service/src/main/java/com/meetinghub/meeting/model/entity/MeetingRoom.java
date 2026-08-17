@@ -57,6 +57,11 @@ public class MeetingRoom extends BaseEntity {
     private String bookableEnd;
 
     /**
+     * 单次最小预约时长（分钟），0 表示不限制
+     */
+    private Integer minDuration;
+
+    /**
      * 单次最大预约时长（分钟）
      */
     private Integer maxDuration;
