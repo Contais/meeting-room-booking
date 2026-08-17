@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="选择人员"
+    :title="props.title || '选择人员'"
     width="860px"
     top="6vh"
     class="user-select-dialog"
@@ -90,16 +90,29 @@
             v-for="u in rightList"
             :key="u.id"
             class="usd-user"
-            :class="{ selected: workingIdSet.has(u.id) }"
+            :class="{ selected: workingIdSet.has(u.id), locked: isLocked(u.id) }"
             @click="toggleUser(u.id, !workingIdSet.has(u.id))"
           >
-            <el-checkbox :model-value="workingIdSet.has(u.id)" @click.stop @change="(val: any) => toggleUser(u.id, !!val)" />
+            <el-checkbox
+              :model-value="workingIdSet.has(u.id)"
+              :disabled="isLocked(u.id)"
+              @click.stop
+              @change="(val: any) => toggleUser(u.id, !!val)"
+            />
             <UserAvatar :avatar="u.avatar" :username="u.realName || u.username" size="sm" />
             <div class="usd-user-info">
               <span class="usd-user-name">{{ u.realName || u.username }}</span>
               <span class="usd-user-dept">{{ u.departmentName || '未分配部门' }}</span>
             </div>
             <span class="usd-user-meta">{{ u.phone || u.email || '' }}</span>
+            <el-tag
+              v-if="lockedMetaOf(u.id)"
+              size="small"
+              :type="lockedMetaOf(u.id)?.type || 'info'"
+              class="usd-user-lock-tag"
+            >
+              {{ lockedMetaOf(u.id)?.label }}
+            </el-tag>
           </div>
           <div v-if="!rightList.length && !loading" class="usd-empty">
             <el-icon :size="36" color="#cbd5e1"><User /></el-icon>
@@ -110,7 +123,7 @@
     </div>
     <template #footer>
       <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="handleConfirm">确定{{ workingUsers.length ? `（${workingUsers.length} 人）` : '' }}</el-button>
+      <el-button type="primary" :loading="props.loading" @click="handleConfirm">确定{{ workingUsers.length ? `（${workingUsers.length} 人）` : '' }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -137,6 +150,12 @@ const props = defineProps<{
   modelValue: boolean
   /** 父组件当前已选人员 ID 列表 */
   selectedIds?: string[]
+  /** 锁定不可选的人员（已邀请参会人/创建者等）：置灰显示并可展示状态 */
+  lockedUsers?: Array<{ id: string; label: string; type?: 'info' | 'success' | 'danger' | 'warning' }>
+  /** 确定按钮加载状态（提交中） */
+  loading?: boolean
+  /** 弹窗标题 */
+  title?: string
 }>()
 
 const emit = defineEmits<{
@@ -169,8 +188,18 @@ const workingUsers = computed(() =>
     .filter((u): u is UserInfo => !!u)
 )
 
+const lockedIdSet = computed(() => new Set((props.lockedUsers || []).map(u => u.id)))
+
+function isLocked(id: string): boolean {
+  return lockedIdSet.value.has(id)
+}
+
+function lockedMetaOf(id: string): { id: string; label: string; type?: 'info' | 'success' | 'danger' | 'warning' } | undefined {
+  return (props.lockedUsers || []).find(u => u.id === id)
+}
+
 function onOpen() {
-  workingIds.value = [...(props.selectedIds || [])]
+  workingIds.value = (props.selectedIds || []).filter(id => !isLocked(id))
   keyword.value = ''
   deptFilter.value = ALL
   deptTreeRef.value?.setCurrentKey(null)
@@ -225,6 +254,11 @@ function deptUsers(id: string): UserInfo[] {
   return contacts.value.filter(u => u.departmentId != null && deptIds.has(u.departmentId))
 }
 
+/** 指定部门（含子部门）下可勾选的人员（排除锁定项） */
+function deptSelectableUsers(id: string): UserInfo[] {
+  return deptUsers(id).filter(u => !isLocked(u.id))
+}
+
 /** 部门人数（仅本部门，用于树上角标） */
 const deptCountMap = computed(() => {
   const map = new Map<string, number>()
@@ -265,19 +299,19 @@ function selectDept(id: string) {
 
 /** 部门勾选状态：全部人员在选 → checked；部分在选 → indeterminate */
 function isDeptChecked(id: string): boolean {
-  const users = deptUsers(id)
+  const users = deptSelectableUsers(id)
   return users.length > 0 && users.every(u => workingIdSet.value.has(u.id))
 }
 
 function isDeptIndeterminate(id: string): boolean {
-  const users = deptUsers(id)
+  const users = deptSelectableUsers(id)
   const selected = users.filter(u => workingIdSet.value.has(u.id)).length
   return selected > 0 && selected < users.length
 }
 
 /** 勾选/取消部门：全选或全移除该部门（含子部门）人员 */
 function toggleDept(id: string, checked: boolean) {
-  const ids = deptUsers(id).map(u => u.id)
+  const ids = deptSelectableUsers(id).map(u => u.id)
   const set = new Set(workingIds.value)
   for (const uid of ids) {
     if (checked) set.add(uid)
@@ -288,6 +322,7 @@ function toggleDept(id: string, checked: boolean) {
 
 /** 切换单个人员选中状态 */
 function toggleUser(id: string, checked: boolean) {
+  if (isLocked(id)) return
   const set = new Set(workingIds.value)
   if (checked) set.add(id)
   else set.delete(id)
@@ -418,6 +453,16 @@ function handleConfirm() {
 }
 .usd-user.selected {
   background: var(--el-color-primary-light-9, #eef2ff);
+}
+.usd-user.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.usd-user.locked:hover {
+  background: transparent;
+}
+.usd-user-lock-tag {
+  flex-shrink: 0;
 }
 .usd-user-info {
   display: flex;
