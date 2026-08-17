@@ -559,10 +559,17 @@ a { text-decoration: none; color: var(--primary); }
   color: var(--primary);
 }
 
-.el-tag--dark.el-tag--success { background: #ecfdf5; border-color: #a7f3d0; color: #059669; }
-.el-tag--dark.el-tag--warning { background: #fffbeb; border-color: #fde68a; color: #d97706; }
-.el-tag--dark.el-tag--danger { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
-.el-tag--dark.el-tag--info { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+.admin-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
 
 /* 操作按钮紧凑模式 - 强制缩小所有操作按钮 */
 .action-buttons .el-button { padding: 0 !important; width: 32px; height: 32px; min-height: 32px; }

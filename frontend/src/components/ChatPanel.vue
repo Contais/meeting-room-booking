@@ -351,6 +351,8 @@ defineExpose({
 .chat-panel {
   position: fixed; bottom: 24px; right: 24px;
   width: 520px; height: 640px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
   background: #fff; border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   display: flex; flex-direction: column;

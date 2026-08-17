@@ -19,9 +19,8 @@
         <h2 class="banner-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</h2>
         <div class="banner-meta">
           <span class="banner-username">@{{ userStore.userInfo?.username }}</span>
-          <el-tag :type="userStore.isAdmin() ? 'danger' : 'info'" effect="dark" round size="small">
-            {{ userStore.isAdmin() ? '超级管理员' : '普通用户' }}
-          </el-tag>
+          <span v-if="userStore.isAdmin()" class="admin-badge">超级管理员</span>
+          <el-tag v-else type="info" size="small">普通用户</el-tag>
         </div>
       </div>
     </div>
@@ -37,9 +36,8 @@
             <el-input :value="userStore.userInfo?.username" disabled />
           </el-form-item>
           <el-form-item label="角色">
-            <el-tag :type="userStore.isAdmin() ? 'danger' : 'info'" effect="dark" round>
-              {{ userStore.isAdmin() ? '超级管理员' : '普通用户' }}
-            </el-tag>
+            <span v-if="userStore.isAdmin()" class="admin-badge">超级管理员</span>
+            <el-tag v-else type="info" size="small">普通用户</el-tag>
           </el-form-item>
           <el-form-item label="真实姓名" prop="realName">
             <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />

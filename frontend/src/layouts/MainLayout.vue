@@ -74,7 +74,7 @@
               </div>
               <div v-if="!isCollapsed" class="user-info-brief">
                 <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</span>
-                <span class="user-role-tag" v-if="userStore.isAdmin()">超级管理员</span>
+                <span class="admin-badge" v-if="userStore.isAdmin()">超级管理员</span>
               </div>
               <el-icon class="arrow"><ArrowDown /></el-icon>
             </div>
@@ -94,7 +94,7 @@
                     <div class="dropdown-username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</div>
                     <div class="dropdown-account">@{{ userStore.userInfo?.username || 'unknown' }}</div>
                   </div>
-                  <span class="dropdown-role" v-if="userStore.isAdmin()">超级管理员</span>
+                  <span class="admin-badge" v-if="userStore.isAdmin()">超级管理员</span>
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-menu-list">
@@ -288,7 +288,7 @@ watch(() => notificationStore.latestNotification, (n) => {
 }
 
 .logo {
-  height: 64px;
+  height: 56px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -550,15 +550,6 @@ watch(() => notificationStore.latestNotification, (n) => {
   white-space: nowrap;
 }
 
-.user-role-tag {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-  color: #fff;
-  font-weight: 500;
-}
-
 .arrow {
   font-size: 12px;
   color: var(--text-muted);
@@ -632,16 +623,6 @@ watch(() => notificationStore.latestNotification, (n) => {
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 2px;
-}
-
-:global(.user-dropdown-popper .dropdown-role) {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-  color: #fff;
-  font-weight: 500;
-  flex-shrink: 0;
 }
 
 :global(.user-dropdown-popper .dropdown-divider) {
