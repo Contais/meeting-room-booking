@@ -19,12 +19,19 @@ public final class RoomToolResults {
     /**
      * 会议室简要信息（屏蔽 imageUrl、description、deleted 等内部字段）。
      *
-     * @param name      名称
-     * @param location  位置
-     * @param capacity  容量
-     * @param equipment 设备
+     * @param name         名称
+     * @param location     位置
+     * @param capacity     容量
+     * @param equipment    设备
+     * @param needApproval 是否需要审批
+     * @param advanceDays  提前预约天数
+     * @param maxDuration  单次最大预约时长（分钟）
+     * @param bookableStart 可预约开始时间 HH:mm
+     * @param bookableEnd   可预约结束时间 HH:mm
      */
-    public record RoomSummary(String name, String location, int capacity, String equipment) {
+    public record RoomSummary(String name, String location, int capacity, String equipment,
+                              boolean needApproval, int advanceDays, int maxDuration,
+                              String bookableStart, String bookableEnd) {
     }
 
     /**
