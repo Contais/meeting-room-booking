@@ -33,6 +33,7 @@
 |--------|------|----------|
 | 🔴 强制 | `.harness/rules/代码规范.md` | 每次编码任务 |
 | 🔴 强制 | `.harness/rules/工程结构.md` | 每次编码任务 |
+| 🟡 按需 | `.harness/rules/前端UI规范.md` | 涉及前端页面 / 组件 / 视觉交互时必读 |
 | 🟡 按需 | `.harness/wiki/业务模型.md` | 涉及业务流程变更时 |
 | 🟡 按需 | `.harness/wiki/数据模型.md` | 涉及数据库变更时 |
 | 🟡 按需 | `.harness/wiki/接口协议.md` | 涉及 API 新增/修改时 |
@@ -124,6 +125,7 @@
 |------|----------|----------|
 | [.harness/rules/代码规范.md](.harness/rules/代码规范.md) | 命名、异常、事务、前端规范 | 每次编码 |
 | [.harness/rules/工程结构.md](.harness/rules/工程结构.md) | 前后端目录结构、四层架构 | 涉及新增文件/模块 |
+| [.harness/rules/前端UI规范.md](.harness/rules/前端UI规范.md) | 页面视觉/交互/表单/头像/列表/图表规范 | 涉及前端 UI 开发与调整时 |
 | [.harness/rules/开发流程规范.md](.harness/rules/开发流程规范.md) | 分支管理、提交规范、评审流程 | 涉及 Git 操作 |
 
 ### 技能（按阶段激活）
