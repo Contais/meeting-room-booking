@@ -48,15 +48,14 @@
     </sql>
 
     <!--
-        我的预约分页查询：LEFT JOIN 会议室表获取会议室名称
+        我的预约分页查询：直接读取预约表 room_name 快照，会议室删除/改名不影响历史展示
         说明：username 为跨服务数据，由 Service 层批量拉取后填充
     -->
     <select id="selectMyPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.remark, r.start_time, r.end_time,
-               r.status, r.create_time, mr.name AS room_name
+               r.status, r.create_time, r.room_name AS room_name
         FROM meeting_room_reservation r
-        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           AND r.user_id = #{userId}
           <include refid="commonFilters"/>
@@ -64,15 +63,14 @@
     </select>
 
     <!--
-        管理端预约分页查询：LEFT JOIN 会议室表获取会议室名称，支持多条件过滤
+        管理端预约分页查询：直接读取预约表 room_name 快照，支持多条件过滤
         说明：username 为跨服务数据，由 Service 层批量拉取后填充
     -->
     <select id="selectAllPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.remark, r.start_time, r.end_time,
-               r.status, r.create_time, mr.name AS room_name
+               r.status, r.create_time, r.room_name AS room_name
         FROM meeting_room_reservation r
-        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           <include refid="commonFilters"/>
           <if test="query.roomId != null">
@@ -92,11 +90,10 @@
     <select id="selectMyMeetingsPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.remark, r.start_time, r.end_time,
-               r.status, r.create_time, mr.name AS room_name,
+               r.status, r.create_time, r.room_name AS room_name,
                ra.status AS my_attendee_status
         FROM meeting_room_reservation r
         INNER JOIN meeting_room_reservation_attendee ra ON ra.reservation_id = r.id AND ra.deleted = 0 AND ra.user_id = #{userId}
-        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           AND r.status = 1
           <if test="query.attendeeStatus != null">
@@ -117,9 +114,8 @@
     <select id="selectMyCalendarPage" resultMap="ReservationVOMap">
         SELECT r.id, r.reservation_code, r.room_id, r.user_id, r.subject, r.attendee_count,
                r.remark, r.start_time, r.end_time,
-               r.status, r.create_time, mr.name AS room_name
+               r.status, r.create_time, r.room_name AS room_name
         FROM meeting_room_reservation r
-        LEFT JOIN meeting_room mr ON mr.id = r.room_id AND mr.deleted = 0
         WHERE r.deleted = 0
           AND (
               (r.user_id = #{userId} AND r.status IN (0, 1))

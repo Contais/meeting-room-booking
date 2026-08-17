@@ -149,10 +149,13 @@ public final class ReservationToolResults {
      * @return 工具专用简要 record
      */
     public static ReservationBrief toBrief(MeetingRoomReservation r, String roomName) {
+        String resolvedRoomName = (roomName != null && !roomName.isBlank())
+                ? roomName
+                : r.getRoomName();
         return new ReservationBrief(
                 r.getReservationCode(),
                 r.getSubject(),
-                roomName,
+                resolvedRoomName,
                 formatDateTime(r.getStartTime()),
                 formatDateTime(r.getEndTime()),
                 ReservationStatusEnum.getDescByCode(r.getStatus()),

@@ -199,6 +199,7 @@ CREATE TABLE IF NOT EXISTS `meeting_room_reservation` (
     `id` BIGINT NOT NULL COMMENT '预约ID',
     `reservation_code` VARCHAR(20) DEFAULT NULL COMMENT '预约编号: B + yyyyMMdd + 6位序列',
     `room_id` BIGINT NOT NULL COMMENT '会议室ID',
+    `room_name` VARCHAR(64) DEFAULT NULL COMMENT '会议室名称快照',
     `user_id` BIGINT NOT NULL COMMENT '预约用户ID',
     `subject` VARCHAR(128) DEFAULT NULL COMMENT '会议主题',
     `attendee_count` INT DEFAULT NULL COMMENT '参会人数（由参会人列表派生）',

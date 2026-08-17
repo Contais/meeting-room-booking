@@ -23,6 +23,11 @@ public class MeetingRoomReservation extends BaseEntity {
     private Long roomId;
 
     /**
+     * 会议室名称快照（创建预约时冗余保存，避免会议室后续删除/改名影响历史展示）
+     */
+    private String roomName;
+
+    /**
      * 预约用户ID
      */
     private Long userId;

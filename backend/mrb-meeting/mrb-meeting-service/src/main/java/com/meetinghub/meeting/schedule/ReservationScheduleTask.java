@@ -143,7 +143,7 @@ public class ReservationScheduleTask {
         if (userIds.isEmpty()) {
             return;
         }
-        String roomName = resolveRoomName(r.getRoomId());
+        String roomName = resolveRoomName(r);
         NotificationSendDTO notify = new NotificationSendDTO();
         notify.setType("RESERVATION_REMINDER");
         notify.setTitle("会议即将开始：" + r.getSubject());
@@ -163,11 +163,14 @@ public class ReservationScheduleTask {
         }
     }
 
-    private String resolveRoomName(Long roomId) {
-        if (roomId == null) {
+    private String resolveRoomName(MeetingRoomReservation reservation) {
+        if (reservation.getRoomName() != null && !reservation.getRoomName().isBlank()) {
+            return reservation.getRoomName();
+        }
+        if (reservation.getRoomId() == null) {
             return null;
         }
-        MeetingRoom room = meetingRoomRepository.selectById(roomId);
+        MeetingRoom room = meetingRoomRepository.selectById(reservation.getRoomId());
         return room != null ? room.getName() : null;
     }
 

@@ -95,6 +95,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         // 5. 创建预约（根据审批模式设置初始状态）
         MeetingRoomReservation reservation = new MeetingRoomReservation();
         reservation.setRoomId(dto.getRoomId());
+        reservation.setRoomName(room.getName());
         reservation.setUserId(userId);
         reservation.setSubject(dto.getSubject());
         // 参会人数：先初始化为创建者自身 1 人；
@@ -535,7 +536,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             ScheduleReservationVO rvo = new ScheduleReservationVO();
             rvo.setId(r.getId());
             rvo.setRoomId(r.getRoomId());
-            rvo.setRoomName(roomNameMap.getOrDefault(r.getRoomId(), ""));
+            rvo.setRoomName(resolveRoomName(r, roomNameMap));
             rvo.setSubject(r.getSubject());
             rvo.setUserName(userNameMap.getOrDefault(r.getUserId(), ""));
             rvo.setAttendeeCount(r.getAttendeeCount());
@@ -553,7 +554,7 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
         vo.setId(r.getId());
         vo.setReservationCode(r.getReservationCode());
         vo.setRoomId(r.getRoomId());
-        vo.setRoomName(roomNameMap != null ? roomNameMap.getOrDefault(r.getRoomId(), "") : "");
+        vo.setRoomName(resolveRoomName(r, roomNameMap));
         vo.setUserId(r.getUserId());
         vo.setUsername(userNameMap != null ? userNameMap.getOrDefault(r.getUserId(), "") : "");
         vo.setSubject(r.getSubject());
@@ -574,17 +575,6 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
         }
 
-        // 查询会议室名称
-        String roomName = "";
-        try {
-            MeetingRoom room = meetingRoomRepository.selectById(r.getRoomId());
-            if (room != null) {
-                roomName = room.getName();
-            }
-        } catch (Exception e) {
-            log.warn("查询会议室名称失败, roomId={}", r.getRoomId(), e);
-        }
-
         // 查询用户名（使用批量内部接口，与列表查询保持一致）
         String userName = "";
         try {
@@ -596,9 +586,23 @@ public class ReservationServiceImpl extends ServiceImpl<ReservationRepository, M
             log.warn("Feign 查询用户名失败, userId={}", r.getUserId(), e);
         }
 
-        ReservationVO vo = toVO(r, Map.of(r.getRoomId(), roomName), Map.of(r.getUserId(), userName));
+        ReservationVO vo = toVO(r, null, Map.of(r.getUserId(), userName));
         vo.setAttendees(attendeeService.listAttendees(reservationId));
         return vo;
+    }
+
+    /**
+     * 解析会议室名称：优先使用预约创建时保存的 room_name 快照；
+     * 历史数据缺失快照时，再回退到调用方传入的会议室名称映射。
+     */
+    private String resolveRoomName(MeetingRoomReservation reservation, Map<Long, String> roomNameMap) {
+        if (reservation.getRoomName() != null && !reservation.getRoomName().isBlank()) {
+            return reservation.getRoomName();
+        }
+        if (roomNameMap != null) {
+            return roomNameMap.getOrDefault(reservation.getRoomId(), "");
+        }
+        return "";
     }
 
     @Override

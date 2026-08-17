@@ -71,6 +71,7 @@ class ReservationServiceImplTest {
     private MeetingRoom enabledRoom() {
         MeetingRoom room = new MeetingRoom();
         room.setId(1L);
+        room.setName("大会议室A");
         room.setStatus(EnableStatusEnum.ENABLED.getCode());
         room.setBookableStart("08:00");
         room.setBookableEnd("20:00");
@@ -103,6 +104,28 @@ class ReservationServiceImplTest {
         verify(reservationRepository).insert(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED.getCode());
         assertThat(captor.getValue().getUserId()).isEqualTo(100L);
+        assertThat(captor.getValue().getRoomName()).isEqualTo("大会议室A");
+    }
+
+    @Test
+    void should_useRoomNameSnapshot_when_getReservationDetailForDeletedRoom() {
+        MeetingRoomReservation reservation = new MeetingRoomReservation();
+        reservation.setId(10L);
+        reservation.setRoomId(999L);
+        reservation.setRoomName("已删除会议室");
+        reservation.setUserId(100L);
+        reservation.setSubject("历史会议");
+        reservation.setReservationCode("B20260814000001");
+        reservation.setStatus(ReservationStatusEnum.CONFIRMED.getCode());
+        reservation.setStartTime(LocalDateTime.now().plusDays(1));
+        reservation.setEndTime(LocalDateTime.now().plusDays(1).plusHours(1));
+        when(reservationRepository.selectById(10L)).thenReturn(reservation);
+        when(meetingRoomRepository.selectById(999L)).thenReturn(null);
+        when(userFeignClient.batchUsernames(any())).thenReturn(null);
+
+        var vo = service.getReservationDetail(10L);
+
+        assertThat(vo.getRoomName()).isEqualTo("已删除会议室");
     }
 
     @Test
