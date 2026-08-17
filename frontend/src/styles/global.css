@@ -6,7 +6,7 @@
   --bg-card: #ffffff;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --border: #e5e7eb;
   --border-light: #f1f5f9;
   --success: #10b981;
@@ -532,7 +532,7 @@ a { text-decoration: none; color: var(--primary); }
 
 /* 操作图标按钮 - 水平排列 */
 .action-btns { display: flex; align-items: center; gap: 6px; justify-content: center; }
-.action-btn { width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: #fff; cursor: pointer; transition: all 0.15s; font-size: 14px; color: var(--text-secondary); }
+.action-btn { width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: #fff; cursor: pointer; transition: all 0.15s; font-size: 14px; color: var(--text-secondary); }
 .action-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .action-btn.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .action-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: #fef2f2; }
@@ -565,6 +565,24 @@ a { text-decoration: none; color: var(--primary); }
 .el-tag--dark.el-tag--info { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
 
 /* 操作按钮紧凑模式 - 强制缩小所有操作按钮 */
-.action-buttons .el-button { padding: 0 !important; width: 26px; height: 26px; min-height: 26px; }
-.action-buttons .el-button .el-icon { font-size: 13px; }
+.action-buttons .el-button { padding: 0 !important; width: 32px; height: 32px; min-height: 32px; }
+.action-buttons .el-button .el-icon { font-size: 14px; }
 .action-buttons .el-button + .el-button { margin-left: 2px; }
+
+/* 键盘焦点可见性（覆盖自定义可点击元素与原生控件） */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 尊重用户「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
