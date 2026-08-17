@@ -38,7 +38,7 @@ ON DUPLICATE KEY UPDATE
 
 -- 知识库管理仅管理员可见
 INSERT IGNORE INTO `platform_role_menu` (`id`, `role_id`, `menu_id`)
-SELECT 15, r.`id`, 19 FROM `platform_role` r WHERE r.`role_code` = 'ROLE_ADMIN';
+SELECT 21, r.`id`, 19 FROM `platform_role` r WHERE r.`role_code` = 'ROLE_ADMIN';
 
 -- ========== 预置知识条目（幂等，仅首次生效，不覆盖管理员后续修改） ==========
 INSERT IGNORE INTO `platform_kb_entry` (`id`, `category`, `title`, `question`, `answer`, `tags`, `sort`, `status`) VALUES
