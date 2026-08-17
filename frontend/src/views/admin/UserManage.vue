@@ -14,8 +14,8 @@
     <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
       <template #toolbar-left><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></template>
       <template #toolbar-right><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></template>
-      <el-table :data="tableData" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" align="center" />
+      <el-table :data="tableData" v-loading="loading" empty-text="暂无用户数据，点击左上角「新增用户」创建">
+        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column label="用户名" min-width="200">
           <template #default="{ row }"><div class="user-cell"><UserAvatar :avatar="row.avatar" :username="row.username" size="sm" /><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.email || row.phone || '-' }}</span></div></div></template>
         </el-table-column>
@@ -31,7 +31,7 @@
         </el-table-column>
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="280" fixed="right" align="center">
+        <el-table-column label="操作" width="190" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="router.push({ path: `/admin/users/${row.id}`, query: { from: '/admin/users', fromTitle: '用户管理', dt: '用户详情' } })">
@@ -40,19 +40,28 @@
               <el-button type="primary" link @click="showEditDialog(row)">
                 <el-icon><Edit /></el-icon>编辑
               </el-button>
-              <el-button type="warning" link @click="handleResetPassword(row)">
-                <el-icon><Key /></el-icon>重置密码
-              </el-button>
-              <el-button type="danger" link @click="handleDelete(row.id)">
-                <el-icon><Delete /></el-icon>删除
-              </el-button>
+              <el-dropdown trigger="click" popper-class="action-menu-popper" @command="(cmd: string) => handleRowCommand(cmd, row)">
+                <el-button type="primary" link>
+                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="reset">
+                      <el-icon><Key /></el-icon>重置密码
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided class="danger-item">
+                      <el-icon><Delete /></el-icon>删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
       </el-table>
     </TableCard>
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="用户名" prop="username"><el-input v-model="form.username" :disabled="isEdit" placeholder="请输入用户名" /></el-form-item>
         <el-form-item v-if="!isEdit" label="密码" prop="password"><el-input v-model="form.password" type="password" placeholder="请输入密码" show-password /></el-form-item>
         <el-form-item label="姓名"><el-input v-model="form.realName" placeholder="请输入真实姓名" /></el-form-item>
@@ -74,7 +83,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, Key, View } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, Key, View, ArrowDown } from '@element-plus/icons-vue'
 import { listUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api/user'
 import { getDepartmentTree } from '@/api/department'
 import { listAllRoles } from '@/api/role'
@@ -124,6 +133,10 @@ function showCreateDialog() { isEdit.value = false; Object.assign(form, { id: un
 function showEditDialog(row: any) { isEdit.value = true; Object.assign(form, { id: row.id, username: row.username, password: '', realName: row.realName || '', phone: row.phone || '', email: row.email || '', role: row.role, departmentId: row.departmentId || undefined }); dialogVisible.value = true }
 async function handleSubmit() { const valid = await formRef.value?.validate().catch(() => false); if (!valid) return; submitting.value = true; try { if (isEdit.value) { const { id, phone, email, realName, role, departmentId } = form; await updateUser({ id, phone, email, realName, role, departmentId }); ElMessage.success('更新成功') } else { await createUser(form); ElMessage.success('创建成功') }; dialogVisible.value = false; loadData() } catch { /* */ } finally { submitting.value = false } }
 async function handleDelete(id: string) { try { await ElMessageBox.confirm('确定删除该用户?', '提示', { type: 'warning' }); await deleteUser(id); ElMessage.success('删除成功'); loadData() } catch { /* */ } }
+function handleRowCommand(command: string, row: any) {
+  if (command === 'reset') handleResetPassword(row)
+  else if (command === 'delete') handleDelete(row.id)
+}
 async function handleResetPassword(row: any) {
   try {
     const { value } = await ElMessageBox.prompt('请输入新密码', '重置密码', {
@@ -152,4 +165,13 @@ onMounted(() => { loadData(); loadDeptTree(); loadRoleList() })
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-email { font-size: 11px; color: var(--text-muted); }
+
+/* 操作「更多」下拉里的危险项着色（下拉被 teleport 到 body，需用 :global） */
+:global(.action-menu-popper .el-dropdown-menu__item.danger-item) {
+  color: var(--danger);
+}
+:global(.action-menu-popper .el-dropdown-menu__item.danger-item:not(.is-disabled):hover) {
+  background: #fef0f0;
+  color: var(--danger);
+}
 </style>

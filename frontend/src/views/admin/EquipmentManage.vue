@@ -20,8 +20,8 @@
         <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
       </template>
 
-      <el-table :data="tableData" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" align="center" />
+      <el-table :data="tableData" v-loading="loading" empty-text="暂无设备数据，点击左上角「新增设备」创建">
+        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column prop="code" label="设备编码" width="150" />
         <el-table-column prop="name" label="设备名称" min-width="120" />
         <el-table-column prop="category" label="分类" width="100" align="center">

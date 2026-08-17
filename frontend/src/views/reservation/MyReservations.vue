@@ -45,8 +45,8 @@
         <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
       </template>
 
-      <el-table :data="tableData" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" align="center" />
+      <el-table :data="tableData" v-loading="loading" empty-text="暂无预约记录">
+        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column label="预约编号" width="170">
           <template #default="{ row }">
             <el-link type="primary" underline="never" @click="goDetail(row.id)">{{ row.reservationCode }}</el-link>

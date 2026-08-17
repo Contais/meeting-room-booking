@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }">
+      <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" empty-text="暂无部门数据，点击左上角「新增部门」创建">
         <el-table-column prop="name" label="部门名称" min-width="220" />
         <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
@@ -61,7 +61,7 @@
     </div>
 
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑部门' : '新增部门'" :loading="submitting" @submit="handleSubmit">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="部门名称" prop="name"><el-input v-model="form.name" placeholder="请输入部门名称" /></el-form-item>
         <el-form-item label="上级部门"><el-tree-select v-model="form.parentId" :data="treeData" node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly clearable placeholder="留空则为顶级部门" style="width:100%" /></el-form-item>
         <el-form-item label="排序号"><el-input-number v-model="form.sortOrder" :min="0" :max="9999" style="width:180px" /></el-form-item>

@@ -25,8 +25,8 @@
         <el-tooltip content="刷新"><el-button circle @click="loadRoles"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
       </template>
 
-      <el-table :data="roleList" v-loading="loading">
-        <el-table-column type="index" label="序号" width="60" align="center" />
+      <el-table :data="roleList" v-loading="loading" empty-text="暂无角色数据，点击左上角「新建角色」创建">
+        <el-table-column :index="(index: number) => (query.pageNum - 1) * query.pageSize + index + 1" label="序号" width="70" align="center" />
         <el-table-column prop="roleCode" label="角色编码" width="160" />
         <el-table-column label="角色名称" width="180">
           <template #default="{ row }">
