@@ -42,7 +42,7 @@
             <el-icon><component :is="isCollapsed ? 'Expand' : 'Fold'" /></el-icon>
           </el-button>
           <h2 class="page-title">
-            <span v-if="parentMeta" class="parent-link" @click="goParent">{{ parentMeta.title }}</span>
+            <span v-if="parentMeta" class="parent-link" role="button" tabindex="0" @click="goParent" @keydown.enter="goParent" @keydown.space.prevent="goParent">{{ parentMeta.title }}</span>
             <span v-if="parentMeta" class="title-separator">/</span>
             <span class="current-title">{{ currentTitle }}</span>
           </h2>

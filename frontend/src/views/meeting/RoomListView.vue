@@ -38,7 +38,7 @@
 
     <!-- 卡片列表 -->
     <div class="room-grid" v-loading="loading">
-      <div v-for="room in filteredRooms" :key="room.id" class="room-card" @click="goDetail(room.id)">
+      <div v-for="room in filteredRooms" :key="room.id" class="room-card" role="button" tabindex="0" @click="goDetail(room.id)" @keydown.enter="goDetail(room.id)" @keydown.space.prevent="goDetail(room.id)">
         <div class="card-header">
           <div class="card-title-row">
             <div class="card-icon">

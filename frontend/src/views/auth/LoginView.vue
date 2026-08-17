@@ -44,10 +44,10 @@
 
           <el-form ref="formRef" :model="form" :rules="rules" label-width="0" class="login-form">
             <el-form-item prop="username">
-              <el-input v-model="form.username" placeholder="请输入用户名" size="large" :prefix-icon="User" />
+              <el-input v-model="form.username" placeholder="请输入用户名" aria-label="用户名" size="large" :prefix-icon="User" />
             </el-form-item>
             <el-form-item prop="password">
-              <el-input v-model="form.password" type="password" placeholder="请输入密码" size="large" show-password :prefix-icon="Lock" @keyup.enter="handleLogin" />
+              <el-input v-model="form.password" type="password" placeholder="请输入密码" aria-label="密码" size="large" show-password :prefix-icon="Lock" @keyup.enter="handleLogin" />
             </el-form-item>
 
             <div class="form-options">

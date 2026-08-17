@@ -12,7 +12,7 @@
     </div>
 
     <div class="stat-row">
-      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx" @click="goStat(item)">
+      <div class="stat-card" v-for="(item, idx) in statItems" :key="idx" role="button" tabindex="0" @click="goStat(item)" @keydown.enter="goStat(item)" @keydown.space.prevent="goStat(item)">
         <div class="stat-icon" :style="{ background: item.bg }"><el-icon :size="20"><component :is="item.icon" /></el-icon></div>
         <div class="stat-info"><div class="stat-value">{{ item.value }}</div><div class="stat-label">{{ item.label }}</div></div>
       </div>
@@ -20,13 +20,13 @@
 
 
     <el-row :gutter="16" v-if="userStore.isAdmin()">
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <div class="page-card chart-card">
           <h3 class="section-title">会议室使用率（今日）</h3>
           <v-chart class="chart" :option="usageChartOption" autoresize />
         </div>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <div class="page-card chart-card">
           <h3 class="section-title">高峰时段分布</h3>
           <v-chart class="chart" :option="peakChartOption" autoresize />
@@ -36,7 +36,7 @@
     <div class="page-card quick-actions">
       <h3 class="section-title">快捷操作</h3>
       <div class="action-grid">
-        <div class="action-item" v-for="item in actionItems" :key="item.label" @click="$router.push(item.path)">
+        <div class="action-item" v-for="item in actionItems" :key="item.label" role="button" tabindex="0" @click="$router.push(item.path)" @keydown.enter="$router.push(item.path)" @keydown.space.prevent="$router.push(item.path)">
           <div class="action-icon" :style="{ background: item.bg }"><el-icon :size="18"><component :is="item.icon" /></el-icon></div>
           <span>{{ item.label }}</span>
         </div>
@@ -172,10 +172,9 @@ onMounted(async () => {
 .c1 { width: 120px; height: 120px; }
 .c2 { width: 80px; height: 80px; position: absolute; top: -40px; left: -60px; }
 
-.stat-row { display: flex; gap: 16px; margin: 0; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 0; }
 
 .stat-card {
-  flex: 1;
   background: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 16px;
