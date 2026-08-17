@@ -80,67 +80,64 @@
       </div>
     </div>
 
-    <!-- 头像选择弹窗 -->
-    <el-dialog v-model="showAvatarPicker" title="选择头像" width="480px" class="avatar-picker-dialog">
-      <el-tabs v-model="avatarTab" class="avatar-tabs">
-        <el-tab-pane label="图标头像" name="icon">
-          <div class="avatar-picker-content">
-            <div class="picker-section">
-              <h4>选择图标</h4>
+    <!-- 头像设置弹窗 -->
+    <el-dialog v-model="showAvatarPicker" title="设置头像" width="640px" class="avatar-picker-dialog">
+      <div class="avatar-picker-layout">
+        <div class="picker-preview">
+          <div class="preview-avatar" :style="getAvatarStyle()">
+            <el-icon v-if="selectedAvatarIcon" :size="40"><component :is="selectedAvatarIcon" /></el-icon>
+            <span v-else class="preview-letter">{{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="preview-name">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '用户' }}</div>
+          <div class="preview-hint">实时预览</div>
+        </div>
+
+        <div class="picker-options">
+          <el-tabs v-model="avatarTab" class="avatar-tabs">
+            <el-tab-pane label="图标" name="icon">
               <div class="icon-grid">
-                <div
+                <button
                   v-for="icon in avatarIcons"
                   :key="icon.name"
                   class="icon-item"
                   :class="{ active: selectedIconName === icon.name }"
                   @click="selectIcon(icon.name)"
                 >
-                  <el-icon :size="24"><component :is="icon.comp" /></el-icon>
-                </div>
+                  <el-icon :size="22"><component :is="icon.comp" /></el-icon>
+                </button>
               </div>
-            </div>
-            <div class="picker-section">
-              <h4>选择背景</h4>
+            </el-tab-pane>
+            <el-tab-pane label="背景" name="gradient">
               <div class="gradient-grid">
-                <div
+                <button
                   v-for="(grad, idx) in avatarGradients"
                   :key="idx"
                   class="gradient-item"
                   :class="{ active: selectedGradientIdx === idx }"
                   :style="{ background: grad }"
                   @click="selectGradient(idx)"
-                ></div>
+                ></button>
               </div>
-            </div>
-            <div class="picker-section">
-              <h4>预览</h4>
-              <div class="avatar-preview" :style="getAvatarStyle()">
-                <template v-if="selectedAvatarIcon">
-                  <el-icon :size="32"><component :is="selectedAvatarIcon" /></el-icon>
-                </template>
-                <template v-else>
-                  {{ (userStore.userInfo?.username || 'U').charAt(0).toUpperCase() }}
-                </template>
+            </el-tab-pane>
+            <el-tab-pane label="上传图片" name="upload">
+              <div class="avatar-upload-content">
+                <FileUpload
+                  :model-value="currentAvatarIsUrl ? (userStore.userInfo?.avatar || '') : ''"
+                  biz-type="AVATAR"
+                  shape="avatar"
+                  hint="支持 jpg / png / webp，不超过 5MB"
+                  @change="onAvatarUploaded"
+                />
+                <p v-if="currentAvatarIsUrl" class="avatar-url-tip">当前使用图片头像，可在「图标」切换回图标。</p>
               </div>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="上传图片" name="upload">
-          <div class="avatar-upload-content">
-            <FileUpload
-              :model-value="currentAvatarIsUrl ? (userStore.userInfo?.avatar || '') : ''"
-              biz-type="AVATAR"
-              shape="avatar"
-              hint="支持 jpg / png / webp，不超过 5MB"
-              @change="onAvatarUploaded"
-            />
-            <p v-if="currentAvatarIsUrl" class="avatar-url-tip">当前使用图片头像，可在「图标头像」切换回图标。</p>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+      </div>
       <template #footer>
-        <el-button v-if="avatarTab === 'icon'" @click="resetAvatar">重置</el-button>
-        <el-button v-if="avatarTab === 'icon'" type="primary" class="btn-gradient" @click="confirmAvatar">确认</el-button>
+        <el-button @click="showAvatarPicker = false">取消</el-button>
+        <el-button v-if="avatarTab !== 'upload'" @click="resetAvatar">重置</el-button>
+        <el-button v-if="avatarTab !== 'upload'" type="primary" class="btn-gradient" :loading="profileLoading" @click="confirmAvatar">保存头像</el-button>
         <el-button v-else @click="showAvatarPicker = false">完成</el-button>
       </template>
     </el-dialog>
@@ -199,7 +196,7 @@ const passwordRules: FormRules = {
 
 // 头像选择器
 const showAvatarPicker = ref(false)
-const avatarTab = ref<'icon' | 'upload'>('icon')
+const avatarTab = ref<'icon' | 'gradient' | 'upload'>('icon')
 const selectedIconName = ref<string>('')
 const selectedGradientIdx = ref<number>(0)
 
@@ -470,86 +467,41 @@ async function handleChangePassword() {
   margin: 0;
 }
 
-/* 头像选择器弹窗 */
+/* 头像设置弹窗 */
 .avatar-picker-dialog :deep(.el-dialog__body) {
-  padding-top: 0;
+  padding-top: 8px;
 }
 
-.avatar-picker-content {
+.avatar-picker-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.picker-preview {
+  flex-shrink: 0;
+  width: 168px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.picker-section h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 12px 0;
-}
-
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 8px;
-}
-
-.icon-item {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--bg-page);
-  display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text-secondary);
-  border: 2px solid transparent;
-}
-.icon-item:hover {
-  background: var(--border-light);
-  color: var(--primary);
-  transform: scale(1.05);
-}
-.icon-item.active {
-  background: rgba(102, 126, 234, 0.1);
-  color: var(--primary);
-  border-color: var(--primary);
+  gap: 10px;
+  padding: 12px 0;
+  border-right: 1px solid var(--border-light);
 }
 
-.gradient-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 8px;
-}
-
-.gradient-item {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 3px solid transparent;
-  box-sizing: border-box;
-}
-.gradient-item:hover {
-  transform: scale(1.1);
-}
-.gradient-item.active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
-}
-
-.avatar-preview {
-  width: 64px;
-  height: 64px;
+.preview-avatar {
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 600;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition: background 0.2s ease;
+  overflow: hidden;
 }
 
 .banner-avatar-img {
@@ -559,8 +511,85 @@ async function handleChangePassword() {
   object-fit: cover;
 }
 
-.avatar-tabs {
-  margin-top: -8px;
+.preview-letter {
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.preview-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.preview-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.picker-options {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-tabs :deep(.el-tabs__content) {
+  overflow: visible;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.icon-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+  border: 2px solid transparent;
+  padding: 0;
+}
+.icon-item:hover {
+  background: var(--border-light);
+  color: var(--primary);
+}
+.icon-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.gradient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 10px;
+}
+
+.gradient-item {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 3px solid transparent;
+  box-sizing: border-box;
+  padding: 0;
+}
+.gradient-item:hover {
+  transform: scale(1.06);
+}
+.gradient-item.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
 }
 
 .avatar-upload-content {
@@ -568,7 +597,7 @@ async function handleChangePassword() {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
 .avatar-url-tip {

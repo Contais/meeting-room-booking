@@ -15,7 +15,7 @@
       <template #toolbar-left><el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增用户</el-button></template>
       <template #toolbar-right><el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip></template>
       <el-table :data="tableData" v-loading="loading" empty-text="暂无用户数据，点击左上角「新增用户」创建">
-        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column label="用户名" min-width="200">
           <template #default="{ row }"><div class="user-cell"><UserAvatar :avatar="row.avatar" :username="row.username" size="sm" /><div class="user-info"><span class="user-name">{{ row.username }}</span><span class="user-email">{{ row.email || row.phone || '-' }}</span></div></div></template>
         </el-table-column>
@@ -165,13 +165,4 @@ onMounted(() => { loadData(); loadDeptTree(); loadRoleList() })
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-email { font-size: 11px; color: var(--text-muted); }
-
-/* 操作「更多」下拉里的危险项着色（下拉被 teleport 到 body，需用 :global） */
-:global(.action-menu-popper .el-dropdown-menu__item.danger-item) {
-  color: var(--danger);
-}
-:global(.action-menu-popper .el-dropdown-menu__item.danger-item:not(.is-disabled):hover) {
-  background: #fef0f0;
-  color: var(--danger);
-}
 </style>

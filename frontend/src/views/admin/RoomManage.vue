@@ -25,7 +25,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" empty-text="暂无会议室数据，点击左上角「新增会议室」创建">
-        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column prop="name" label="名称" min-width="120" />
         <el-table-column prop="location" label="位置" min-width="100" />
         <el-table-column prop="capacity" label="容量" width="80" align="center" />

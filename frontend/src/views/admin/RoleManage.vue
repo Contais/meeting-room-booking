@@ -26,7 +26,7 @@
       </template>
 
       <el-table :data="roleList" v-loading="loading" empty-text="暂无角色数据，点击左上角「新建角色」创建">
-        <el-table-column :index="(index: number) => (query.pageNum - 1) * query.pageSize + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.pageNum - 1) * query.pageSize + index + 1" label="序号" width="70" align="center" />
         <el-table-column prop="roleCode" label="角色编码" width="160" />
         <el-table-column label="角色名称" width="180">
           <template #default="{ row }">
@@ -52,7 +52,7 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="280" fixed="right" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="handlePermission(row)">
@@ -63,13 +63,21 @@
                 <el-icon><Edit /></el-icon>
                 编辑
               </el-button>
-              <el-button :type="row.status === 1 ? 'warning' : 'success'" link :disabled="row.isSystem === 1" @click="handleToggle(row)">
-                {{ row.status === 1 ? '禁用' : '启用' }}
-              </el-button>
-              <el-button type="danger" link :disabled="row.isSystem === 1" @click="handleDelete(row)">
-                <el-icon><Delete /></el-icon>
-                删除
-              </el-button>
+              <el-dropdown trigger="click" popper-class="action-menu-popper" @command="(cmd: string) => handleRowCommand(cmd, row)">
+                <el-button type="primary" link>
+                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="toggle" :disabled="row.isSystem === 1">
+                      {{ row.status === 1 ? '禁用' : '启用' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided class="danger-item" :disabled="row.isSystem === 1">
+                      <el-icon><Delete /></el-icon>删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -122,7 +130,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Key, Refresh } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Key, Refresh, ArrowDown } from '@element-plus/icons-vue'
 import {
   listRoles,
   createRole,
@@ -290,6 +298,10 @@ async function handleDelete(row: RoleInfo) {
     ElMessage.success('删除成功')
     loadRoles()
   } catch { /* */ }
+}
+function handleRowCommand(command: string, row: RoleInfo) {
+  if (command === 'toggle') handleToggle(row)
+  else if (command === 'delete') handleDelete(row)
 }
 
 // 权限配置相关

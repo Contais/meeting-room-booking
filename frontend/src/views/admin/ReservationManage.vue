@@ -50,7 +50,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" empty-text="暂无预约记录">
-        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column label="预约编号" width="170">
           <template #default="{ row }">
             <el-link type="primary" underline="never" @click="goDetail(row.id)">{{ row.reservationCode }}</el-link>

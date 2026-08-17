@@ -593,3 +593,12 @@ a { text-decoration: none; color: var(--primary); }
     scroll-behavior: auto !important;
   }
 }
+
+/* 表格操作「更多」下拉里的危险项着色 */
+.action-menu-popper .el-dropdown-menu__item.danger-item {
+  color: var(--danger);
+}
+.action-menu-popper .el-dropdown-menu__item.danger-item:not(.is-disabled):hover {
+  background: #fef0f0;
+  color: var(--danger);
+}

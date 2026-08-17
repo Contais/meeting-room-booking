@@ -21,7 +21,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" empty-text="暂无设备数据，点击左上角「新增设备」创建">
-        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column prop="code" label="设备编码" width="150" />
         <el-table-column prop="name" label="设备名称" min-width="120" />
         <el-table-column prop="category" label="分类" width="100" align="center">
@@ -50,7 +50,7 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="240" fixed="right" align="center">
+        <el-table-column label="操作" width="190" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
               <el-button type="primary" link @click="router.push({ path: `/admin/equipments/${row.id}`, query: { from: '/admin/equipments', fromTitle: '设备管理', dt: '设备详情' } })">
@@ -59,12 +59,21 @@
               <el-button type="primary" link @click="showEditDialog(row)">
                 <el-icon><Edit /></el-icon>编辑
               </el-button>
-              <el-button :type="row.status === 1 ? 'warning' : 'success'" link @click="handleToggle(row)">
-                <el-icon><Switch /></el-icon>{{ row.status === 1 ? '禁用' : '启用' }}
-              </el-button>
-              <el-button type="danger" link @click="handleDelete(row)">
-                <el-icon><Delete /></el-icon>删除
-              </el-button>
+              <el-dropdown trigger="click" popper-class="action-menu-popper" @command="(cmd: string) => handleRowCommand(cmd, row)">
+                <el-button type="primary" link>
+                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="toggle">
+                      <el-icon><Switch /></el-icon>{{ row.status === 1 ? '禁用' : '启用' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided class="danger-item">
+                      <el-icon><Delete /></el-icon>删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -117,7 +126,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, View, Switch } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Refresh, View, Switch, ArrowDown } from '@element-plus/icons-vue'
 import {
   listEquipments,
   createEquipment,
@@ -314,6 +323,10 @@ async function handleDelete(row: Equipment) {
     ElMessage.success('删除成功')
     loadData()
   } catch { /* */ }
+}
+function handleRowCommand(command: string, row: Equipment) {
+  if (command === 'toggle') handleToggle(row)
+  else if (command === 'delete') handleDelete(row)
 }
 
 onMounted(loadData)

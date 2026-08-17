@@ -39,7 +39,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" empty-text="暂无会议记录">
-        <el-table-column :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
+        <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
         <el-table-column label="会议主题" min-width="150">
           <template #default="{ row }">
             <el-link type="primary" underline="never" @click="goDetail(row.id)">{{ row.subject }}</el-link>

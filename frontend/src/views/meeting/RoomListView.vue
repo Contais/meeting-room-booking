@@ -22,7 +22,7 @@
     <div class="status-legend">
       <span class="legend-tip">状态说明（点击筛选）：</span>
       <button type="button" class="legend-item" :class="{ active: filter.availability === 'available' }" @click="toggleLegendFilter('available')">
-        <span class="status-badge active"><span class="status-dot"></span>空闲</span>
+        <span class="status-badge available"><span class="status-dot"></span>空闲</span>
         <span class="legend-desc">当前无进行中的会议</span>
       </button>
       <button type="button" class="legend-item" :class="{ active: filter.availability === 'busy' }" @click="toggleLegendFilter('busy')">
@@ -109,7 +109,7 @@ function goDetail(id: string) { router.push({ path: `/meeting/rooms/${id}`, quer
 
 function roomStatusClass(room: MeetingRoom): string {
   if (room.status !== 1) return 'inactive'
-  return room.currentAvailable ? 'active' : 'busy'
+  return room.currentAvailable ? 'available' : 'busy'
 }
 function roomStatusText(room: MeetingRoom): string {
   if (room.status !== 1) return '禁用'
@@ -241,7 +241,7 @@ onMounted(async () => {
   font-size: 12px;
   font-weight: 500;
 }
-.status-badge.active {
+.status-badge.available {
   background: rgba(103, 194, 58, 0.1);
   color: #67c23a;
 }
