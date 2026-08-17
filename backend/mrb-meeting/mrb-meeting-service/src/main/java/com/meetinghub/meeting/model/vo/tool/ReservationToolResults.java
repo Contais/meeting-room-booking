@@ -117,10 +117,11 @@ public final class ReservationToolResults {
     /**
      * 部门简要信息。
      *
-     * @param id   部门ID（供模型调用邀请工具使用，不应展示给用户）
-     * @param name 部门名称
+     * @param id       部门ID（供模型调用邀请工具使用，不应展示给用户）
+     * @param name     部门名称
+     * @param parentId 父部门ID，0 表示顶级部门
      */
-    public record DepartmentBrief(Long id, String name) {
+    public record DepartmentBrief(Long id, String name, Long parentId) {
     }
 
     /**

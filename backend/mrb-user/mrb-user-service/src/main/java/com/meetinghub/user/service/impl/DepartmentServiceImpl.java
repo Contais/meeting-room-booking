@@ -17,9 +17,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -53,6 +59,52 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentRepository, Dep
                         .orderByAsc(Department::getSortOrder)
         );
         return all.stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public Set<Long> listEnabledDescendantIds(Long departmentId) {
+        if (departmentId == null) {
+            return Collections.emptySet();
+        }
+
+        List<Department> enabledDepartments = list(
+                new LambdaQueryWrapper<Department>()
+                        .eq(Department::getStatus, EnableStatusEnum.ENABLED.getCode())
+        );
+        if (enabledDepartments.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Map<Long, List<Department>> childrenByParent = enabledDepartments.stream()
+                .collect(Collectors.groupingBy(Department::getParentId));
+
+        // 目标部门本身不存在或已禁用时，不返回任何部门
+        boolean rootExists = enabledDepartments.stream()
+                .anyMatch(dept -> departmentId.equals(dept.getId()));
+        if (!rootExists) {
+            return Collections.emptySet();
+        }
+
+        Set<Long> subtreeIds = new LinkedHashSet<>();
+        Set<Long> visited = new HashSet<>();
+        Deque<Long> queue = new ArrayDeque<>();
+        queue.add(departmentId);
+
+        while (!queue.isEmpty()) {
+            Long currentId = queue.poll();
+            if (!visited.add(currentId)) {
+                continue;
+            }
+            subtreeIds.add(currentId);
+
+            List<Department> children = childrenByParent.getOrDefault(currentId, List.of());
+            for (Department child : children) {
+                if (!visited.contains(child.getId())) {
+                    queue.add(child.getId());
+                }
+            }
+        }
+        return subtreeIds;
     }
 
     @Override

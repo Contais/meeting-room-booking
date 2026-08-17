@@ -31,7 +31,7 @@ public interface UserFeignClient {
     Result<Map<Long, String>> batchUsernames(@RequestParam("ids") List<Long> ids);
 
     /**
-     * 按部门 ID 查询所有启用用户（用于邀请参会人）
+     * 按部门子树查询所有启用用户：包含目标部门及其所有启用后代部门成员。
      */
     @GetMapping("/uc/user/internal/list-by-department")
     Result<List<UserBriefDTO>> listByDepartment(@RequestParam("departmentId") Long departmentId);

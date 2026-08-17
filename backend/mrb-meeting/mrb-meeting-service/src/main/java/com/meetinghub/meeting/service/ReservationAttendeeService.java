@@ -19,7 +19,7 @@ public interface ReservationAttendeeService extends IService<ReservationAttendee
     int inviteAttendees(Long reservationId, Long inviterId, List<Long> userIds);
 
     /**
-     * 按部门邀请：将部门所有成员加入参会人列表
+     * 按部门邀请：将部门及其所有启用子部门成员加入参会人列表。
      */
     int inviteDepartment(Long reservationId, Long inviterId, Long departmentId);
 

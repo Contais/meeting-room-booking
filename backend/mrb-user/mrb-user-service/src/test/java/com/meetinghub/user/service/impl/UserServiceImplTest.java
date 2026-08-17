@@ -6,10 +6,13 @@ import com.meetinghub.common.enums.EnableStatusEnum;
 import com.meetinghub.common.enums.RoleEnum;
 import com.meetinghub.common.exception.BusinessException;
 import com.meetinghub.common.exception.ErrorCode;
+import com.meetinghub.platform.api.feign.FileFeignClient;
 import com.meetinghub.user.model.dto.UserCreateDTO;
 import com.meetinghub.user.model.dto.UserUpdateDTO;
 import com.meetinghub.user.model.entity.User;
+import com.meetinghub.user.repository.DepartmentRepository;
 import com.meetinghub.user.repository.UserRepository;
+import com.meetinghub.user.service.DepartmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +21,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +36,15 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private DepartmentRepository departmentRepository;
+
+    @Mock
+    private DepartmentService departmentService;
+
+    @Mock
+    private FileFeignClient fileFeignClient;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -178,6 +194,36 @@ class UserServiceImplTest {
         verify(userRepository).updateById(captor.capture());
         assertThat(captor.getValue().getPassword()).isNotEqualTo("newpassword");
         assertThat(BCrypt.checkpw("newpassword", captor.getValue().getPassword())).isTrue();
+    }
+
+    @Test
+    void should_returnUsers_when_departmentTreeHasEnabledDescendants() {
+        when(departmentService.listEnabledDescendantIds(3L)).thenReturn(Set.of(3L, 4L));
+        when(userRepository.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(user(1L, 3L), user(2L, 4L)));
+        when(departmentRepository.selectBatchIds(any())).thenReturn(Collections.emptyList());
+
+        List<com.meetinghub.user.model.vo.UserVO> result = userService.listContactsByDepartmentTree(3L);
+
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(com.meetinghub.user.model.vo.UserVO::getId).containsExactlyInAnyOrder(1L, 2L);
+    }
+
+    @Test
+    void should_returnEmpty_when_departmentTreeEmpty() {
+        when(departmentService.listEnabledDescendantIds(3L)).thenReturn(Collections.emptySet());
+
+        List<com.meetinghub.user.model.vo.UserVO> result = userService.listContactsByDepartmentTree(3L);
+
+        assertThat(result).isEmpty();
+        verify(userRepository, never()).selectList(any(LambdaQueryWrapper.class));
+    }
+
+    private User user(Long id, Long departmentId) {
+        User user = new User();
+        user.setId(id);
+        user.setUsername("user" + id);
+        user.setDepartmentId(departmentId);
+        return user;
     }
 
 }

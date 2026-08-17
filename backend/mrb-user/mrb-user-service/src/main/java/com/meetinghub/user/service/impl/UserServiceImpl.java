@@ -18,6 +18,7 @@ import com.meetinghub.user.model.vo.UserVO;
 import com.meetinghub.user.model.entity.Department;
 import com.meetinghub.user.repository.DepartmentRepository;
 import com.meetinghub.user.repository.UserRepository;
+import com.meetinghub.user.service.DepartmentService;
 import com.meetinghub.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl extends ServiceImpl<UserRepository, User> implements UserService {
 
     private final DepartmentRepository departmentRepository;
+    private final DepartmentService departmentService;
     private final UserRepository userRepository;
     private final FileFeignClient fileFeignClient;
 
@@ -260,6 +262,24 @@ public class UserServiceImpl extends ServiceImpl<UserRepository, User> implement
     @Override
     public List<UserVO> listContacts(String keyword, Long departmentId) {
         List<User> users = userRepository.selectContacts(keyword, departmentId);
+        return toVOList(users);
+    }
+
+    @Override
+    public List<UserVO> listContactsByDepartmentTree(Long departmentId) {
+        Set<Long> departmentIds = departmentService.listEnabledDescendantIds(departmentId);
+        if (departmentIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<User> users = userRepository.selectList(
+                new LambdaQueryWrapper<User>()
+                        .eq(User::getDeleted, DeletedEnum.NOT_DELETED.getCode())
+                        .eq(User::getStatus, EnableStatusEnum.ENABLED.getCode())
+                        .in(User::getDepartmentId, departmentIds)
+                        .orderByAsc(User::getDepartmentId)
+                        .orderByAsc(User::getUsername)
+        );
         return toVOList(users);
     }
 

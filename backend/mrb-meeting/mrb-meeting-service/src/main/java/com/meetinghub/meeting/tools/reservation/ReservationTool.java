@@ -190,7 +190,7 @@ public class ReservationTool {
         return new ReservationHistoryResult(total, confirmed, pending, cancelled, briefs);
     }
 
-    @Tool(description = "查询所有部门列表（用于邀请参会人时按部门选择）。返回 JSON 对象：departments 部门列表（id 部门ID、name 部门名称）。注意：部门ID仅用于调用邀请工具，不应展示给用户")
+    @Tool(description = "查询所有部门列表（用于邀请参会人时按部门选择）。返回 JSON 对象：departments 部门列表（id 部门ID、name 部门名称、parentId 父部门ID，parentId=0 表示顶级部门）。注意：部门ID仅用于调用邀请工具，不应展示给用户")
     public ToolResult listDepartments() {
         try {
             var result = departmentFeignClient.listFlat();
@@ -198,7 +198,7 @@ public class ReservationTool {
                 return new ToolResult.ErrorResult("当前系统未配置部门");
             }
             List<DepartmentBrief> departments = result.getData().stream()
-                    .map(d -> new DepartmentBrief(d.getId(), d.getName()))
+                    .map(d -> new DepartmentBrief(d.getId(), d.getName(), d.getParentId()))
                     .collect(Collectors.toList());
             return new DepartmentListResult(departments);
         } catch (Exception e) {
@@ -207,7 +207,7 @@ public class ReservationTool {
         }
     }
 
-    @Tool(description = "按部门邀请参会人。传入预约编号（B 开头）或预约记录ID，以及部门ID，将该部门所有成员加入参会人列表。仅预约创建者可操作。返回 JSON 对象：success 是否成功、message 结果描述")
+    @Tool(description = "按部门邀请参会人。传入预约编号（B 开头）或预约记录ID，以及部门ID，将该部门及其所有启用子部门的成员加入参会人列表。仅预约创建者可操作。返回 JSON 对象：success 是否成功、message 结果描述")
     public OperationResult inviteDepartmentAttendees(
             ToolContext toolContext,
             @ToolParam(description = "预约编号（B 开头）或预约记录ID") String reservationRef,

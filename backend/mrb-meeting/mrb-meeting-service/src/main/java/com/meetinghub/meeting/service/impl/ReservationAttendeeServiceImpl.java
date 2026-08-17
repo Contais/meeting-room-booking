@@ -134,7 +134,7 @@ public class ReservationAttendeeServiceImpl
         if (departmentId == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR.getCode(), "部门ID不能为空");
         }
-        // 通过 Feign 查询部门所有成员
+        // 通过 Feign 查询部门子树所有启用成员（包含启用子部门）
         List<UserBriefDTO> members;
         try {
             var result = userFeignClient.listByDepartment(departmentId);

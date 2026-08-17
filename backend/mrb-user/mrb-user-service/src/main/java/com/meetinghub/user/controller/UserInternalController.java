@@ -53,12 +53,13 @@ public class UserInternalController {
     }
 
     /**
-     * 按部门 ID 查询所有启用用户（跨服务调用，供 mrb-meeting 邀请参会人使用）
+     * 按部门子树查询所有启用用户（跨服务调用，供 mrb-meeting 邀请参会人使用）。
+     * 范围包含目标部门及其所有启用后代部门。
      */
-    @Operation(summary = "按部门查询启用用户")
+    @Operation(summary = "按部门子树查询启用用户")
     @GetMapping("/list-by-department")
     public Result<List<UserVO>> listByDepartment(@RequestParam Long departmentId) {
-        return Result.ok(userService.listContacts(null, departmentId));
+        return Result.ok(userService.listContactsByDepartmentTree(departmentId));
     }
 
     /**
