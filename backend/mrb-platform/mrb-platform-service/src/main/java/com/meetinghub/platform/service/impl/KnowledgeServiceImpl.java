@@ -17,6 +17,7 @@ import com.meetinghub.platform.model.vo.KnowledgeEntryVO;
 import com.meetinghub.platform.repository.KnowledgeEntryRepository;
 import com.meetinghub.platform.service.KnowledgeService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -38,6 +39,7 @@ import java.util.regex.Pattern;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class KnowledgeServiceImpl extends ServiceImpl<KnowledgeEntryRepository, KnowledgeEntry>
         implements KnowledgeService {
 
@@ -149,13 +151,16 @@ public class KnowledgeServiceImpl extends ServiceImpl<KnowledgeEntryRepository, 
         List<KnowledgeEntry> enabledEntries = list(new LambdaQueryWrapper<KnowledgeEntry>()
                 .eq(KnowledgeEntry::getStatus, EnableStatusEnum.ENABLED.getCode()));
 
-        return enabledEntries.stream()
+        List<KnowledgeEntryDTO> hits = enabledEntries.stream()
                 .map(entry -> new ScoredEntry(entry, score(entry, queryFeatures)))
                 .filter(scored -> scored.score() >= SEARCH_MIN_SCORE)
                 .sorted(Comparator.comparingInt(ScoredEntry::score).reversed())
                 .limit(SEARCH_TOP_N)
                 .map(scored -> toDTO(scored.entry()))
                 .toList();
+        log.info("知识库检索 query={}, 启用条目数={}, 命中数={}",
+                query, enabledEntries.size(), hits.size());
+        return hits;
     }
 
     /**
