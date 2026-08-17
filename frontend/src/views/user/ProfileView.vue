@@ -406,18 +406,17 @@ async function handleChangePassword() {
 
 .avatar-edit-btn {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
+  bottom: 0;
+  right: 0;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border: 3px solid var(--bg-card);
   transition: all 0.2s ease;
   font-size: 14px;
 }
@@ -563,7 +562,6 @@ async function handleChangePassword() {
   cursor: pointer;
   transition: all 0.15s ease;
   color: var(--text-secondary);
-  border: 2px solid transparent;
   padding: 0;
 }
 .icon-item:hover {
@@ -573,7 +571,6 @@ async function handleChangePassword() {
 .icon-item.active {
   background: var(--primary-light);
   color: var(--primary);
-  border-color: var(--primary);
 }
 
 .gradient-grid {
@@ -583,11 +580,12 @@ async function handleChangePassword() {
 }
 
 .gradient-item {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.15s ease;
-  border: 3px solid transparent;
+  border: none;
   box-sizing: border-box;
   padding: 0;
 }
@@ -595,8 +593,19 @@ async function handleChangePassword() {
   transform: scale(1.06);
 }
 .gradient-item.active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+  box-shadow: none;
+}
+.gradient-item.active::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .avatar-upload-content {
