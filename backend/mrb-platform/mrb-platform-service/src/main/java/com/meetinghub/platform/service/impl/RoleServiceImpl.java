@@ -144,9 +144,8 @@ public class RoleServiceImpl extends ServiceImpl<RoleRepository, Role> implement
         if (role == null || DeletedEnum.DELETED.getCode().equals(role.getDeleted())) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
-        roleMenuRepository.delete(
-                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, dto.getRoleId())
-        );
+        // 角色-菜单为纯关联表：先物理删除再重建，避免逻辑删除残留行触发唯一键冲突
+        roleMenuRepository.deletePhysicallyByRoleId(dto.getRoleId());
         if (dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {
             for (Long menuId : dto.getMenuIds()) {
                 RoleMenu rm = new RoleMenu();
