@@ -118,12 +118,35 @@ onMounted(async () => {
   if (userStore.isAdmin()) {
     try {
       const res = await getRoomUsage()
+      const usageRows = res.data.map((r: any) => ({ name: r.roomName, value: Math.round(r.usageRate * 100) }))
+      // 会议室多时标签旋转 30°（小角度），配合省略与悬浮看全名，避免重叠
+      const rotateLabels = usageRows.length > 6
       usageChartOption.value = {
-        tooltip: { trigger: 'axis' },
-        grid: { left: 40, right: 20, bottom: 40, top: 10 },
-        xAxis: { type: 'category', data: res.data.map((r: any) => r.roomName), axisLabel: { fontSize: 11 } },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          formatter: (params: any[]) => {
+            const p = params[0]
+            return p ? `${p.name}：${p.value}%` : ''
+          }
+        },
+        grid: { left: 40, right: 20, bottom: rotateLabels ? 64 : 44, top: 10 },
+        xAxis: {
+          type: 'category',
+          data: usageRows.map((r: any) => r.name),
+          axisLabel: {
+            fontSize: 11,
+            interval: 0,
+            rotate: rotateLabels ? 30 : 0,
+            formatter: (name: string) => (name.length > 6 ? name.slice(0, 6) + '…' : name)
+          }
+        },
         yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
-        series: [{ type: 'bar', data: res.data.map((r: any) => Math.round(r.usageRate * 100)), itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#667eea' }, { offset: 1, color: '#764ba2' }] } } }]
+        series: [{
+          type: 'bar',
+          data: usageRows.map((r: any) => r.value),
+          itemStyle: { borderRadius: [4, 4, 0, 0], color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#667eea' }, { offset: 1, color: '#764ba2' }] } }
+        }]
       }
     } catch { /* */ }
     try {
