@@ -11,24 +11,25 @@
       </template>
     </SearchBar>
 
-    <TableCard
-      :total="total"
-      v-model:page="query.pageNum"
-      v-model:size="query.pageSize"
-      @size-change="onSizeChange"
-      @current-change="loadRoles"
-    >
+    <div ref="tableCardRef" class="table-card-fullscreen">
+      <TableCard
+        :total="total"
+        v-model:page="query.pageNum"
+        v-model:size="query.pageSize"
+        @size-change="onSizeChange"
+        @current-change="loadRoles"
+      >
       <template #toolbar-left>
         <el-button class="btn-outline" @click="handleCreate"><el-icon><Plus /></el-icon>新建角色</el-button>
       </template>
       <template #toolbar-right>
-        <el-tooltip content="刷新"><el-button circle @click="loadRoles"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        <TableToolbarActions :fullscreen-target="tableCardRef" v-model:sort-order="sortOrder" :columns="columnOptions" v-model:visible-columns="visibleColumns" @refresh="loadRoles" />
       </template>
 
-      <el-table :data="roleList" v-loading="loading" empty-text="暂无角色数据，点击左上角「新建角色」创建">
+      <el-table :data="displayData" v-loading="loading" empty-text="暂无角色数据，点击左上角「新建角色」创建">
         <el-table-column type="index" :index="(index: number) => (query.pageNum - 1) * query.pageSize + index + 1" label="序号" width="70" align="center" />
-        <el-table-column prop="roleCode" label="角色编码" width="120" />
-        <el-table-column label="角色名称" width="140">
+        <el-table-column v-if="isColumnVisible('roleCode')" prop="roleCode" label="角色编码" width="120" />
+        <el-table-column v-if="isColumnVisible('roleName')" label="角色名称" width="140">
           <template #default="{ row }">
             <span class="role-name-cell">
               <span class="role-dot" :style="{ background: getRoleColor(row.id) }"></span>
@@ -36,22 +37,22 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="70" align="center" />
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column v-if="isColumnVisible('description')" prop="description" label="描述" min-width="150" show-overflow-tooltip />
+        <el-table-column v-if="isColumnVisible('sort')" prop="sort" label="排序" width="70" align="center" />
+        <el-table-column v-if="isColumnVisible('status')" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light" round>
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="类型" width="110" align="center">
+        <el-table-column v-if="isColumnVisible('type')" label="类型" width="110" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.isSystem === 1" type="danger" size="small" effect="light" round>系统角色</el-tag>
             <el-tag v-else type="info" size="small" effect="light" round>自定义</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('createTime')" label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
@@ -82,7 +83,8 @@
           </template>
         </el-table-column>
       </el-table>
-    </TableCard>
+      </TableCard>
+    </div>
 
     <!-- 新建/编辑角色抽屉 -->
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" :loading="submitting" @submit="handleSubmit">
@@ -128,9 +130,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Edit, Delete, Key, Refresh, ArrowDown, Switch } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Key, ArrowDown, Switch } from '@element-plus/icons-vue'
 import {
   listRoles,
   createRole,
@@ -146,12 +148,28 @@ import { getMenuTree } from '@/api/menu'
 import type { MenuItem } from '@/types/menu'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
+import TableToolbarActions from '@/components/TableToolbarActions.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
+import { sortByProperty } from '@/utils/table'
+import { useTableToolbar } from '@/composables/useTableToolbar'
 import { formatDateTime } from '@/utils/datetime'
+import type { TableColumnOption } from '@/types/table'
 
 const loading = ref(false)
 const submitting = ref(false)
 const roleList = ref<RoleInfo[]>([])
+const tableCardRef = ref<HTMLDivElement>()
+const columnOptions: TableColumnOption[] = [
+  { key: 'roleCode', label: '角色编码' },
+  { key: 'roleName', label: '角色名称' },
+  { key: 'description', label: '描述' },
+  { key: 'sort', label: '排序' },
+  { key: 'status', label: '状态' },
+  { key: 'type', label: '类型' },
+  { key: 'createTime', label: '创建时间' }
+]
+const { sortOrder, visibleColumns, isColumnVisible } = useTableToolbar(columnOptions)
+const displayData = computed(() => sortByProperty(roleList.value, sortOrder.value, (row) => row.sort ?? 0))
 const total = ref(0)
 
 const query = reactive<RolePageQuery & { roleName?: string; status?: number; isSystem?: number }>({

@@ -16,24 +16,25 @@
       </template>
     </SearchBar>
 
-    <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
+    <div ref="tableCardRef" class="table-card-fullscreen">
+      <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
       <template #toolbar-left>
         <el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增会议室</el-button>
       </template>
       <template #toolbar-right>
-        <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        <TableToolbarActions :fullscreen-target="tableCardRef" v-model:sort-order="sortOrder" :columns="columnOptions" v-model:visible-columns="visibleColumns" @refresh="loadData" />
       </template>
 
-      <el-table :data="tableData" v-loading="loading" empty-text="暂无会议室数据，点击左上角「新增会议室」创建">
+      <el-table :data="displayData" v-loading="loading" empty-text="暂无会议室数据，点击左上角「新增会议室」创建">
         <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
-        <el-table-column prop="name" label="名称" min-width="120" />
-        <el-table-column prop="location" label="位置" min-width="100" />
-        <el-table-column prop="capacity" label="容量" width="80" align="center" />
-        <el-table-column label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
-        <el-table-column label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
-        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
-        <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
-        <el-table-column label="当前" width="80" align="center"><template #default="{ row }"><el-tag v-if="row.status === 1" :type="row.currentAvailable ? 'success' : 'warning'" size="small" effect="light" round>{{ row.currentAvailable ? '空闲' : '使用中' }}</el-tag><span v-else style="color: var(--text-muted)">-</span></template></el-table-column>
+        <el-table-column v-if="isColumnVisible('name')" prop="name" label="名称" min-width="120" />
+        <el-table-column v-if="isColumnVisible('location')" prop="location" label="位置" min-width="100" />
+        <el-table-column v-if="isColumnVisible('capacity')" prop="capacity" label="容量" width="80" align="center" />
+        <el-table-column v-if="isColumnVisible('timeRange')" label="时段" width="120"><template #default="{ row }">{{ row.bookableStart || '08:00' }}~{{ row.bookableEnd || '20:00' }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('approval')" label="审批" width="90" align="center"><template #default="{ row }"><el-tag :type="row.needApproval === 1 ? 'warning' : 'success'" size="small" effect="light">{{ row.needApproval === 1 ? '需审批' : '免审批' }}</el-tag></template></el-table-column>
+        <el-table-column v-if="isColumnVisible('createTime')" label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('status')" label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template></el-table-column>
+        <el-table-column v-if="isColumnVisible('current')" label="当前" width="80" align="center"><template #default="{ row }"><el-tag v-if="row.status === 1" :type="row.currentAvailable ? 'success' : 'warning'" size="small" effect="light" round>{{ row.currentAvailable ? '空闲' : '使用中' }}</el-tag><span v-else style="color: var(--text-muted)">-</span></template></el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
@@ -50,7 +51,8 @@
           </template>
         </el-table-column>
       </el-table>
-    </TableCard>
+      </TableCard>
+    </div>
 
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑会议室' : '新增会议室'" :loading="submitting" @submit="handleSubmit">
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form-standard">
@@ -75,22 +77,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, View } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, View } from '@element-plus/icons-vue'
 import { listRoomsAdmin, createRoom, updateRoom, deleteRoom } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
+import TableToolbarActions from '@/components/TableToolbarActions.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import FileUpload from '@/components/FileUpload.vue'
+import { sortByProperty } from '@/utils/table'
+import { useTableToolbar } from '@/composables/useTableToolbar'
 import { formatDateTime } from '@/utils/datetime'
+import type { TableColumnOption } from '@/types/table'
 import type { MeetingRoom } from '@/types/meeting'
 
 const router = useRouter()
 const loading = ref(false); const submitting = ref(false)
 const tableData = ref<MeetingRoom[]>([]); const total = ref(0)
+const tableCardRef = ref<HTMLDivElement>()
+const columnOptions: TableColumnOption[] = [
+  { key: 'name', label: '名称' },
+  { key: 'location', label: '位置' },
+  { key: 'capacity', label: '容量' },
+  { key: 'timeRange', label: '时段' },
+  { key: 'approval', label: '审批' },
+  { key: 'createTime', label: '创建时间' },
+  { key: 'status', label: '状态' },
+  { key: 'current', label: '当前' }
+]
+const { sortOrder, visibleColumns, isColumnVisible } = useTableToolbar(columnOptions)
+const displayData = computed(() => sortByProperty(tableData.value, sortOrder.value, (row) => row.createTime || ''))
 const dialogVisible = ref(false); const isEdit = ref(false); const formRef = ref<FormInstance>()
 const query = reactive({ page: 1, size: 10, keyword: '', name: '', location: '', equipment: '', minCapacity: undefined as number | undefined, bookableStart: '', bookableEnd: '', needApproval: undefined as number | undefined, status: undefined as number | undefined, createTimeStart: '', createTimeEnd: '', availability: '' as string })
 const createTimeRange = ref<string[]>([])

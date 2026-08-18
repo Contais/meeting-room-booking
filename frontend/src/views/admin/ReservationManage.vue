@@ -41,26 +41,27 @@
       </template>
     </SearchBar>
 
-    <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
+    <div ref="tableCardRef" class="table-card-fullscreen">
+      <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
       <template #toolbar-left>
         <el-button class="btn-outline" @click="bookingDialogVisible = true"><el-icon><Plus /></el-icon>预约会议室</el-button>
       </template>
       <template #toolbar-right>
-        <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        <TableToolbarActions :fullscreen-target="tableCardRef" v-model:sort-order="sortOrder" :columns="columnOptions" v-model:visible-columns="visibleColumns" @refresh="loadData" />
       </template>
 
-      <el-table :data="tableData" v-loading="loading" empty-text="暂无预约记录">
+      <el-table :data="displayData" v-loading="loading" empty-text="暂无预约记录">
         <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
-        <el-table-column label="预约编号" width="170">
+        <el-table-column v-if="isColumnVisible('reservationCode')" label="预约编号" width="170">
           <template #default="{ row }">
             <el-link type="primary" underline="never" @click="goDetail(row.id)">{{ row.reservationCode }}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="roomName" label="会议室" min-width="110" />
-        <el-table-column prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="username" label="预约人" min-width="100" />
-        <el-table-column prop="attendeeCount" label="人数" width="70" align="center" />
-        <el-table-column label="预约时段" min-width="110">
+        <el-table-column v-if="isColumnVisible('roomName')" prop="roomName" label="会议室" min-width="110" />
+        <el-table-column v-if="isColumnVisible('subject')" prop="subject" label="会议主题" min-width="130" show-overflow-tooltip />
+        <el-table-column v-if="isColumnVisible('username')" prop="username" label="预约人" min-width="100" />
+        <el-table-column v-if="isColumnVisible('attendeeCount')" prop="attendeeCount" label="人数" width="70" align="center" />
+        <el-table-column v-if="isColumnVisible('timeSlot')" label="预约时段" min-width="110">
           <template #default="{ row }">
             <div class="time-slot-cell">
               <div class="ts-date">{{ formatDate(row.startTime) }}</div>
@@ -68,8 +69,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
-        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('status')" label="状态" width="80" align="center"><template #default="{ row }"><el-tag :type="statusType(row.status)" size="small" effect="light">{{ statusText(row.status) }}</el-tag></template></el-table-column>
+        <el-table-column v-if="isColumnVisible('createTime')" label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="170" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
@@ -94,22 +95,27 @@
           </template>
         </el-table-column>
       </el-table>
-    </TableCard>
+      </TableCard>
+    </div>
 
     <BookingDialog v-model="bookingDialogVisible" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Check, Close, Refresh, View, Delete } from '@element-plus/icons-vue'
+import { Plus, Check, Close, View, Delete } from '@element-plus/icons-vue'
 import { listAllReservations, approveReservation, rejectReservation, cancelReservation, adminDeleteReservation } from '@/api/reservation'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
+import TableToolbarActions from '@/components/TableToolbarActions.vue'
 import BookingDialog from '@/components/BookingDialog.vue'
+import { sortByProperty } from '@/utils/table'
+import { useTableToolbar } from '@/composables/useTableToolbar'
 import { formatDateTime, formatDate, formatTime } from '@/utils/datetime'
+import type { TableColumnOption } from '@/types/table'
 import type { Reservation } from '@/types/reservation'
 
 const route = useRoute()
@@ -120,6 +126,19 @@ const hasInitialQuery = Object.keys(route.query).length > 0
 const bookingDialogVisible = ref(false)
 const loading = ref(false)
 const tableData = ref<Reservation[]>([])
+const tableCardRef = ref<HTMLDivElement>()
+const columnOptions: TableColumnOption[] = [
+  { key: 'reservationCode', label: '预约编号' },
+  { key: 'roomName', label: '会议室' },
+  { key: 'subject', label: '会议主题' },
+  { key: 'username', label: '预约人' },
+  { key: 'attendeeCount', label: '人数' },
+  { key: 'timeSlot', label: '预约时段' },
+  { key: 'status', label: '状态' },
+  { key: 'createTime', label: '创建时间' }
+]
+const { sortOrder, visibleColumns, isColumnVisible } = useTableToolbar(columnOptions)
+const displayData = computed(() => sortByProperty(tableData.value, sortOrder.value, (row) => row.createTime || ''))
 const total = ref(0)
 const query = reactive({
   page: 1,

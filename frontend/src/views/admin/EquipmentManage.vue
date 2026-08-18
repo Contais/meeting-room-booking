@@ -12,31 +12,32 @@
       </template>
     </SearchBar>
 
-    <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
+    <div ref="tableCardRef" class="table-card-fullscreen">
+      <TableCard :total="total" v-model:page="query.page" v-model:size="query.size" @size-change="onSizeChange" @current-change="loadData">
       <template #toolbar-left>
         <el-button class="btn-outline" @click="showCreateDialog"><el-icon><Plus /></el-icon>新增设备</el-button>
       </template>
       <template #toolbar-right>
-        <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+        <TableToolbarActions :fullscreen-target="tableCardRef" v-model:sort-order="sortOrder" :columns="columnOptions" v-model:visible-columns="visibleColumns" @refresh="loadData" />
       </template>
 
-      <el-table :data="tableData" v-loading="loading" empty-text="暂无设备数据，点击左上角「新增设备」创建">
+      <el-table :data="displayData" v-loading="loading" empty-text="暂无设备数据，点击左上角「新增设备」创建">
         <el-table-column type="index" :index="(index: number) => (query.page - 1) * query.size + index + 1" label="序号" width="70" align="center" />
-        <el-table-column prop="code" label="设备编码" width="150" />
-        <el-table-column prop="name" label="设备名称" min-width="120" />
-        <el-table-column prop="category" label="分类" width="100" align="center">
+        <el-table-column v-if="isColumnVisible('code')" prop="code" label="设备编码" width="150" />
+        <el-table-column v-if="isColumnVisible('name')" prop="name" label="设备名称" min-width="120" />
+        <el-table-column v-if="isColumnVisible('category')" prop="category" label="分类" width="100" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.category" type="info" size="small" effect="light" round>{{ row.category }}</el-tag>
             <span v-else style="color: var(--text-muted)">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="品牌型号" min-width="160">
+        <el-table-column v-if="isColumnVisible('brandModel')" label="品牌型号" min-width="160">
           <template #default="{ row }">
             <span v-if="row.brand || row.model">{{ [row.brand, row.model].filter(Boolean).join(' / ') }}</span>
             <span v-else style="color: var(--text-muted)">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="关联会议室" width="120" align="center">
+        <el-table-column v-if="isColumnVisible('rooms')" label="关联会议室" width="120" align="center">
           <template #default="{ row }">
             <el-tooltip v-if="row.rooms && row.rooms.length" :content="row.rooms.map((r: RoomBrief) => r.name).join('、')" placement="top">
               <el-tag type="success" size="small" effect="light" round>{{ row.rooms.length }} 间</el-tag>
@@ -44,12 +45,12 @@
             <span v-else style="color: var(--text-muted)">未关联</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column v-if="isColumnVisible('status')" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('createTime')" label="创建时间" width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
@@ -78,7 +79,8 @@
           </template>
         </el-table-column>
       </el-table>
-    </TableCard>
+      </TableCard>
+    </div>
 
     <!-- 新增/编辑设备 -->
     <FormDrawer v-model:visible="dialogVisible" :title="isEdit ? '编辑设备' : '新增设备'" :loading="submitting" @submit="handleSubmit">
@@ -122,11 +124,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh, View, Switch, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, View, Switch, ArrowDown } from '@element-plus/icons-vue'
 import {
   listEquipments,
   createEquipment,
@@ -137,8 +139,12 @@ import {
 import { listRoomsAdmin } from '@/api/meeting'
 import SearchBar from '@/components/SearchBar.vue'
 import TableCard from '@/components/TableCard.vue'
+import TableToolbarActions from '@/components/TableToolbarActions.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
+import { sortByProperty } from '@/utils/table'
+import { useTableToolbar } from '@/composables/useTableToolbar'
 import { formatDateTime } from '@/utils/datetime'
+import type { TableColumnOption } from '@/types/table'
 import type { Equipment, RoomBrief, RoomEquipmentItem } from '@/types/equipment'
 import type { MeetingRoom } from '@/types/meeting'
 
@@ -146,6 +152,18 @@ const router = useRouter()
 const loading = ref(false)
 const submitting = ref(false)
 const tableData = ref<Equipment[]>([])
+const tableCardRef = ref<HTMLDivElement>()
+const columnOptions: TableColumnOption[] = [
+  { key: 'code', label: '设备编码' },
+  { key: 'name', label: '设备名称' },
+  { key: 'category', label: '分类' },
+  { key: 'brandModel', label: '品牌型号' },
+  { key: 'rooms', label: '关联会议室' },
+  { key: 'status', label: '状态' },
+  { key: 'createTime', label: '创建时间' }
+]
+const { sortOrder, visibleColumns, isColumnVisible } = useTableToolbar(columnOptions)
+const displayData = computed(() => sortByProperty(tableData.value, sortOrder.value, (row) => row.createTime || ''))
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)

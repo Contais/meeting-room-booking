@@ -25,23 +25,23 @@
       </template>
     </SearchBar>
 
-    <div class="table-card">
+    <div ref="tableCardRef" class="table-card">
       <div class="table-toolbar">
         <div class="toolbar-left">
           <el-button class="btn-outline" @click="showCreateDialog()"><el-icon><Plus /></el-icon>新增部门</el-button>
           <el-button @click="expandAll = !expandAll">{{ expandAll ? '收起' : '展开' }}</el-button>
         </div>
         <div class="toolbar-right">
-          <el-tooltip content="刷新"><el-button circle @click="loadData"><el-icon><Refresh /></el-icon></el-button></el-tooltip>
+          <TableToolbarActions :fullscreen-target="tableCardRef" v-model:sort-order="sortOrder" :columns="columnOptions" v-model:visible-columns="visibleColumns" @refresh="loadData" />
         </div>
       </div>
 
-      <el-table :data="filteredTree" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" empty-text="暂无部门数据，点击左上角「新增部门」创建">
-        <el-table-column prop="name" label="部门名称" min-width="220" />
-        <el-table-column label="状态" width="90" align="center">
+      <el-table :data="displayData" v-loading="loading" row-key="id" :key="expandAll" :default-expand-all="expandAll" :tree-props="{ children: 'children' }" empty-text="暂无部门数据，点击左上角「新增部门」创建">
+        <el-table-column v-if="isColumnVisible('name')" prop="name" label="部门名称" min-width="220" />
+        <el-table-column v-if="isColumnVisible('status')" label="状态" width="90" align="center">
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small" effect="light">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
+        <el-table-column v-if="isColumnVisible('createTime')" label="创建时间" min-width="170"><template #default="{ row }">{{ formatDateTime(row.createTime) }}</template></el-table-column>
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-links">
@@ -74,17 +74,28 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment } from '@/api/department'
 import SearchBar from '@/components/SearchBar.vue'
+import TableToolbarActions from '@/components/TableToolbarActions.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
+import { sortTreeByProperty } from '@/utils/table'
+import { useTableToolbar } from '@/composables/useTableToolbar'
 import { formatDateTime } from '@/utils/datetime'
+import type { TableColumnOption } from '@/types/table'
 import type { Department } from '@/types/department'
 
 const loading = ref(false)
 const submitting = ref(false)
 const filterStatus = ref(undefined as number | undefined)
 const treeData = ref<Department[]>([])
+const tableCardRef = ref<HTMLDivElement>()
+const columnOptions: TableColumnOption[] = [
+  { key: 'name', label: '部门名称' },
+  { key: 'status', label: '状态' },
+  { key: 'createTime', label: '创建时间' }
+]
+const { sortOrder, visibleColumns, isColumnVisible } = useTableToolbar(columnOptions)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
@@ -120,6 +131,8 @@ const filteredTree = computed(() => {
   }
   return treeData.value.map(filterNode).filter((n): n is Department => n !== null)
 })
+
+const displayData = computed(() => sortTreeByProperty(filteredTree.value, sortOrder.value, (row) => row.sortOrder ?? 0))
 
 function applyFilter() {
   // 计算属性自动响应，此函数仅为查询按钮提供显式触发入口

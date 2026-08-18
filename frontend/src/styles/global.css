@@ -452,6 +452,8 @@ a { text-decoration: none; color: var(--primary); }
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
 .table-toolbar .toolbar-left { display: flex; align-items: center; gap: 8px; }
 .table-toolbar .toolbar-right { display: flex; align-items: center; gap: 4px; }
+.table-card:fullscreen { background: var(--bg-card); overflow: auto; }
+.table-card-fullscreen:fullscreen { background: var(--bg-page); overflow: auto; padding: 16px; }
 
 .pagination-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border-light); background: var(--bg-card); }
 .total-text { font-size: 13px; color: var(--text-muted); }
